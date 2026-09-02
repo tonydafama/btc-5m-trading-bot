@@ -1,0 +1,52 @@
+{
+  "enabled": true,
+  "started_at_hkt": "2026-07-01 02:03:15 HKT",
+  "baseline_usdc": {
+    "v1": 1000.0,
+    "alpha_max": 1000.0,
+    "vault": 3000.0,
+    "unallocated": 1000.0
+  },
+  "accounts": {
+    "v1": {
+      "label": "V1",
+      "strategy": "Package2+",
+      "logs": [
+        "trade_log_live.json",
+        "trade_log_eth_live.json"
+      ]
+    },
+    "alpha_max": {
+      "label": "Alpha Max",
+      "strategy": "Alpha-Max",
+      "logs": [
+        "bot2/alpha_max_trades_live.json"
+      ]
+    },
+    "vault": {
+      "label": "Vault",
+      "strategy": "Savings only"
+    },
+    "unallocated": {
+      "label": "Unallocated",
+      "strategy": "Hold / decide later"
+    }
+  },
+  "exclude_before_start": true,
+  "exclude_manual_trades": true,
+  "reset_archive_id": "pre-competition-20260630-180315",
+  "account_start_usdc": {
+    "v1": 1000.0,
+    "alpha_max": 1000.0
+  },
+  "wallet_at_reset_usdc": {
+    "v1": 1000.0,
+    "alpha_max": 1000.0
+  },
+  "notes": [
+    "Account PnL = live wallet − wallet_at_reset ($1,000 each — manual allocation before live).",
+    "Archive manifest still records auto-snapshot at reset (V1 $1096.74, Alpha $1010.68) for audit only.",
+    "Trade log PnL = bot WIN/LOSS rows since monitor start.",
+    "Monitor start: 2026-07-01 02:03:15 HKT"
+  ]
+}

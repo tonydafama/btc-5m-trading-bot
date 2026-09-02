@@ -1,0 +1,23 @@
+{
+  "status": "held",
+  "decision_at_hkt": "2026-06-16",
+  "user_preference": "Package 2 — implement when user confirms",
+  "do_not_deploy_until": "explicit user go-ahead",
+  "strategy_base": "OLD",
+  "rules": {
+    "max_ask": 0.88,
+    "min_ask": 0.15,
+    "bet_flat_usd": 5.0,
+    "bet_favorite_usd": 7.0,
+    "favorite_ask_threshold": 0.70,
+    "timing_filters": "unchanged (T-60→T-22, move≥$12, delta≥0.025%, depth≥$50)"
+  },
+  "backtest_reference": {
+    "dataset": "trade_log_paper.json · 484 windows",
+    "baseline_old_pnl": 61.49,
+    "package2_estimated_pnl": 83.34,
+    "trades": 55,
+    "win_rate_pct": 89.1,
+    "note": "Semi-dynamic sizing (fav $7 / else $5), not full bankroll %"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "experiments": [
+    {
+      "id": "weather-paper-w1-20260614",
+      "status": "retired",
+      "kind": "monitor",
+      "bot": "Weather",
+      "started_at_hkt": "2026-06-14 08:00:00",
+      "retired_at_hkt": "2026-06-23 12:00:00",
+      "title": "Weather W1 paper · NO-only",
+      "hypothesis": "Ensemble forecast edge vs Polymarket temperature buckets.",
+      "metrics_source": "weather_paper",
+      "conclusion": "Retired 2026-06-23: 154 settled −$23.85 paper; 68% WR negative ROI. Cron off; logs in /root/weather-bot/logs/paper_trades.json; API /api/weather-summary kept."
+    },
+    {
+      "id": "eth-min-move-ab-20260618",
+      "status": "decided",
+      "kind": "ab_test",
+      "bot": "ETH",
+      "started_at_hkt": "2026-06-18 12:00:00",
+      "decided_at_hkt": "2026-06-18 14:00:00",
+      "title": "ETH min move $1.0 → $0.8",
+      "hypothesis": "Relax eth_move filter; expect +2–5 paper entries/day vs control.",
+      "control": { "ETH_MIN_MOVE_USD": 1.0 },
+      "treatment": { "ETH_MIN_MOVE_USD": 0.8 },
+      "conclusion": "Control $1.0 deployed on ETH live; treatment $0.8 not run in parallel."
+    },
+    {
+      "id": "btc-fav-cap-20260618",
+      "status": "deployed",
+      "kind": "rollout",
+      "bot": "BTC",
+      "started_at_hkt": "2026-06-18 12:00:00",
+      "deployed_at_hkt": "2026-06-18 12:00:00",
+      "title": "Favorite max ask 0.88 → 0.85 · stake $14 → $12",
+      "hypothesis": "Reduce high-ask asymmetric tail risk on fav entries.",
+      "params": {
+        "max_ask_favorite": 0.85,
+        "stake_favorite": 12.0,
+        "favorite_loss_streak_pause": 2,
+        "favorite_pause_minutes": 45
+      },
+      "conclusion": "Live config — see BTC tab / strategy_config.json."
+    }
+  ]
+}

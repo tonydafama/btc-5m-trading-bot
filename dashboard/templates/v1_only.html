@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>V1 BTC/ETH</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:#0d1117; --panel:#161b22; --panel2:#0f1621; --border:#30363d;
+      --text:#e6edf3; --muted:#8b949e; --green:#3fb950; --red:#f85149;
+      --blue:#58a6ff; --orange:#d29922;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    .wrap { max-width:1100px; margin:0 auto; padding:1rem; }
+    header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+    h1 { margin:0; font-size:1.35rem; }
+    .sub { color:var(--muted); font-size:.82rem; margin-top:.2rem; }
+    .pill { display:inline-flex; align-items:center; border:1px solid var(--border); background:var(--panel2); color:var(--muted); padding:.25rem .5rem; border-radius:999px; font-size:.76rem; }
+    .pill.live { color:var(--green); border-color:rgba(63,185,80,.45); }
+    .pill.warn { color:var(--orange); border-color:rgba(210,153,34,.45); }
+    .grid { display:grid; gap:.75rem; }
+    .grid.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:.85rem; }
+    .pnl-panel { border-left:3px solid var(--blue); }
+    .pnl-panel.today { border-left-color:var(--orange); }
+    .wallet-bar { display:flex; flex-wrap:wrap; gap:1.25rem; align-items:baseline; }
+    .wallet-bar .value { font-size:1.5rem; font-weight:700; }
+    .label { color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.03em; }
+    .value { font-size:1.35rem; font-weight:700; margin-top:.15rem; }
+    .hint { color:var(--muted); font-size:.74rem; margin-top:.2rem; }
+    .tag { font-size:.68rem; color:var(--muted); font-weight:500; text-transform:none; letter-spacing:0; margin-left:.35rem; }
+    .pos { color:var(--green); } .neg { color:var(--red); } .muted { color:var(--muted); }
+    section { margin-top:.75rem; }
+    .section-head { display:flex; align-items:center; justify-content:space-between; gap:.75rem; margin-bottom:.55rem; }
+    h2 { font-size:.95rem; margin:0; }
+    button { cursor:pointer; border:1px solid var(--border); background:var(--panel2); color:var(--text); border-radius:8px; padding:.4rem .6rem; font-size:.76rem; }
+    button:hover { border-color:var(--blue); }
+    button.danger { border-color:rgba(248,81,73,.45); color:var(--red); }
+    button.good { border-color:rgba(63,185,80,.45); color:var(--green); }
+    .controls { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.55rem; }
+    .bot-card { border-left:3px solid var(--blue); }
+    .bot-card.eth { border-left-color:var(--green); }
+    .status-line { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.45rem; }
+    .table-wrap { overflow:auto; border:1px solid var(--border); border-radius:12px; }
+    table { width:100%; border-collapse:collapse; font-size:.76rem; min-width:980px; }
+    th,td { padding:.45rem .5rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th { color:var(--muted); background:rgba(255,255,255,.025); font-weight:600; }
+    tr:last-child td { border-bottom:0; }
+    .reason { color:var(--muted); max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .chart-box { height:260px; padding:.2rem 0 .4rem; }
+    .chart-note { font-size:.72rem; color:var(--muted); margin-top:.15rem; }
+    .tier-current { background:rgba(88,166,255,0.1); }
+    .stake-table th, .stake-table td { font-size:.72rem; padding:.38rem .45rem; text-align:right; }
+    .stake-table th:first-child, .stake-table td:first-child { text-align:left; }
+    .sched-grid { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; font-size:.78rem; }
+    .sched-box { background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:.55rem .65rem; }
+    .sched-box .title { color:var(--muted); font-size:.68rem; text-transform:uppercase; margin-bottom:.25rem; }
+    @media (max-width:760px) {
+      .sched-grid { grid-template-columns:1fr; }
+      header { display:block; }
+      .grid.three, .grid.two { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>V1 BTC / ETH</h1>
+        <div class="sub">Bot only · <span id="session-start">—</span> · 更新 <span id="updated">—</span></div>
+        <div class="controls">
+          <a href="/logs" style="text-decoration:none"><button type="button">Rules &amp; Log</button></a>
+        </div>
+      </div>
+      <div class="status-line">
+        <span class="pill live" id="btc-mode">BTC —</span>
+        <span class="pill live" id="eth-mode">ETH —</span>
+        <span class="pill live" id="risk-pill">—</span>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="wallet-bar">
+        <div>
+          <div class="label">Wallet</div>
+          <div class="value" id="wallet-cash">—</div>
+          <div class="hint" id="wallet-hint">—</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <h2>Stake Plan</h2>
+        <span class="pill live" id="stake-mult-pill">—</span>
+      </div>
+      <div class="hint" id="stake-formula">—</div>
+      <div class="table-wrap" style="margin-top:.5rem">
+        <table class="stake-table">
+          <thead>
+            <tr>
+              <th>Wallet ≥</th><th>Tier</th>
+              <th>BTC fav US</th><th>BTC fav core</th>
+              <th>ETH fav US</th><th>ETH fav core</th>
+              <th>ETH dog US</th><th>ETH dog core</th>
+            </tr>
+          </thead>
+          <tbody id="stake-tiers-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="hint" id="stake-current-line" style="margin-top:.45rem">—</div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <h2>Trading Schedule</h2>
+        <span class="pill" id="sched-now-pill">—</span>
+      </div>
+      <div class="sched-grid" id="sched-grid">—</div>
+      <div class="hint" style="margin-top:.45rem" id="sched-stop-line">Daily stop: combined net PnL ≤ <span id="sched-stop">—</span> · wallet↓ → stake tier↓ auto</div>
+      <div class="table-wrap" style="margin-top:.5rem">
+        <table class="stake-table" id="stop-table">
+          <thead>
+            <tr><th>Wallet ≥</th><th>Daily stop</th><th></th></tr>
+          </thead>
+          <tbody id="stop-tiers-body"><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="hint" id="stop-current-line" style="margin-top:.35rem">—</div>
+    </section>
+
+    <section class="card pnl-panel">
+      <div class="section-head">
+        <h2>Overall PnL <span class="tag">Session · 累計</span></h2>
+      </div>
+      <div class="grid three">
+        <div><div class="label">V1 Total</div><div class="value" id="ov-total">—</div></div>
+        <div><div class="label">BTC Bot</div><div class="value" id="ov-btc">—</div></div>
+        <div><div class="label">ETH Bot</div><div class="value" id="ov-eth">—</div></div>
+      </div>
+      <div class="hint">從 session 開始所有已平倉加總 · 對應 Overall 圖表</div>
+    </section>
+
+    <section class="card pnl-panel today">
+      <div class="section-head">
+        <h2>Session PnL <span class="tag">US session · 21:30 歸零</span></h2>
+      </div>
+      <div class="grid three">
+        <div><div class="label">V1 Total</div><div class="value" id="td-total">—</div></div>
+        <div><div class="label">BTC Bot</div><div class="value" id="td-btc">—</div></div>
+        <div><div class="label">ETH Bot</div><div class="value" id="td-eth">—</div></div>
+      </div>
+      <div class="hint" id="daily-stop-hint">—</div>
+    </section>
+
+    <section class="grid two">
+      <div class="card bot-card">
+        <div class="section-head">
+          <h2>BTC V1</h2>
+          <span class="pill" id="btc-status">—</span>
+        </div>
+        <div class="status-line">
+          <span class="pill" id="btc-fav-risk">fav —</span>
+          <span class="pill" id="btc-dog-risk">dog —</span>
+        </div>
+        <div class="controls">
+          <button id="btc-toggle">—</button>
+          <button class="good" data-release="btc">解除停損</button>
+        </div>
+      </div>
+      <div class="card bot-card eth">
+        <div class="section-head">
+          <h2>ETH V1</h2>
+          <span class="pill" id="eth-status">—</span>
+        </div>
+        <div class="status-line">
+          <span class="pill" id="eth-fav-risk">fav —</span>
+          <span class="pill" id="eth-dog-risk">dog —</span>
+        </div>
+        <div class="controls">
+          <button id="eth-toggle">—</button>
+          <button class="good" data-release="eth">解除停損</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <h2>Daily PnL</h2>
+        <span class="hint">每日單日盈虧（柱狀）</span>
+      </div>
+      <div class="chart-box"><canvas id="daily-chart"></canvas></div>
+      <div class="chart-note">每根柱 = 該日當天賺/虧 · 不是累計</div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <h2>Overall PnL</h2>
+        <span class="hint">Session 累計曲線</span>
+      </div>
+      <div class="chart-box"><canvas id="cumul-chart"></canvas></div>
+      <div class="chart-note">曲線 = 從 session 起逐日累加 · 最後一點 ≈ Overall V1 Total</div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <h2>Recent Trades</h2>
+        <div class="controls">
+          <button data-limit="10">10</button>
+          <button data-limit="25">25</button>
+          <button data-limit="50">50</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th><th>Bot</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th>
+            </tr>
+          </thead>
+          <tbody id="trades-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let dailyChart, cumulChart;
+    let tradeLimit = 25;
+
+    function money(v) {
+      const n = Number(v || 0);
+      return (n >= 0 ? '+$' : '-$') + Math.abs(n).toFixed(2);
+    }
+    function usd(v) { return '$' + Number(v || 0).toFixed(2); }
+    function cls(el, v) {
+      el.classList.remove('pos', 'neg');
+      el.classList.add(Number(v || 0) >= 0 ? 'pos' : 'neg');
+    }
+    function setPnl(id, value) {
+      const el = $(id);
+      el.textContent = money(value);
+      cls(el, value);
+    }
+
+    function fmtBar(v) {
+      const n = Number(v || 0);
+      return (n >= 0 ? '+$' : '-$') + Math.abs(n).toFixed(0);
+    }
+
+    const chartZeroLine = {
+      id: 'zeroLine',
+      beforeDatasetsDraw(chart) {
+        const y = chart.scales.y;
+        const y0 = y.getPixelForValue(0);
+        const { left, right, top, bottom } = chart.chartArea;
+        if (y0 < top || y0 > bottom) return;
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(139,148,158,0.45)';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(left, y0);
+        ctx.lineTo(right, y0);
+        ctx.stroke();
+        ctx.restore();
+      },
+    };
+
+    const barValueLabels = {
+      id: 'barValueLabels',
+      afterDatasetsDraw(chart) {
+        if (chart.config.type !== 'bar') return;
+        const ctx = chart.ctx;
+        chart.data.datasets.forEach((ds, di) => {
+          if (di !== chart.data.datasets.length - 1) return;
+          const meta = chart.getDatasetMeta(di);
+          meta.data.forEach((bar, i) => {
+            const v = ds.data[i];
+            if (v == null) return;
+            ctx.save();
+            ctx.font = '600 10px system-ui,sans-serif';
+            ctx.fillStyle = Number(v) >= 0 ? '#3fb950' : '#f85149';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = Number(v) >= 0 ? 'bottom' : 'top';
+            const pad = Number(v) >= 0 ? -4 : 4;
+            ctx.fillText(fmtBar(v), bar.x, bar.y + pad);
+            ctx.restore();
+          });
+        });
+      },
+    };
+
+    const lineValueLabels = {
+      id: 'lineValueLabels',
+      afterDatasetsDraw(chart) {
+        if (chart.config.type !== 'line') return;
+        const ctx = chart.ctx;
+        const offsets = [-12, 14, 28];
+        chart.data.datasets.forEach((ds, di) => {
+          const meta = chart.getDatasetMeta(di);
+          meta.data.forEach((pt, i) => {
+            const v = ds.data[i];
+            if (v == null) return;
+            ctx.save();
+            ctx.font = (di === 0 ? '600 10px' : '500 9px') + ' system-ui,sans-serif';
+            ctx.fillStyle = ds.borderColor;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(fmtBar(v), pt.x, pt.y - (offsets[di] || 12));
+            ctx.restore();
+          });
+        });
+      },
+    };
+
+    function hexRgba(hex, a) {
+      const h = hex.replace('#', '');
+      return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`;
+    }
+
+    function cumulative(series) {
+      let c = 0;
+      return series.map((r) => {
+        c = Math.round((c + Number(r.pnl || 0)) * 100) / 100;
+        return { ...r, pnl: c };
+      });
+    }
+
+    function baseScales() {
+      return {
+        x: { grid: { display: false }, ticks: { color: '#8b949e', font: { size: 11 } }, border: { color: '#30363d' } },
+        y: {
+          grid: { color: 'rgba(48,54,61,0.5)', drawTicks: false },
+          ticks: { color: '#8b949e', font: { size: 10 }, callback: (v) => (v >= 0 ? '+$' : '-$') + Math.abs(v) },
+          border: { display: false },
+        },
+      };
+    }
+
+    function renderDailyChart(data) {
+      const labels = (data.total || []).map((r) => r.label || r.date?.slice(5));
+      const btc = (data.btc || []).map((r) => Number(r.pnl || 0));
+      const eth = (data.eth || []).map((r) => Number(r.pnl || 0));
+      const total = (data.total || []).map((r) => Number(r.pnl || 0));
+      const opts = {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { top: 22 } },
+        plugins: {
+          legend: { position: 'top', align: 'end', labels: { color: '#e6edf3', usePointStyle: true, font: { size: 10 } } },
+          tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', borderWidth: 1,
+            callbacks: { label: (c) => ' ' + c.dataset.label + ': ' + money(c.raw) } },
+        },
+        scales: baseScales(),
+      };
+      const datasets = [
+        { label: 'BTC', data: btc, backgroundColor: hexRgba('#d29922', 0.85), borderRadius: 4, barPercentage: 0.75 },
+        { label: 'ETH', data: eth, backgroundColor: hexRgba('#3fb950', 0.85), borderRadius: 4, barPercentage: 0.75 },
+        { label: 'V1 Total', data: total, backgroundColor: hexRgba('#58a6ff', 0.9), borderRadius: 4, barPercentage: 0.75 },
+      ];
+      if (!dailyChart) {
+        dailyChart = new Chart($('daily-chart'), { type: 'bar', data: { labels, datasets }, options: opts, plugins: [chartZeroLine, barValueLabels] });
+      } else {
+        dailyChart.data.labels = labels;
+        dailyChart.data.datasets[0].data = btc;
+        dailyChart.data.datasets[1].data = eth;
+        dailyChart.data.datasets[2].data = total;
+        dailyChart.update();
+      }
+    }
+
+    function renderCumulChart(data) {
+      const btcC = cumulative(data.btc || []);
+      const ethC = cumulative(data.eth || []);
+      const totC = cumulative(data.total || []);
+      const labels = totC.map((r) => r.label || r.date?.slice(5));
+      const opts = {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { top: 26 } },
+        plugins: {
+          legend: { position: 'top', align: 'end', labels: { color: '#e6edf3', usePointStyle: true, font: { size: 10 } } },
+          tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', borderWidth: 1,
+            callbacks: { label: (c) => ' ' + c.dataset.label + ': ' + money(c.raw) } },
+        },
+        scales: baseScales(),
+      };
+      const mkLine = (label, rows, color, main) => ({
+        label, data: rows.map((r) => r.pnl),
+        borderColor: color,
+        backgroundColor: main ? hexRgba(color, 0.1) : 'transparent',
+        fill: !!main, tension: 0.3,
+        pointRadius: main ? 5 : 3, pointHoverRadius: 7,
+        pointBackgroundColor: color, pointBorderColor: '#0d1117', pointBorderWidth: 2,
+        borderWidth: main ? 2.5 : 1.5,
+      });
+      const datasets = [
+        mkLine('V1 Total', totC, '#58a6ff', true),
+        mkLine('BTC', btcC, '#d29922', false),
+        mkLine('ETH', ethC, '#3fb950', false),
+      ];
+      if (!cumulChart) {
+        cumulChart = new Chart($('cumul-chart'), { type: 'line', data: { labels, datasets }, options: opts, plugins: [chartZeroLine, lineValueLabels] });
+      } else {
+        cumulChart.data.labels = labels;
+        cumulChart.data.datasets[0].data = datasets[0].data;
+        cumulChart.data.datasets[1].data = datasets[1].data;
+        cumulChart.data.datasets[2].data = datasets[2].data;
+        cumulChart.update();
+      }
+    }
+
+    async function getJson(url) {
+      const res = await fetch(url, { cache: 'no-store' });
+      return res.json();
+    }
+    async function postControl(asset, action) {
+      await fetch('/api/bot-control', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ asset, action }) });
+      await refresh();
+    }
+
+    function renderWallet(account) {
+      const start = Number(account.starting_wallet_usdc || 0);
+      const botSum = Number(account.bots_log_sum || 0);
+      const target = Number(account.bot_target_wallet_usd || start + botSum);
+      const gap = Number(account.wallet_gap_vs_bot_usd ?? 0);
+      const started = (account.started_at_hkt || '').replace(' HKT', '').slice(0, 16);
+      $('session-start').textContent = started ? 'from ' + usd(start) + ' · ' + started : usd(start);
+      $('wallet-hint').textContent = Math.abs(gap) < 5
+        ? 'aligned · target ' + usd(target)
+        : 'target ' + usd(target) + ' · gap ' + money(gap);
+    }
+
+    function fmtStake(v) {
+      if (v == null || v === undefined) return '—';
+      return '$' + Number(v).toFixed(2);
+    }
+
+    function renderStakePlan(plan, walletCash) {
+      const wallet = walletCash != null ? Number(walletCash) : Number(plan.wallet_usd || 0);
+      const coreM = (plan.schedule && plan.schedule.core_stake_mult) || 1.5;
+      $('stake-mult-pill').textContent = '×' + plan.current_multiplier + ' · wallet ' + usd(wallet);
+      $('stake-formula').textContent =
+        'Stake = base × wallet tier × (' + coreM + ' if core window) · BTC dog off · daily stop −$' + (plan.daily_stop_usd || 500);
+      const cs = plan.current_stakes || {};
+      let line = 'Core now: BTC fav ' + fmtStake(cs.btc_fav_core) + ' · ETH fav ' + fmtStake(cs.eth_fav_core) + ' · ETH dog ' + fmtStake(cs.eth_dog_core);
+      line += ' · US (non-core): BTC ' + fmtStake(cs.btc_fav) + ' · ETH ' + fmtStake(cs.eth_fav) + ' · dog ' + fmtStake(cs.eth_dog);
+      if (plan.next_threshold) {
+        line += ' · next $' + plan.next_threshold.wallet_usd + ' (+' + usd(plan.next_threshold.need_usd) + ') → ×' + plan.next_threshold.multiplier;
+      }
+      $('stake-current-line').textContent = line;
+      const body = $('stake-tiers-body');
+      const tiers = plan.tiers || [];
+      if (!tiers.length) {
+        body.innerHTML = '<tr><td colspan="8" class="muted">No tiers</td></tr>';
+        return;
+      }
+      body.innerHTML = tiers.map((t) => `<tr class="${t.current ? 'tier-current' : ''}">
+        <td>$${Number(t.wallet_usd).toLocaleString()}${t.current ? ' ← now' : ''}</td>
+        <td>${t.multiplier}×</td>
+        <td>${fmtStake(t.btc_fav)}</td>
+        <td>${fmtStake(t.btc_fav_core)}</td>
+        <td>${fmtStake(t.eth_fav)}</td>
+        <td>${fmtStake(t.eth_fav_core)}</td>
+        <td>${fmtStake(t.eth_dog)}</td>
+        <td>${fmtStake(t.eth_dog_core)}</td>
+      </tr>`).join('');
+    }
+
+    function renderDailyStop(plan) {
+      const ds = plan.daily_stop || {};
+      const limit = ds.current_limit_usd ?? plan.daily_stop_usd ?? 500;
+      $('sched-stop').textContent = '−' + usd(limit).slice(1);
+      const combinedOnly = ds.combined_only !== false;
+      $('sched-stop-line').textContent = (combinedOnly
+        ? 'Daily stop: BTC+ETH combined only (per-asset off) · limit '
+        : 'Daily stop: combined net PnL ≤ ')
+        + '−' + usd(limit).slice(1) + ' · wallet↓ → stake & stop tier↓';
+      const body = $('stop-tiers-body');
+      const tiers = ds.tiers || [];
+      if (!ds.scaling_enabled || !tiers.length) {
+        body.innerHTML = '<tr><td colspan="3" class="muted">Fixed −' + usd(limit).slice(1) + ' combined</td></tr>';
+      } else {
+        body.innerHTML = tiers.map((t) => `<tr class="${t.current ? 'tier-current' : ''}">
+          <td>$${Number(t.wallet_usd).toLocaleString()}${t.current ? ' ← now' : ''}</td>
+          <td>−$${Number(t.limit_usd).toFixed(0)}</td>
+          <td class="muted">${t.current ? 'active' : ''}</td>
+        </tr>`).join('');
+      }
+      let line = 'Now: combined stop −$' + Number(limit).toFixed(0);
+      if (ds.next_threshold) {
+        line += ' · next $' + ds.next_threshold.wallet_usd + ' (+' + usd(ds.next_threshold.need_usd) + ') → −$' + ds.next_threshold.limit_usd;
+      }
+      $('stop-current-line').textContent = line;
+    }
+
+    function renderSchedule(plan, tt) {
+      const s = plan.schedule || {};
+      $('sched-stop').textContent = usd(plan.daily_stop_usd || 500);
+      renderDailyStop(plan);
+      const now = tt?.now || {};
+      $('sched-now-pill').textContent = (now.label || tt?.state || '—') + (now.hkt ? ' · ' + now.hkt : '');
+      $('sched-grid').innerHTML = `
+        <div class="sched-box"><div class="title">US Session</div>${s.us_hours_et || '—'}<br><span class="muted">HKT ~21:30–04:00</span></div>
+        <div class="sched-box"><div class="title">Core Window</div>${s.core_et || '—'}<br><span class="muted">HKT ~23:00–03:00 · stake ×${s.core_stake_mult || 1.5} on top of wallet tier</span></div>
+        <div class="sched-box"><div class="title">BTC</div>${s.btc || '—'}</div>
+        <div class="sched-box"><div class="title">ETH</div>${s.eth || '—'}</div>`;
+    }
+
+    function renderControls(control, plan) {
+      for (const asset of ['btc', 'eth']) {
+        const b = control[asset] || {};
+        const paused = !!b.paused;
+        $(asset + '-status').textContent = paused ? 'Paused' : 'Running';
+        $(asset + '-status').className = 'pill ' + (paused ? 'warn' : 'live');
+        const btn = $(asset + '-toggle');
+        btn.textContent = paused ? 'Resume' : 'Pause';
+        btn.className = paused ? 'good' : 'danger';
+        btn.onclick = () => postControl(asset, paused ? 'resume' : 'pause');
+      }
+      const ds = control.btc?.daily_stop || control.eth?.daily_stop || {};
+      $('daily-stop-hint').textContent = (ds.effective ? 'session stop −$' + Math.abs(Number(ds.limit || 500)).toFixed(0) + ' hit · ' : 'limit −$' + Math.abs(Number(ds.limit || 500)).toFixed(0) + ' combined · ')
+        + ((plan && plan.schedule && plan.schedule.pnl_reset && plan.schedule.pnl_reset.next_reset_hkt)
+          ? 'resets ' + plan.schedule.pnl_reset.next_reset_hkt + ' · ' : '')
+        + 'Session ≠ Overall';
+      $('risk-pill').textContent = ds.effective ? 'daily stop' : 'risk ok';
+      $('risk-pill').className = 'pill ' + (ds.effective ? 'warn' : 'live');
+    }
+
+    function renderTierRisk(risk) {
+      const src = risk?.btc || {};
+      for (const asset of ['btc', 'eth']) {
+        $(asset + '-fav-risk').textContent = src.favorite_paused ? 'fav stop' : 'fav ' + (src.favorite_loss_streak ?? 0);
+        if (asset === 'btc') {
+          $('btc-dog-risk').textContent = 'dog off';
+          $('btc-dog-risk').className = 'pill warn';
+        } else {
+          const dog = $('eth-dog-risk');
+          dog.textContent = src.underdog_paused ? 'dog stop' : 'dog ' + (src.underdog_loss_streak ?? 0);
+          dog.className = 'pill ' + (src.underdog_paused ? 'warn' : '');
+        }
+      }
+    }
+
+    function renderTrades(rows) {
+      const body = $('trades-body');
+      if (!rows.length) { body.innerHTML = '<tr><td colspan="8" class="muted">No trades yet</td></tr>'; return; }
+      body.innerHTML = rows.map((r) => `<tr>
+        <td>${(r.timestamp_hkt || '').slice(0, 16)}</td>
+        <td>${r.bot || '—'}</td><td>${r.tier || '—'}</td>
+        <td>${r.entry_ask ?? r.ask ?? '—'}</td>
+        <td>$${Number(r.stake || 0).toFixed(2)}</td>
+        <td>${r.trade_result || r.status || '—'}</td>
+        <td class="${Number(r.pnl || 0) >= 0 ? 'pos' : 'neg'}">${r.pnl == null ? '—' : money(r.pnl)}</td>
+        <td class="reason" title="${r.strategy_reason || ''}">${r.strategy_reason || ''}</td>
+      </tr>`).join('');
+    }
+
+    async function refresh() {
+      const [wallet, account, btc, eth, control, tier, trades, daily, stakePlan, timetable] = await Promise.all([
+        getJson('/api/wallet'), getJson('/api/account-pnl'), getJson('/api/summary'),
+        getJson('/api/eth-summary'), getJson('/api/bot-control'), getJson('/api/tier-pause'),
+        getJson('/api/overview-trades?limit=' + tradeLimit), getJson('/api/daily-pnl'),
+        getJson('/api/stake-plan'), getJson('/api/timetable'),
+      ]);
+      account.wallet_cash = wallet.cash_usdc || wallet.available_usdc || account.wallet_cash;
+      $('updated').textContent = new Date().toLocaleTimeString('zh-HK');
+      $('btc-mode').textContent = 'BTC ' + (wallet.trading_mode || '—').toUpperCase();
+      $('eth-mode').textContent = 'ETH ' + (wallet.eth_trading_mode || '—').toUpperCase();
+      $('wallet-cash').textContent = usd(account.wallet_cash);
+      renderWallet(account);
+      renderStakePlan(stakePlan, account.wallet_cash);
+      renderSchedule(stakePlan, timetable);
+
+      const ovBtc = btc.package2?.overall_pnl ?? btc.overall_pnl ?? account.btc_log_pnl ?? 0;
+      const ovEth = eth.package2?.overall_pnl ?? eth.overall_pnl ?? account.eth_log_pnl ?? 0;
+      const ovTot = account.bots_log_sum ?? (Number(ovBtc) + Number(ovEth));
+      setPnl('ov-total', ovTot);
+      setPnl('ov-btc', ovBtc);
+      setPnl('ov-eth', ovEth);
+
+      const tdBtc = btc.package2?.daily_pnl_hkt ?? btc.daily_pnl_hkt ?? 0;
+      const tdEth = eth.package2?.daily_pnl_hkt ?? eth.daily_pnl_hkt ?? 0;
+      setPnl('td-total', Number(tdBtc) + Number(tdEth));
+      setPnl('td-btc', tdBtc);
+      setPnl('td-eth', tdEth);
+
+      renderControls(control, stakePlan);
+      renderTierRisk(tier);
+      renderTrades(trades);
+      renderDailyChart(daily);
+      renderCumulChart(daily);
+    }
+
+    document.querySelectorAll('[data-release]').forEach((btn) => {
+      btn.onclick = () => postControl(btn.dataset.release, 'release_daily_stop');
+    });
+    document.querySelectorAll('[data-limit]').forEach((btn) => {
+      btn.onclick = () => { tradeLimit = btn.dataset.limit; refresh(); };
+    });
+
+    refresh();
+    setInterval(refresh, 30000);
+  </script>
+</body>
+</html>

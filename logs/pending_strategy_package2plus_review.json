@@ -1,0 +1,113 @@
+{
+  "document": "Package 2+ Strategy Specification — FOR REVIEW ONLY",
+  "status": "held",
+  "version": "2026-06-16-draft-2",
+  "deploy": false,
+  "user_approved": false,
+  "updated_at_utc": "2026-06-16T10:53:54Z",
+  "summary_zh": "OLD 策略為基底，三檔固定下注：favorite $7 / mid $5 / underdog $10。程式尚未部署。",
+
+  "wallet_snapshot": {
+    "as_of_utc": "2026-06-16T10:53:54Z",
+    "cash_usdc": 102.29,
+    "total_equity_usdc": 102.29,
+    "positions_open": 0,
+    "portfolio_value_usdc": 0.0,
+    "api_ready": true,
+    "allowance_ok": true,
+    "l2_ok": true,
+    "trading_mode": "live",
+    "deposit_address": "0xB0B1D24BAc2456e5526F9C6eF80CC9e8269A259F",
+    "note": "Live API read — sufficient for Package 2+ all tiers ($10 max single bet)"
+  },
+
+  "live_session_current": {
+    "session_id": "live-20260615-123544",
+    "started_at_hkt": "2026-06-15 20:35:44 HKT",
+    "starting_wallet_usdc": 125.98,
+    "active_strategy_in_session_file": "NEW",
+    "bot_trades_this_session": 1,
+    "bot_closed_pnl_usdc": -3.78,
+    "bot_equity_curve": [125.98, 122.2],
+    "manual_wallet_activity": "excluded from bot PnL — user confirmed manual betting caused wallet drift",
+    "wallet_vs_bot_only": "Current $102.29 vs bot-only path $122.20 → ~$19.91 not tracked by bot (manual / transfers)",
+    "on_deploy_recommendation": "Reset live_session.starting_wallet_usdc to current cash ($102.29) or user-specified trading float after approve"
+  },
+
+  "capital_readiness_package2plus": {
+    "trading_float_usdc": 102.29,
+    "max_single_bet_usdc": 10.0,
+    "favorite_bet_usdc": 7.0,
+    "mid_bet_usdc": 5.0,
+    "underdog_bet_usdc": 10.0,
+    "can_run_favorite": true,
+    "can_run_mid": true,
+    "can_run_underdog": true,
+    "min_wallet_for_all_tiers": 10.0,
+    "suggested_reserve_note": "At $102.29, ~10 consecutive max losses ($10) before depletion — use daily loss limit $25"
+  },
+
+  "strategy_identity": {
+    "name": "Package 2+",
+    "base": "OLD",
+    "replaces": "NEW live tiered % strategy",
+    "trading_mode_when_live": "live"
+  },
+
+  "entry_rules": {
+    "market": "Polymarket BTC 5-minute Up/Down windows",
+    "side_selection": "Momentum — delta sign → up/down",
+    "max_ask": 0.88,
+    "min_ask": 0.15,
+    "timing_window": "T-60 → T-22",
+    "min_btc_move_usd": 12,
+    "min_delta_pct": 0.025,
+    "min_depth_usd": 50,
+    "max_spread": 0.06,
+    "one_trade_per_window": true
+  },
+
+  "bet_sizing": {
+    "type": "three_tier_fixed_usd",
+    "note": "Fixed USD — NOT % of wallet; $102.29 wallet does not change stake sizes",
+    "tiers": [
+      { "name": "favorite", "ask_range": ">= 0.70", "stake_usd": 7.0 },
+      { "name": "mid", "ask_range": "> 0.30 and < 0.70", "stake_usd": 5.0 },
+      { "name": "underdog", "ask_range": ">= 0.15 and <= 0.30", "stake_usd": 10.0 },
+      { "name": "skip", "ask_range": "< 0.15", "stake_usd": 0 },
+      { "name": "skip", "ask_range": "> 0.88", "stake_usd": 0 }
+    ]
+  },
+
+  "underdog_extra_filters": {
+    "enabled": true,
+    "applies_when": "0.15 <= ask <= 0.30",
+    "rules": [
+      "ask_depth_usd >= 200",
+      "abs(delta_pct) >= 0.035 OR abs(btc_move_usd) >= 25",
+      "30 <= t_remaining <= 60"
+    ],
+    "on_fail": "skip (no fallback to mid $5)"
+  },
+
+  "risk_limits": {
+    "max_single_stake_usd": 10.0,
+    "suggested_daily_loss_limit_usd": 25.0,
+    "drawdown_throttle_pct": 10,
+    "underdog_cooldown": "2 consecutive underdog losses → 24h off underdog tier"
+  },
+
+  "backtest_reference": {
+    "dataset": "484 windows · trade_log_paper.json",
+    "package_2_plus_pnl_usd": 97.25,
+    "baseline_old_pnl_usd": 61.49,
+    "caveat": "Underdog $10 based on 1 sample trade in backtest"
+  },
+
+  "open_questions_for_user": [
+    "Approve deploy Package 2+?",
+    "Reset session starting_wallet to $102.29 on deploy?",
+    "Underdog filter fail → skip (default) or mid $5?",
+    "daily_loss_limit $25 OK?"
+  ]
+}

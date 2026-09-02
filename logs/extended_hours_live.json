@@ -1,0 +1,8 @@
+{
+  "btc_enabled": false,
+  "eth_enabled": false,
+  "btc_extended_dog_only": false,
+  "updated_at_hkt": "2026-06-29 18:59:30 HKT",
+  "updated_at_utc": "2026-06-29T10:59:30.049384+00:00",
+  "note": "Extended hours disabled \u2014 BTC/ETH trade US regular hours only"
+}

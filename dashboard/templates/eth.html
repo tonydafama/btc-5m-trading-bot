@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}ETH Paper{% endblock %}
+{% block content %}
+{% import "_strategy_blocks.html" as sb %}
+  <h1>ETH 5m <span class="badge {{ 'live' if eth_trading_mode == 'LIVE' else 'paper' }}">{{ eth_trading_mode }}</span> <span class="badge paper">PACKAGE2+</span></h1>
+  <p class="sub">{{ strategy_display.eth.panel_sub }} · Session {{ eth_summary.live_session.session_id if eth_summary.live_session else '—' }}
+    {% if eth_summary.live_session and eth_summary.live_session.experiments %} · <span style="color:var(--blue)">🧪 A/B: ETH_MIN_MOVE {{ eth_summary.live_session.experiments[0].ETH_MIN_MOVE_USD|default('0.8') }}</span>{% endif %}
+    · 更新 <span id="updated">—</span>
+  </p>
+
+  <div class="wallet-bar" id="eth-wallet-bar">
+    <div class="card"><div class="label">Live 錢包</div><div class="value" id="eth-bar-wallet">${{ "%.2f"|format(eth_summary.wallet_cash|default(eth_summary.equity|default(0))) }}</div></div>
+    <div class="card"><div class="label">今日 Bot PnL</div><div class="value {{ 'pos' if (eth_summary.daily_pnl_hkt|default(eth_summary.daily_paper_pnl_hkt|default(0))) >= 0 else 'neg' }}" id="eth-bar-daily">${{ "%+.2f"|format(eth_summary.daily_pnl_hkt|default(eth_summary.daily_paper_pnl_hkt|default(0))) }}</div><div class="hint">HKT 今日 · Paper</div></div>
+    <div class="card"><div class="label">Overall PnL</div><div class="value {{ 'pos' if (eth_summary.overall_pnl|default(eth_summary.paper_pnl|default(0))) >= 0 else 'neg' }}" id="eth-bar-overall">${{ "%+.2f"|format(eth_summary.overall_pnl|default(eth_summary.paper_pnl|default(0))) }}</div><div class="hint" id="eth-bar-overall-hint">本 session 起 · Paper</div></div>
+    <div class="card"><div class="label">Bot 模式</div><div class="value">PAPER</div></div>
+  </div>
+
+  <div class="grid" id="eth-stats-grid">
+    <div class="card"><div class="label">Live 錢包</div><div class="value" id="eth-wallet">${{ "%.2f"|format(eth_summary.wallet_cash|default(eth_summary.equity|default(0))) }}</div></div>
+    <div class="card"><div class="label">今日 Bot PnL</div><div class="value {{ 'pos' if (eth_summary.daily_pnl_hkt|default(eth_summary.daily_paper_pnl_hkt|default(0))) >= 0 else 'neg' }}" id="eth-daily-pnl">${{ "%+.2f"|format(eth_summary.daily_pnl_hkt|default(eth_summary.daily_paper_pnl_hkt|default(0))) }}</div></div>
+    <div class="card"><div class="label">Overall PnL</div><div class="value {{ 'pos' if (eth_summary.overall_pnl|default(eth_summary.paper_pnl|default(0))) >= 0 else 'neg' }}" id="eth-overall-pnl">${{ "%+.2f"|format(eth_summary.overall_pnl|default(eth_summary.paper_pnl|default(0))) }}</div></div>
+    <div class="card"><div class="label">錢包 PnL（live）</div><div class="value {{ 'pos' if eth_summary.total_pnl >= 0 else 'neg' }}" id="eth-pnl">${{ "%+.2f"|format(eth_summary.total_pnl) }}</div></div>
+    <div class="card"><div class="label">窗口判斷</div><div class="value" id="eth-judged">{{ eth_summary.observation.windows_judged if eth_summary.observation else 0 }}</div></div>
+    <div class="card"><div class="label">已進場</div><div class="value" id="eth-entered">{{ eth_summary.trades_entered }}</div></div>
+    <div class="card"><div class="label">已跳過</div><div class="value" id="eth-skipped">{{ eth_summary.trades_skipped }}</div></div>
+    <div class="card"><div class="label">勝率</div><div class="value" id="eth-wr">{% if eth_summary.win_rate is not none %}{{ eth_summary.win_rate }}%{% else %}—{% endif %}</div><div class="hint" id="eth-wl">{{ eth_summary.wins }}W / {{ eth_summary.losses }}L</div></div>
+  </div>
+
+  <section>
+    <h2>ETH 下注分級<span class="paper-section-label">PAPER</span></h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Ask 區間</th><th>分級</th><th>固定下注</th></tr></thead>
+        <tbody id="eth-tiers-body"><tr><td colspan="3" style="color:var(--muted);text-align:center;padding:1rem">載入中…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  {{ sb.eth_rules(strategy_display, eth_trading_mode) }}
+
+  <section>
+    <h2>ETH 即時窗口<span class="paper-section-label">PAPER</span></h2>
+    <div class="card live-box" id="eth-live-panel">載入中…</div>
+  </section>
+
+  <section>
+    <h2>ETH Trade Log<span class="paper-section-label">PAPER</span></h2>
+    <div class="log-filters-wrap" id="eth-log-filters-wrap">
+      <div class="log-filters-title">Log 篩選</div>
+      <div class="log-date-row">
+        <span class="filter-label">日期 HKT</span>
+        <div class="filter-group date-pills-wrap" id="eth-date-pills"></div>
+      </div>
+      <div class="day-summary-bar" id="eth-day-summary"></div>
+      <div class="log-filters" id="eth-log-filters">
+        <span class="filter-label">狀態</span>
+        <div class="filter-group" data-filter-group="status">
+          <button type="button" class="filter-pill active" data-filter="status" data-value="all">全部</button>
+          <button type="button" class="filter-pill" data-filter="status" data-value="entered">成交</button>
+          <button type="button" class="filter-pill" data-filter="status" data-value="skipped">跳過</button>
+          <button type="button" class="filter-pill" data-filter="status" data-value="win">WIN</button>
+          <button type="button" class="filter-pill" data-filter="status" data-value="loss">LOSS</button>
+        </div>
+        <span class="filter-sep"></span>
+        <span class="filter-label">跳過原因</span>
+        <div class="filter-group" data-filter-group="skip">
+          <button type="button" class="filter-pill active" data-filter="skip" data-value="all">全部</button>
+          <button type="button" class="filter-pill" data-filter="skip" data-value="outside_session">非交易時段</button>
+          <button type="button" class="filter-pill" data-filter="skip" data-value="timing">時機/過濾</button>
+          <button type="button" class="filter-pill" data-filter="skip" data-value="strategy">Ask/策略</button>
+        </div>
+        <input type="search" class="log-search" id="eth-log-search" placeholder="搜尋 reason / market…" autocomplete="off">
+        <button type="button" class="filter-reset" id="eth-log-reset">重置</button>
+        <span class="log-filter-count" id="eth-log-filter-count"></span>
+        <div class="log-sort-row" id="eth-log-sort">
+          <span class="filter-label">排序</span>
+          <button type="button" class="sort-pill active" data-sort-key="date" data-sort-dir="desc">日期 ↓ 新→舊</button>
+          <button type="button" class="sort-pill" data-sort-key="date" data-sort-dir="asc">日期 ↑ 舊→新</button>
+          <button type="button" class="sort-pill" data-sort-key="pnl" data-sort-dir="desc">PnL ↓</button>
+          <button type="button" class="sort-pill" data-sort-key="pnl" data-sort-dir="asc">PnL ↑</button>
+          <button type="button" class="sort-pill" data-sort-key="ask" data-sort-dir="desc">Ask ↓</button>
+          <button type="button" class="sort-pill" data-sort-key="ask" data-sort-dir="asc">Ask ↑</button>
+          <label class="sort-group-toggle"><input type="checkbox" id="eth-group-date" checked> 依日期分組</label>
+        </div>
+      </div>
+    </div>
+    <div class="table-wrap log-table-wrap">
+      <table class="log-table" id="eth-log-table">
+        <thead>
+          <tr>
+            <th class="th-sortable" data-sort-key="date">日期<span class="sort-arrow">▼</span></th>
+            <th class="th-sortable" data-sort-key="date">時間<span class="sort-arrow">▼</span></th>
+            <th>Market</th><th>Contract</th>
+            <th class="th-sortable" data-sort-key="ask">Ask<span class="sort-arrow">▼</span></th>
+            <th>Stake</th><th>Tier</th><th>Outcome</th>
+            <th class="th-sortable" data-sort-key="result">Result<span class="sort-arrow">▼</span></th>
+            <th class="th-sortable" data-sort-key="pnl">PnL<span class="sort-arrow">▼</span></th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody id="eth-log-body"><tr><td colspan="11" style="color:var(--muted);text-align:center;padding:2rem">載入 trade log…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}
+{% block scripts %}
+<script>
+  const tierSkipNote = '(依目前策略略過)';
+
+  function renderEthTiers(t) {
+    const tb = document.getElementById('eth-tiers-body');
+    if (!tb || !t || !t.examples) return;
+    tb.innerHTML = t.examples.map(row => {
+      const skipped = !!row.skipped;
+      const stakeVal = row.stake ? '$' + Number(row.stake).toFixed(0) : '—';
+      const stake = skipped
+        ? `<span style="color:#8b949e">${stakeVal} <span style="font-size:0.72rem">${tierSkipNote}</span></span>`
+        : stakeVal;
+      const mult = skipped
+        ? `${row.multiplier} <span style="color:#8b949e;font-size:0.72rem">${tierSkipNote}</span>`
+        : row.multiplier;
+      return `<tr class="${skipped ? 'row-skipped' : ''}"><td>${row.ask_range}</td><td>${mult}</td><td>${stake}</td></tr>`;
+    }).join('');
+  }
+
+  function updateEthStats(e) {
+    const wallet = e.wallet_cash ?? e.equity ?? 0;
+    const start = e.starting_wallet_usdc ?? e.starting_bankroll ?? 0;
+    document.getElementById('eth-wallet').textContent = '$' + wallet.toFixed(2);
+    document.getElementById('eth-bar-wallet').textContent = '$' + wallet.toFixed(2);
+    const dailyEth = e.daily_pnl_hkt ?? e.daily_paper_pnl_hkt ?? 0;
+    ['eth-daily-pnl', 'eth-bar-daily'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = fmtPnl(dailyEth); el.className = 'value ' + (dailyEth >= 0 ? 'pos' : 'neg'); }
+    });
+    const overallEth = e.overall_pnl ?? e.paper_pnl ?? 0;
+    ['eth-overall-pnl', 'eth-bar-overall'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = fmtPnl(overallEth); el.className = 'value ' + (overallEth >= 0 ? 'pos' : 'neg'); }
+    });
+    document.getElementById('eth-pnl').textContent = fmtPnl(e.total_pnl || 0);
+    document.getElementById('eth-pnl').className = 'value ' + ((e.total_pnl || 0) >= 0 ? 'pos' : 'neg');
+    document.getElementById('eth-judged').textContent = (e.observation || {}).windows_judged ?? 0;
+    document.getElementById('eth-entered').textContent = e.trades_entered ?? 0;
+    document.getElementById('eth-skipped').textContent = e.trades_skipped ?? 0;
+    document.getElementById('eth-wr').textContent = e.win_rate != null ? e.win_rate + '%' : '—';
+    document.getElementById('eth-wl').textContent = (e.wins || 0) + 'W / ' + (e.losses || 0) + 'L';
+    if (e.dynamic_tiers || e.package2) renderEthTiers(e.dynamic_tiers || e.package2);
+  }
+
+  const ethLogFilters = createLogFilterController({
+    wrapId: 'eth-log-filters-wrap',
+    rootId: 'eth-log-filters',
+    datePillsId: 'eth-date-pills',
+    daySummaryId: 'eth-day-summary',
+    bodyId: 'eth-log-body',
+    tableId: 'eth-log-table',
+    sortRootId: 'eth-log-sort',
+    groupDateId: 'eth-group-date',
+    countId: 'eth-log-filter-count',
+    searchId: 'eth-log-search',
+    resetId: 'eth-log-reset',
+    storageKey: 'eth-log-filters-v3',
+    emptyMsg: '沒有符合篩選條件的 ETH 紀錄',
+    noDataMsg: 'ETH paper 尚無紀錄',
+    ethTable: true,
+  });
+
+  async function refresh() {
+    try {
+      const [sumR, logR, liveR] = await Promise.all([
+        fetch('/api/eth-summary'), fetch('/api/eth-trade-log'), fetch('/api/eth-live'),
+      ]);
+      const e = await sumR.json();
+      const log = await logR.json();
+      const live = await liveR.json();
+      updateEthStats(e);
+      ethLogFilters.setRows(log);
+      if (live.status === 'ok') {
+        const px = live.spot || {};
+        document.getElementById('eth-live-panel').innerHTML =
+          `<strong>${live.market.title}</strong> · 剩餘 ${live.market.t_remaining}s<br>` +
+          `ETH $${Math.round(px.price || 0)} · Up ${live.up_book.best_ask ?? '—'} · Down ${live.down_book.best_ask ?? '—'}`;
+      }
+      document.getElementById('updated').textContent = new Date().toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong' });
+    } catch (err) { console.warn(err); }
+  }
+  refresh();
+  setInterval(refresh, 15000);
+</script>
+{% endblock %}

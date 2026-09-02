@@ -1,0 +1,145 @@
+{
+  "generated_hkt": "2026-06-29 19:45:14 HKT",
+  "all_live": {
+    "n": 94,
+    "wins": 56,
+    "losses": 38,
+    "wr": 59.6,
+    "pnl": 1418.22,
+    "avg": 15.09,
+    "stake": 8841.63
+  },
+  "new_allowed": {
+    "n": 48,
+    "wins": 36,
+    "losses": 12,
+    "wr": 75.0,
+    "pnl": 1479.85,
+    "avg": 30.83,
+    "stake": 4927.62
+  },
+  "removed_total": {
+    "n": 46,
+    "wins": 20,
+    "losses": 26,
+    "wr": 43.5,
+    "pnl": -61.63,
+    "avg": -1.34,
+    "stake": 3914.01
+  },
+  "asset_stats": {
+    "BTC": {
+      "all": {
+        "n": 35,
+        "wins": 23,
+        "losses": 12,
+        "wr": 65.7,
+        "pnl": 355.54,
+        "avg": 10.16,
+        "stake": 3514.47
+      },
+      "new_allowed": {
+        "n": 19,
+        "wins": 15,
+        "losses": 4,
+        "wr": 78.9,
+        "pnl": 464.92,
+        "avg": 24.47,
+        "stake": 1964.46
+      },
+      "removed": {
+        "n": 16,
+        "wins": 8,
+        "losses": 8,
+        "wr": 50.0,
+        "pnl": -109.38,
+        "avg": -6.84,
+        "stake": 1550.01
+      }
+    },
+    "ETH": {
+      "all": {
+        "n": 59,
+        "wins": 33,
+        "losses": 26,
+        "wr": 55.9,
+        "pnl": 1062.68,
+        "avg": 18.01,
+        "stake": 5327.16
+      },
+      "new_allowed": {
+        "n": 29,
+        "wins": 21,
+        "losses": 8,
+        "wr": 72.4,
+        "pnl": 1014.93,
+        "avg": 35.0,
+        "stake": 2963.16
+      },
+      "removed": {
+        "n": 30,
+        "wins": 12,
+        "losses": 18,
+        "wr": 40.0,
+        "pnl": 47.75,
+        "avg": 1.59,
+        "stake": 2364.0
+      }
+    }
+  },
+  "removed_by_reason": {
+    "fav_outside_core": {
+      "n": 11,
+      "wins": 5,
+      "losses": 6,
+      "wr": 45.5,
+      "pnl": -233.06,
+      "avg": -21.19,
+      "stake": 546.0
+    },
+    "btc_fav_13et_skip": {
+      "n": 7,
+      "wins": 4,
+      "losses": 3,
+      "wr": 57.1,
+      "pnl": -265.78,
+      "avg": -37.97,
+      "stake": 848.01
+    },
+    "outside_us_extended_disabled": {
+      "n": 28,
+      "wins": 11,
+      "losses": 17,
+      "wr": 39.3,
+      "pnl": 437.21,
+      "avg": 15.61,
+      "stake": 2520.0
+    }
+  },
+  "weekend_dog_removed": {
+    "n": 21,
+    "wins": 8,
+    "losses": 13,
+    "wr": 38.1,
+    "pnl": 444.78,
+    "avg": 21.18,
+    "stake": 1890.0
+  },
+  "extended_dog_removed": {
+    "n": 28,
+    "wins": 11,
+    "losses": 17,
+    "wr": 39.3,
+    "pnl": 437.21,
+    "avg": 15.61,
+    "stake": 2520.0
+  },
+  "projection": {
+    "span_days": 4,
+    "allowed_trades_per_day": 12.0,
+    "avg_usd_per_trade": 30.83,
+    "gross_usd_per_day": 369.96,
+    "gross_hkd_per_day": 2886.0,
+    "days_per_100hkd": 0.03
+  }
+}

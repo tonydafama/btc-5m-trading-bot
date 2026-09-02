@@ -1,0 +1,51 @@
+# --- Secrets (NEVER commit) ---
+.env
+.env.bot2
+.env.*
+!.env.example
+!.env.bot2.example
+
+# --- Python ---
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# --- Runtime logs & live state (large / sensitive) ---
+logs/*.jsonl
+logs/*.log
+logs/error.log
+logs/trade_log*.json
+logs/*observations*
+logs/windows.json
+logs/eth_windows.json
+logs/window_stats.json
+logs/eth_window_stats.json
+logs/wallet_cache.json
+logs/bot_control.json
+logs/*_session.json
+logs/*_state.json
+logs/observer_state.json
+logs/eth_observer_state.json
+logs/manual_bets.json
+logs/wallet_flows.json
+logs/telegram_alert_state.json
+logs/backtest_archive/
+logs/bot2/
+logs/dashboard.log
+
+# Keep strategy config (no secrets)
+!logs/strategy_config.json
+
+# --- IDE / OS ---
+.cursor/
+.DS_Store
+*.swp
+Thumbs.db
+
+# --- Archives / backups ---
+*.tar.gz
+*.enc

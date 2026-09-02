@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Simple{% endblock %}
+{% block content %}
+  <h1>概覽 <span class="badge {{ 'live' if trading_mode == 'LIVE' else 'paper' }}" id="mode-badge">{{ trading_mode }}</span></h1>
+  <p class="sub">精簡版 · 錢包 + PnL + 最近 20 筆 · 更新 <span id="updated">—</span></p>
+
+  <div class="wallet-bar" id="wallet-bar">
+    <div class="card"><div class="label">Polymarket Cash</div><div class="value green" id="wallet-cash">—</div><div id="wallet-ready" class="ready-warn">載入中…</div></div>
+    <div class="card"><div class="label">BTC 今日 PnL</div><div class="value" id="btc-daily">—</div></div>
+    <div class="card"><div class="label">BTC Overall PnL</div><div class="value" id="btc-overall">—</div></div>
+    <div class="card"><div class="label">ETH 今日 PnL</div><div class="value" id="eth-daily">—</div><div class="hint">Paper</div></div>
+    <div class="card"><div class="label">ETH Overall PnL</div><div class="value" id="eth-overall">—</div><div class="hint">Paper</div></div>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <h2>BTC 最近 20 筆{% if trading_mode == 'LIVE' %}<span class="live-section-label">LIVE</span>{% endif %}</h2>
+      <a href="/trading" class="weather-link">完整 Trade Log →</a>
+    </div>
+    <div class="table-wrap simple-recent-table">
+      <table>
+        <thead>
+          <tr><th>時間</th><th>Market</th><th>Ask</th><th>Result</th><th>PnL</th></tr>
+        </thead>
+        <tbody id="recent-btc"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:1.5rem">載入中…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>ETH 最近 20 筆<span class="paper-section-label">PAPER</span></h2>
+      <a href="/eth" class="weather-link">ETH 詳情 →</a>
+    </div>
+    <div class="table-wrap simple-recent-table">
+      <table>
+        <thead>
+          <tr><th>時間</th><th>Market</th><th>Ask</th><th>Result</th><th>PnL</th></tr>
+        </thead>
+        <tbody id="recent-eth"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:1.5rem">載入中…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>BTC 即時窗口</h2>
+    <div class="card live-box" id="live-panel">載入中…</div>
+  </section>
+{% endblock %}
+{% block scripts %}
+<script>
+  function renderRecent(tb, rows, eth) {
+    const list = (rows || []).slice(0, 20);
+    if (!list.length) {
+      tb.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:1.5rem">尚無紀錄</td></tr>';
+      return;
+    }
+    tb.innerHTML = list.map(t => {
+      const result = t.trade_result || '—';
+      const pnl = result === 'WIN' || result === 'LOSS'
+        ? `<span class="${(t.pnl || 0) >= 0 ? 'pos' : 'neg'}">${fmtPnl(t.pnl || 0)}</span>` : '—';
+      const ts = logTimestamp(t);
+      const time = ts.length >= 19 ? ts.slice(11, 19) : '—';
+      const reason = eth ? fmtEthReason(t.strategy_reason) : (t.strategy_reason || '');
+      return `<tr class="${t.entered ? '' : 'row-skipped'}">
+        <td>${ts.slice(0, 10)} ${time}</td>
+        <td title="${(t.market || '').replace(/"/g, '&quot;')}">${(t.market || '').slice(0, 32)}</td>
+        <td>${t.entry_ask != null ? Number(t.entry_ask).toFixed(2) : '—'}</td>
+        <td class="result-${result}">${result}</td>
+        <td>${pnl}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function refresh() {
+    try {
+      const [btcSum, ethSum, btcLog, ethLog, live, wallet] = await Promise.all([
+        fetch('/api/summary'), fetch('/api/eth-summary'),
+        fetch('/api/trade-log'), fetch('/api/eth-trade-log'),
+        fetch('/api/live'), fetch('/api/wallet'),
+      ]);
+      const bs = await btcSum.json();
+      const es = await ethSum.json();
+      const bl = await btcLog.json();
+      const el = await ethLog.json();
+      const lv = await live.json();
+      const w = await wallet.json();
+
+      const btcDaily = bs.daily_pnl_hkt ?? (bs.package2 || {}).daily_pnl_hkt ?? 0;
+      const btcOverall = bs.overall_pnl ?? bs.total_pnl ?? 0;
+      const ethDaily = es.daily_pnl_hkt ?? es.daily_paper_pnl_hkt ?? 0;
+      const ethOverall = es.overall_pnl ?? es.paper_pnl ?? 0;
+
+      const setPnl = (id, val) => {
+        const el = document.getElementById(id);
+        el.textContent = fmtPnl(val);
+        el.className = 'value ' + (val >= 0 ? 'pos' : 'neg');
+      };
+      setPnl('btc-daily', btcDaily);
+      setPnl('btc-overall', btcOverall);
+      setPnl('eth-daily', ethDaily);
+      setPnl('eth-overall', ethOverall);
+
+      if (w.cash_usdc != null) {
+        document.getElementById('wallet-cash').textContent = '$' + w.cash_usdc.toFixed(2);
+        const ready = document.getElementById('wallet-ready');
+        ready.textContent = w.ready_label || (w.api_ready ? '✅ API 可交易' : '⚠️ API 未就緒');
+        ready.className = w.api_ready ? 'ready-ok' : 'ready-warn';
+        ready.title = w.ready_detail || w.error || '';
+        const mode = (w.trading_mode || '{{ trading_mode }}').toUpperCase();
+        const mb = document.getElementById('mode-badge');
+        if (mb) { mb.textContent = mode; mb.className = 'badge ' + (mode === 'LIVE' ? 'live' : 'paper'); }
+      }
+
+      renderRecent(document.getElementById('recent-btc'), bl, false);
+      renderRecent(document.getElementById('recent-eth'), el, true);
+
+      if (lv.status === 'ok') {
+        const px = lv.spot || {};
+        document.getElementById('live-panel').innerHTML =
+          `<strong>${lv.market.title}</strong> · 剩餘 ${lv.market.t_remaining}s<br>` +
+          `BTC $${Math.round(px.price || 0)} · Up ${lv.up_book.best_ask ?? '—'} · Down ${lv.down_book.best_ask ?? '—'}`;
+      }
+      document.getElementById('updated').textContent = new Date().toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong' });
+    } catch (e) { console.warn(e); }
+  }
+  refresh();
+  setInterval(refresh, 15000);
+</script>
+{% endblock %}

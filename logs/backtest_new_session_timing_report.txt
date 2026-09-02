@@ -1,0 +1,36 @@
+==============================================================================
+NEW STRATEGY BACKTEST — recent session ONLY (no old 169 paper)
+Windows: 260 | Resolved: 259 | Actual NEW entered: 9 | Actual PnL: $+0.00
+Rules: ask≤0.60 · dynamic stake · move≥$12 · bot decision logic
+==============================================================================
+
+Scenario                         進場   略過timing    略過ask      勝率       PnL
+------------------------------------------------------------------------------
+T65-22 · delta 0.025%             8        172       79   75.0% $ +149.57
+T70-22 · delta 0.025%             8        172       79   75.0% $ +149.57
+T60-22 (現況) · delta 0.025%        9        132      118   66.7% $  +74.09
+T60-20 · delta 0.025%             9        132      118   66.7% $  +74.09
+T60-18 · delta 0.025%             9        132      118   66.7% $  +74.09
+T60-15 · delta 0.025%             9        132      118   66.7% $  +74.09
+T65-22 · delta 0.022%             9        166       84   66.7% $  +74.07
+T70-22 · delta 0.022%             9        166       84   66.7% $  +74.07
+T65-22 · delta 0.020%            13        157       89   53.8% $  +65.06
+T70-22 · delta 0.020%            13        157       89   53.8% $  +65.06
+T60-22 (現況) · delta 0.022%       10        124      125   60.0% $  +21.24
+T60-20 · delta 0.022%            10        124      125   60.0% $  +21.24
+T60-18 · delta 0.022%            10        124      125   60.0% $  +21.24
+T60-15 · delta 0.022%            10        124      125   60.0% $  +21.24
+T60-22 (現況) · delta 0.020%       14        115      130   50.0% $  +14.93
+
+NOTE: Sample is small — most scenarios have 0–3 NEW entries. Treat as directional only.
+
+BEST: T65-22 · delta 0.025%
+  8 trades · 6W/2L · PnL $+149.57 · bankroll $251.60
+    c-updown-5m-1781474400 ask=0.51 stake=$10.20 WIN $+9.80
+    c-updown-5m-1781478900 ask=0.26 stake=$33.55 WIN $+95.49
+    c-updown-5m-1781479800 ask=0.57 stake=$20.73 WIN $+15.64
+    c-updown-5m-1781481300 ask=0.41 stake=$22.30 WIN $+32.09
+    c-updown-5m-1781482800 ask=0.44 stake=$25.51 WIN $+32.47
+    c-updown-5m-1781495100 ask=0.41 stake=$28.75 WIN $+41.37
+    c-updown-5m-1781498700 ask=0.40 stake=$49.33 LOSS $-49.33
+    c-updown-5m-1781513700 ask=0.58 stake=$27.96 LOSS $-27.96

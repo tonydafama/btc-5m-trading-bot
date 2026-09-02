@@ -1,0 +1,854 @@
+{
+  "full P2 (no dog) cap0.9": {
+    "full": {
+      "mode": "full_p2_no_underdog",
+      "max_fav": 0.9,
+      "timing": "T75-22",
+      "trades": 83,
+      "wins": 74,
+      "losses": 9,
+      "wr": 89.2,
+      "gross_pnl": 82.63,
+      "fees": 8.05,
+      "net_pnl": 74.58,
+      "final_bankroll": 176.94,
+      "ev_gross": 1.0,
+      "ev_net": 0.9,
+      "max_dd_gross": 11.38,
+      "max_dd_net": 12.51,
+      "max_loss_streak": 1,
+      "losing_months_sim": 9,
+      "skips": {
+        "timing": 248,
+        "not_favorite": 1,
+        "ask_cap": 154,
+        "no_outcome": 0
+      },
+      "loss_trades": [
+        {
+          "slug": "btc-updown-5m-1781561100",
+          "tier": "favorite",
+          "ask": 0.77,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1127,
+          "net": -7.11,
+          "bankroll_after": 106.43
+        },
+        {
+          "slug": "btc-updown-5m-1781577600",
+          "tier": "mid",
+          "ask": 0.41,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.2065,
+          "net": -5.21,
+          "bankroll_after": 112.55
+        },
+        {
+          "slug": "btc-updown-5m-1781600100",
+          "tier": "mid",
+          "ask": 0.34,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.231,
+          "net": -5.23,
+          "bankroll_after": 131.03
+        },
+        {
+          "slug": "btc-updown-5m-1781630400",
+          "tier": "favorite",
+          "ask": 0.82,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0882,
+          "net": -7.09,
+          "bankroll_after": 162.35
+        },
+        {
+          "slug": "btc-updown-5m-1781656500",
+          "tier": "favorite",
+          "ask": 0.74,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1274,
+          "net": -7.13,
+          "bankroll_after": 177.2
+        },
+        {
+          "slug": "btc-updown-5m-1781667900",
+          "tier": "mid",
+          "ask": 0.51,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.1715,
+          "net": -5.17,
+          "bankroll_after": 178.1
+        },
+        {
+          "slug": "btc-updown-5m-1781670300",
+          "tier": "favorite",
+          "ask": 0.85,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0735,
+          "net": -7.07,
+          "bankroll_after": 173.61
+        },
+        {
+          "slug": "btc-updown-5m-1781674200",
+          "tier": "mid",
+          "ask": 0.67,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.1155,
+          "net": -5.12,
+          "bankroll_after": 171.82
+        },
+        {
+          "slug": "btc-updown-5m-1781681400",
+          "tier": "mid",
+          "ask": 0.56,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.154,
+          "net": -5.15,
+          "bankroll_after": 175.29
+        }
+      ]
+    },
+    "train": {
+      "mode": "full_p2_no_underdog",
+      "max_fav": 0.9,
+      "timing": "T75-22",
+      "trades": 36,
+      "wins": 33,
+      "losses": 3,
+      "wr": 91.7,
+      "gross_pnl": 35.98,
+      "fees": 3.41,
+      "net_pnl": 32.57,
+      "final_bankroll": 134.88,
+      "ev_gross": 1.0,
+      "ev_net": 0.9,
+      "max_dd_gross": 7.0,
+      "max_dd_net": 7.11,
+      "max_loss_streak": 1,
+      "losing_months_sim": 3,
+      "skips": {
+        "timing": 108,
+        "not_favorite": 0,
+        "ask_cap": 66,
+        "no_outcome": 0
+      },
+      "loss_trades": [
+        {
+          "slug": "btc-updown-5m-1781561100",
+          "tier": "favorite",
+          "ask": 0.77,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1127,
+          "net": -7.11,
+          "bankroll_after": 106.43
+        },
+        {
+          "slug": "btc-updown-5m-1781577600",
+          "tier": "mid",
+          "ask": 0.41,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.2065,
+          "net": -5.21,
+          "bankroll_after": 112.55
+        },
+        {
+          "slug": "btc-updown-5m-1781600100",
+          "tier": "mid",
+          "ask": 0.34,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.231,
+          "net": -5.23,
+          "bankroll_after": 131.03
+        }
+      ]
+    },
+    "test": {
+      "mode": "full_p2_no_underdog",
+      "max_fav": 0.9,
+      "timing": "T75-22",
+      "trades": 47,
+      "wins": 41,
+      "losses": 6,
+      "wr": 87.2,
+      "gross_pnl": 46.65,
+      "fees": 4.63,
+      "net_pnl": 42.02,
+      "final_bankroll": 144.35,
+      "ev_gross": 0.99,
+      "ev_net": 0.89,
+      "max_dd_gross": 11.38,
+      "max_dd_net": 12.51,
+      "max_loss_streak": 1,
+      "losing_months_sim": 6,
+      "skips": {
+        "timing": 140,
+        "not_favorite": 1,
+        "ask_cap": 88,
+        "no_outcome": 0
+      },
+      "loss_trades": [
+        {
+          "slug": "btc-updown-5m-1781630400",
+          "tier": "favorite",
+          "ask": 0.82,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0882,
+          "net": -7.09,
+          "bankroll_after": 129.76
+        },
+        {
+          "slug": "btc-updown-5m-1781656500",
+          "tier": "favorite",
+          "ask": 0.74,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1274,
+          "net": -7.13,
+          "bankroll_after": 144.61
+        },
+        {
+          "slug": "btc-updown-5m-1781667900",
+          "tier": "mid",
+          "ask": 0.51,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.1715,
+          "net": -5.17,
+          "bankroll_after": 145.51
+        },
+        {
+          "slug": "btc-updown-5m-1781670300",
+          "tier": "favorite",
+          "ask": 0.85,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0735,
+          "net": -7.07,
+          "bankroll_after": 141.02
+        },
+        {
+          "slug": "btc-updown-5m-1781674200",
+          "tier": "mid",
+          "ask": 0.67,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.1155,
+          "net": -5.12,
+          "bankroll_after": 139.23
+        },
+        {
+          "slug": "btc-updown-5m-1781681400",
+          "tier": "mid",
+          "ask": 0.56,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.154,
+          "net": -5.15,
+          "bankroll_after": 142.7
+        }
+      ]
+    }
+  },
+  "full P2 (no dog) cap0.88": {
+    "full": {
+      "mode": "full_p2_no_underdog",
+      "max_fav": 0.88,
+      "timing": "T75-22",
+      "trades": 68,
+      "wins": 59,
+      "losses": 9,
+      "wr": 86.8,
+      "gross_pnl": 70.03,
+      "fees": 7.26,
+      "net_pnl": 62.77,
+      "final_bankroll": 165.09,
+      "ev_gross": 1.03,
+      "ev_net": 0.92,
+      "max_dd_gross": 13.03,
+      "max_dd_net": 14.06,
+      "max_loss_streak": 1,
+      "losing_months_sim": 9,
+      "skips": {
+        "timing": 248,
+        "not_favorite": 1,
+        "ask_cap": 169,
+        "no_outcome": 0
+      },
+      "loss_trades": [
+        {
+          "slug": "btc-updown-5m-1781561100",
+          "tier": "favorite",
+          "ask": 0.77,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1127,
+          "net": -7.11,
+          "bankroll_after": 105.61
+        },
+        {
+          "slug": "btc-updown-5m-1781577600",
+          "tier": "mid",
+          "ask": 0.41,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.2065,
+          "net": -5.21,
+          "bankroll_after": 110.27
+        },
+        {
+          "slug": "btc-updown-5m-1781600100",
+          "tier": "mid",
+          "ask": 0.34,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.231,
+          "net": -5.23,
+          "bankroll_after": 125.56
+        },
+        {
+          "slug": "btc-updown-5m-1781630400",
+          "tier": "favorite",
+          "ask": 0.82,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0882,
+          "net": -7.09,
+          "bankroll_after": 153.6
+        },
+        {
+          "slug": "btc-updown-5m-1781656500",
+          "tier": "favorite",
+          "ask": 0.74,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1274,
+          "net": -7.13,
+          "bankroll_after": 167.72
+        },
+        {
+          "slug": "btc-updown-5m-1781667900",
+          "tier": "mid",
+          "ask": 0.51,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.1715,
+          "net": -5.17,
+          "bankroll_after": 167.89
+        },
+        {
+          "slug": "btc-updown-5m-1781670300",
+          "tier": "favorite",
+          "ask": 0.85,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0735,
+          "net": -7.07,
+          "bankroll_after": 162.58
+        },
+        {
+          "slug": "btc-updown-5m-1781674200",
+          "tier": "mid",
+          "ask": 0.67,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.1155,
+          "net": -5.12,
+          "bankroll_after": 160.79
+        },
+        {
+          "slug": "btc-updown-5m-1781681400",
+          "tier": "mid",
+          "ask": 0.56,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.154,
+          "net": -5.15,
+          "bankroll_after": 163.44
+        }
+      ]
+    },
+    "train": {
+      "mode": "full_p2_no_underdog",
+      "max_fav": 0.88,
+      "timing": "T75-22",
+      "trades": 28,
+      "wins": 25,
+      "losses": 3,
+      "wr": 89.3,
+      "gross_pnl": 29.29,
+      "fees": 3.0,
+      "net_pnl": 26.29,
+      "final_bankroll": 128.59,
+      "ev_gross": 1.05,
+      "ev_net": 0.94,
+      "max_dd_gross": 7.0,
+      "max_dd_net": 7.11,
+      "max_loss_streak": 1,
+      "losing_months_sim": 3,
+      "skips": {
+        "timing": 108,
+        "not_favorite": 0,
+        "ask_cap": 74,
+        "no_outcome": 0
+      },
+      "loss_trades": [
+        {
+          "slug": "btc-updown-5m-1781561100",
+          "tier": "favorite",
+          "ask": 0.77,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1127,
+          "net": -7.11,
+          "bankroll_after": 105.61
+        },
+        {
+          "slug": "btc-updown-5m-1781577600",
+          "tier": "mid",
+          "ask": 0.41,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.2065,
+          "net": -5.21,
+          "bankroll_after": 110.27
+        },
+        {
+          "slug": "btc-updown-5m-1781600100",
+          "tier": "mid",
+          "ask": 0.34,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.231,
+          "net": -5.23,
+          "bankroll_after": 125.56
+        }
+      ]
+    },
+    "test": {
+      "mode": "full_p2_no_underdog",
+      "max_fav": 0.88,
+      "timing": "T75-22",
+      "trades": 40,
+      "wins": 34,
+      "losses": 6,
+      "wr": 85.0,
+      "gross_pnl": 40.74,
+      "fees": 4.26,
+      "net_pnl": 36.48,
+      "final_bankroll": 138.79,
+      "ev_gross": 1.02,
+      "ev_net": 0.91,
+      "max_dd_gross": 13.03,
+      "max_dd_net": 14.06,
+      "max_loss_streak": 1,
+      "losing_months_sim": 6,
+      "skips": {
+        "timing": 140,
+        "not_favorite": 1,
+        "ask_cap": 95,
+        "no_outcome": 0
+      },
+      "loss_trades": [
+        {
+          "slug": "btc-updown-5m-1781630400",
+          "tier": "favorite",
+          "ask": 0.82,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0882,
+          "net": -7.09,
+          "bankroll_after": 127.3
+        },
+        {
+          "slug": "btc-updown-5m-1781656500",
+          "tier": "favorite",
+          "ask": 0.74,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1274,
+          "net": -7.13,
+          "bankroll_after": 141.42
+        },
+        {
+          "slug": "btc-updown-5m-1781667900",
+          "tier": "mid",
+          "ask": 0.51,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.1715,
+          "net": -5.17,
+          "bankroll_after": 141.59
+        },
+        {
+          "slug": "btc-updown-5m-1781670300",
+          "tier": "favorite",
+          "ask": 0.85,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0735,
+          "net": -7.07,
+          "bankroll_after": 136.28
+        },
+        {
+          "slug": "btc-updown-5m-1781674200",
+          "tier": "mid",
+          "ask": 0.67,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.1155,
+          "net": -5.12,
+          "bankroll_after": 134.49
+        },
+        {
+          "slug": "btc-updown-5m-1781681400",
+          "tier": "mid",
+          "ask": 0.56,
+          "won": false,
+          "pnl": -5.0,
+          "fee": 0.154,
+          "net": -5.15,
+          "bankroll_after": 137.14
+        }
+      ]
+    }
+  },
+  "favorite-only cap0.9": {
+    "full": {
+      "mode": "favorite_only",
+      "max_fav": 0.9,
+      "timing": "T75-22",
+      "trades": 65,
+      "wins": 61,
+      "losses": 4,
+      "wr": 93.8,
+      "gross_pnl": 58.5,
+      "fees": 5.32,
+      "net_pnl": 53.18,
+      "final_bankroll": 155.54,
+      "ev_gross": 0.9,
+      "ev_net": 0.82,
+      "max_dd_gross": 7.0,
+      "max_dd_net": 7.13,
+      "max_loss_streak": 1,
+      "losing_months_sim": 4,
+      "skips": {
+        "timing": 248,
+        "not_favorite": 19,
+        "ask_cap": 154,
+        "no_outcome": 0
+      },
+      "loss_trades": [
+        {
+          "slug": "btc-updown-5m-1781561100",
+          "tier": "favorite",
+          "ask": 0.77,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1127,
+          "net": -7.11,
+          "bankroll_after": 101.85
+        },
+        {
+          "slug": "btc-updown-5m-1781630400",
+          "tier": "favorite",
+          "ask": 0.82,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0882,
+          "net": -7.09,
+          "bankroll_after": 138.29
+        },
+        {
+          "slug": "btc-updown-5m-1781656500",
+          "tier": "favorite",
+          "ask": 0.74,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1274,
+          "net": -7.13,
+          "bankroll_after": 143.69
+        },
+        {
+          "slug": "btc-updown-5m-1781670300",
+          "tier": "favorite",
+          "ask": 0.85,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0735,
+          "net": -7.07,
+          "bankroll_after": 145.27
+        }
+      ]
+    },
+    "train": {
+      "mode": "favorite_only",
+      "max_fav": 0.9,
+      "timing": "T75-22",
+      "trades": 28,
+      "wins": 27,
+      "losses": 1,
+      "wr": 96.4,
+      "gross_pnl": 30.86,
+      "fees": 2.27,
+      "net_pnl": 28.59,
+      "final_bankroll": 130.9,
+      "ev_gross": 1.1,
+      "ev_net": 1.02,
+      "max_dd_gross": 7.0,
+      "max_dd_net": 7.11,
+      "max_loss_streak": 1,
+      "losing_months_sim": 1,
+      "skips": {
+        "timing": 108,
+        "not_favorite": 8,
+        "ask_cap": 66,
+        "no_outcome": 0
+      },
+      "loss_trades": [
+        {
+          "slug": "btc-updown-5m-1781561100",
+          "tier": "favorite",
+          "ask": 0.77,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1127,
+          "net": -7.11,
+          "bankroll_after": 101.85
+        }
+      ]
+    },
+    "test": {
+      "mode": "favorite_only",
+      "max_fav": 0.9,
+      "timing": "T75-22",
+      "trades": 37,
+      "wins": 34,
+      "losses": 3,
+      "wr": 91.9,
+      "gross_pnl": 27.64,
+      "fees": 3.04,
+      "net_pnl": 24.6,
+      "final_bankroll": 126.93,
+      "ev_gross": 0.75,
+      "ev_net": 0.66,
+      "max_dd_gross": 7.0,
+      "max_dd_net": 7.13,
+      "max_loss_streak": 1,
+      "losing_months_sim": 3,
+      "skips": {
+        "timing": 140,
+        "not_favorite": 11,
+        "ask_cap": 88,
+        "no_outcome": 0
+      },
+      "loss_trades": [
+        {
+          "slug": "btc-updown-5m-1781630400",
+          "tier": "favorite",
+          "ask": 0.82,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0882,
+          "net": -7.09,
+          "bankroll_after": 109.68
+        },
+        {
+          "slug": "btc-updown-5m-1781656500",
+          "tier": "favorite",
+          "ask": 0.74,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1274,
+          "net": -7.13,
+          "bankroll_after": 115.08
+        },
+        {
+          "slug": "btc-updown-5m-1781670300",
+          "tier": "favorite",
+          "ask": 0.85,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0735,
+          "net": -7.07,
+          "bankroll_after": 116.66
+        }
+      ]
+    }
+  },
+  "favorite-only cap0.88": {
+    "full": {
+      "mode": "favorite_only",
+      "max_fav": 0.88,
+      "timing": "T75-22",
+      "trades": 50,
+      "wins": 46,
+      "losses": 4,
+      "wr": 92.0,
+      "gross_pnl": 45.9,
+      "fees": 4.53,
+      "net_pnl": 41.37,
+      "final_bankroll": 143.69,
+      "ev_gross": 0.92,
+      "ev_net": 0.83,
+      "max_dd_gross": 7.0,
+      "max_dd_net": 7.13,
+      "max_loss_streak": 1,
+      "losing_months_sim": 4,
+      "skips": {
+        "timing": 248,
+        "not_favorite": 19,
+        "ask_cap": 169,
+        "no_outcome": 0
+      },
+      "loss_trades": [
+        {
+          "slug": "btc-updown-5m-1781561100",
+          "tier": "favorite",
+          "ask": 0.77,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1127,
+          "net": -7.11,
+          "bankroll_after": 101.03
+        },
+        {
+          "slug": "btc-updown-5m-1781630400",
+          "tier": "favorite",
+          "ask": 0.82,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0882,
+          "net": -7.09,
+          "bankroll_after": 129.54
+        },
+        {
+          "slug": "btc-updown-5m-1781656500",
+          "tier": "favorite",
+          "ask": 0.74,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1274,
+          "net": -7.13,
+          "bankroll_after": 134.21
+        },
+        {
+          "slug": "btc-updown-5m-1781670300",
+          "tier": "favorite",
+          "ask": 0.85,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0735,
+          "net": -7.07,
+          "bankroll_after": 134.24
+        }
+      ]
+    },
+    "train": {
+      "mode": "favorite_only",
+      "max_fav": 0.88,
+      "timing": "T75-22",
+      "trades": 20,
+      "wins": 19,
+      "losses": 1,
+      "wr": 95.0,
+      "gross_pnl": 24.17,
+      "fees": 1.86,
+      "net_pnl": 22.31,
+      "final_bankroll": 124.61,
+      "ev_gross": 1.21,
+      "ev_net": 1.12,
+      "max_dd_gross": 7.0,
+      "max_dd_net": 7.11,
+      "max_loss_streak": 1,
+      "losing_months_sim": 1,
+      "skips": {
+        "timing": 108,
+        "not_favorite": 8,
+        "ask_cap": 74,
+        "no_outcome": 0
+      },
+      "loss_trades": [
+        {
+          "slug": "btc-updown-5m-1781561100",
+          "tier": "favorite",
+          "ask": 0.77,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1127,
+          "net": -7.11,
+          "bankroll_after": 101.03
+        }
+      ]
+    },
+    "test": {
+      "mode": "favorite_only",
+      "max_fav": 0.88,
+      "timing": "T75-22",
+      "trades": 30,
+      "wins": 27,
+      "losses": 3,
+      "wr": 90.0,
+      "gross_pnl": 21.73,
+      "fees": 2.68,
+      "net_pnl": 19.05,
+      "final_bankroll": 121.37,
+      "ev_gross": 0.72,
+      "ev_net": 0.64,
+      "max_dd_gross": 7.0,
+      "max_dd_net": 7.13,
+      "max_loss_streak": 1,
+      "losing_months_sim": 3,
+      "skips": {
+        "timing": 140,
+        "not_favorite": 11,
+        "ask_cap": 95,
+        "no_outcome": 0
+      },
+      "loss_trades": [
+        {
+          "slug": "btc-updown-5m-1781630400",
+          "tier": "favorite",
+          "ask": 0.82,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0882,
+          "net": -7.09,
+          "bankroll_after": 107.22
+        },
+        {
+          "slug": "btc-updown-5m-1781656500",
+          "tier": "favorite",
+          "ask": 0.74,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.1274,
+          "net": -7.13,
+          "bankroll_after": 111.89
+        },
+        {
+          "slug": "btc-updown-5m-1781670300",
+          "tier": "favorite",
+          "ask": 0.85,
+          "won": false,
+          "pnl": -7.0,
+          "fee": 0.0735,
+          "net": -7.07,
+          "bankroll_after": 111.92
+        }
+      ]
+    }
+  }
+}

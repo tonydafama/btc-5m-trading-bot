@@ -1,0 +1,1574 @@
+{
+  "generated_at_hkt": "2026-06-23 20:57:22 HKT",
+  "min_trades_for_ranking": 3,
+  "assets": {
+    "btc": {
+      "closed_total": 278,
+      "closed_nyse_session": 104,
+      "by_et_hour_all": {
+        "0": {
+          "hour_et": "00:00",
+          "hour_hkt_sample": "12:00",
+          "trades": 9,
+          "wins": 7,
+          "losses": 2,
+          "win_rate_pct": 77.8,
+          "pnl_usd": 20.02,
+          "avg_pnl_usd": 2.22
+        },
+        "1": {
+          "hour_et": "01:00",
+          "hour_hkt_sample": "13:00",
+          "trades": 9,
+          "wins": 3,
+          "losses": 6,
+          "win_rate_pct": 33.3,
+          "pnl_usd": -55.64,
+          "avg_pnl_usd": -6.18
+        },
+        "2": {
+          "hour_et": "02:00",
+          "hour_hkt_sample": "14:00",
+          "trades": 11,
+          "wins": 10,
+          "losses": 1,
+          "win_rate_pct": 90.9,
+          "pnl_usd": 23.72,
+          "avg_pnl_usd": 2.16
+        },
+        "3": {
+          "hour_et": "03:00",
+          "hour_hkt_sample": "15:00",
+          "trades": 13,
+          "wins": 10,
+          "losses": 3,
+          "win_rate_pct": 76.9,
+          "pnl_usd": -0.75,
+          "avg_pnl_usd": -0.06
+        },
+        "4": {
+          "hour_et": "04:00",
+          "hour_hkt_sample": "16:00",
+          "trades": 9,
+          "wins": 7,
+          "losses": 2,
+          "win_rate_pct": 77.8,
+          "pnl_usd": 18.34,
+          "avg_pnl_usd": 2.04
+        },
+        "5": {
+          "hour_et": "05:00",
+          "hour_hkt_sample": "17:00",
+          "trades": 8,
+          "wins": 8,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 24.6,
+          "avg_pnl_usd": 3.07
+        },
+        "6": {
+          "hour_et": "06:00",
+          "hour_hkt_sample": "18:00",
+          "trades": 5,
+          "wins": 4,
+          "losses": 1,
+          "win_rate_pct": 80.0,
+          "pnl_usd": 8.5,
+          "avg_pnl_usd": 1.7
+        },
+        "7": {
+          "hour_et": "07:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "8": {
+          "hour_et": "08:00",
+          "hour_hkt_sample": "20:00",
+          "trades": 9,
+          "wins": 8,
+          "losses": 1,
+          "win_rate_pct": 88.9,
+          "pnl_usd": 68.97,
+          "avg_pnl_usd": 7.66
+        },
+        "9": {
+          "hour_et": "09:00",
+          "hour_hkt_sample": "21:00",
+          "trades": 8,
+          "wins": 6,
+          "losses": 2,
+          "win_rate_pct": 75.0,
+          "pnl_usd": 15.33,
+          "avg_pnl_usd": 1.92
+        },
+        "10": {
+          "hour_et": "10:00",
+          "hour_hkt_sample": "22:00",
+          "trades": 16,
+          "wins": 12,
+          "losses": 4,
+          "win_rate_pct": 75.0,
+          "pnl_usd": -14.04,
+          "avg_pnl_usd": -0.88
+        },
+        "11": {
+          "hour_et": "11:00",
+          "hour_hkt_sample": "23:00",
+          "trades": 23,
+          "wins": 19,
+          "losses": 4,
+          "win_rate_pct": 82.6,
+          "pnl_usd": -8.34,
+          "avg_pnl_usd": -0.36
+        },
+        "12": {
+          "hour_et": "12:00",
+          "hour_hkt_sample": "00:00",
+          "trades": 22,
+          "wins": 22,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 95.53,
+          "avg_pnl_usd": 4.34
+        },
+        "13": {
+          "hour_et": "13:00",
+          "hour_hkt_sample": "01:00",
+          "trades": 18,
+          "wins": 14,
+          "losses": 4,
+          "win_rate_pct": 77.8,
+          "pnl_usd": 0.4,
+          "avg_pnl_usd": 0.02
+        },
+        "14": {
+          "hour_et": "14:00",
+          "hour_hkt_sample": "02:00",
+          "trades": 20,
+          "wins": 15,
+          "losses": 5,
+          "win_rate_pct": 75.0,
+          "pnl_usd": 128.16,
+          "avg_pnl_usd": 6.41
+        },
+        "15": {
+          "hour_et": "15:00",
+          "hour_hkt_sample": "03:00",
+          "trades": 20,
+          "wins": 16,
+          "losses": 4,
+          "win_rate_pct": 80.0,
+          "pnl_usd": 82.52,
+          "avg_pnl_usd": 4.13
+        },
+        "16": {
+          "hour_et": "16:00",
+          "hour_hkt_sample": "04:00",
+          "trades": 4,
+          "wins": 3,
+          "losses": 1,
+          "win_rate_pct": 75.0,
+          "pnl_usd": -1.42,
+          "avg_pnl_usd": -0.35
+        },
+        "17": {
+          "hour_et": "17:00",
+          "hour_hkt_sample": "05:00",
+          "trades": 6,
+          "wins": 4,
+          "losses": 2,
+          "win_rate_pct": 66.7,
+          "pnl_usd": -11.92,
+          "avg_pnl_usd": -1.99
+        },
+        "18": {
+          "hour_et": "18:00",
+          "hour_hkt_sample": "06:00",
+          "trades": 12,
+          "wins": 10,
+          "losses": 2,
+          "win_rate_pct": 83.3,
+          "pnl_usd": 10.09,
+          "avg_pnl_usd": 0.84
+        },
+        "19": {
+          "hour_et": "19:00",
+          "hour_hkt_sample": "07:00",
+          "trades": 15,
+          "wins": 15,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 129.21,
+          "avg_pnl_usd": 8.61
+        },
+        "20": {
+          "hour_et": "20:00",
+          "hour_hkt_sample": "08:00",
+          "trades": 8,
+          "wins": 5,
+          "losses": 3,
+          "win_rate_pct": 62.5,
+          "pnl_usd": 2.72,
+          "avg_pnl_usd": 0.34
+        },
+        "21": {
+          "hour_et": "21:00",
+          "hour_hkt_sample": "09:00",
+          "trades": 14,
+          "wins": 9,
+          "losses": 5,
+          "win_rate_pct": 64.3,
+          "pnl_usd": -32.2,
+          "avg_pnl_usd": -2.3
+        },
+        "22": {
+          "hour_et": "22:00",
+          "hour_hkt_sample": "10:00",
+          "trades": 13,
+          "wins": 9,
+          "losses": 4,
+          "win_rate_pct": 69.2,
+          "pnl_usd": -29.44,
+          "avg_pnl_usd": -2.26
+        },
+        "23": {
+          "hour_et": "23:00",
+          "hour_hkt_sample": "11:00",
+          "trades": 6,
+          "wins": 2,
+          "losses": 4,
+          "win_rate_pct": 33.3,
+          "pnl_usd": -27.47,
+          "avg_pnl_usd": -4.58
+        }
+      },
+      "by_et_hour_nyse_only": {
+        "0": {
+          "hour_et": "00:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "1": {
+          "hour_et": "01:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "2": {
+          "hour_et": "02:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "3": {
+          "hour_et": "03:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "4": {
+          "hour_et": "04:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "5": {
+          "hour_et": "05:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "6": {
+          "hour_et": "06:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "7": {
+          "hour_et": "07:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "8": {
+          "hour_et": "08:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "9": {
+          "hour_et": "09:00",
+          "hour_hkt_sample": "21:00",
+          "trades": 5,
+          "wins": 5,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 26.67,
+          "avg_pnl_usd": 5.33
+        },
+        "10": {
+          "hour_et": "10:00",
+          "hour_hkt_sample": "22:00",
+          "trades": 11,
+          "wins": 8,
+          "losses": 3,
+          "win_rate_pct": 72.7,
+          "pnl_usd": -8.49,
+          "avg_pnl_usd": -0.77
+        },
+        "11": {
+          "hour_et": "11:00",
+          "hour_hkt_sample": "23:00",
+          "trades": 19,
+          "wins": 15,
+          "losses": 4,
+          "win_rate_pct": 78.9,
+          "pnl_usd": -23.8,
+          "avg_pnl_usd": -1.25
+        },
+        "12": {
+          "hour_et": "12:00",
+          "hour_hkt_sample": "00:00",
+          "trades": 18,
+          "wins": 18,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 64.43,
+          "avg_pnl_usd": 3.58
+        },
+        "13": {
+          "hour_et": "13:00",
+          "hour_hkt_sample": "01:00",
+          "trades": 16,
+          "wins": 12,
+          "losses": 4,
+          "win_rate_pct": 75.0,
+          "pnl_usd": -6.98,
+          "avg_pnl_usd": -0.44
+        },
+        "14": {
+          "hour_et": "14:00",
+          "hour_hkt_sample": "02:00",
+          "trades": 17,
+          "wins": 13,
+          "losses": 4,
+          "win_rate_pct": 76.5,
+          "pnl_usd": 85.73,
+          "avg_pnl_usd": 5.04
+        },
+        "15": {
+          "hour_et": "15:00",
+          "hour_hkt_sample": "03:00",
+          "trades": 18,
+          "wins": 16,
+          "losses": 2,
+          "win_rate_pct": 88.9,
+          "pnl_usd": 106.52,
+          "avg_pnl_usd": 5.92
+        },
+        "16": {
+          "hour_et": "16:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "17": {
+          "hour_et": "17:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "18": {
+          "hour_et": "18:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "19": {
+          "hour_et": "19:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "20": {
+          "hour_et": "20:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "21": {
+          "hour_et": "21:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "22": {
+          "hour_et": "22:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "23": {
+          "hour_et": "23:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        }
+      },
+      "top_et_hours_nyse": [
+        {
+          "hour_et_int": 15,
+          "hour_et": "15:00",
+          "hour_hkt_sample": "03:00",
+          "trades": 18,
+          "wins": 16,
+          "losses": 2,
+          "win_rate_pct": 88.9,
+          "pnl_usd": 106.52,
+          "avg_pnl_usd": 5.92
+        },
+        {
+          "hour_et_int": 14,
+          "hour_et": "14:00",
+          "hour_hkt_sample": "02:00",
+          "trades": 17,
+          "wins": 13,
+          "losses": 4,
+          "win_rate_pct": 76.5,
+          "pnl_usd": 85.73,
+          "avg_pnl_usd": 5.04
+        },
+        {
+          "hour_et_int": 12,
+          "hour_et": "12:00",
+          "hour_hkt_sample": "00:00",
+          "trades": 18,
+          "wins": 18,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 64.43,
+          "avg_pnl_usd": 3.58
+        },
+        {
+          "hour_et_int": 9,
+          "hour_et": "09:00",
+          "hour_hkt_sample": "21:00",
+          "trades": 5,
+          "wins": 5,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 26.67,
+          "avg_pnl_usd": 5.33
+        },
+        {
+          "hour_et_int": 13,
+          "hour_et": "13:00",
+          "hour_hkt_sample": "01:00",
+          "trades": 16,
+          "wins": 12,
+          "losses": 4,
+          "win_rate_pct": 75.0,
+          "pnl_usd": -6.98,
+          "avg_pnl_usd": -0.44
+        },
+        {
+          "hour_et_int": 10,
+          "hour_et": "10:00",
+          "hour_hkt_sample": "22:00",
+          "trades": 11,
+          "wins": 8,
+          "losses": 3,
+          "win_rate_pct": 72.7,
+          "pnl_usd": -8.49,
+          "avg_pnl_usd": -0.77
+        },
+        {
+          "hour_et_int": 11,
+          "hour_et": "11:00",
+          "hour_hkt_sample": "23:00",
+          "trades": 19,
+          "wins": 15,
+          "losses": 4,
+          "win_rate_pct": 78.9,
+          "pnl_usd": -23.8,
+          "avg_pnl_usd": -1.25
+        }
+      ],
+      "worst_et_hours_nyse": [
+        {
+          "hour_et_int": 11,
+          "hour_et": "11:00",
+          "hour_hkt_sample": "23:00",
+          "trades": 19,
+          "wins": 15,
+          "losses": 4,
+          "win_rate_pct": 78.9,
+          "pnl_usd": -23.8,
+          "avg_pnl_usd": -1.25
+        },
+        {
+          "hour_et_int": 10,
+          "hour_et": "10:00",
+          "hour_hkt_sample": "22:00",
+          "trades": 11,
+          "wins": 8,
+          "losses": 3,
+          "win_rate_pct": 72.7,
+          "pnl_usd": -8.49,
+          "avg_pnl_usd": -0.77
+        },
+        {
+          "hour_et_int": 13,
+          "hour_et": "13:00",
+          "hour_hkt_sample": "01:00",
+          "trades": 16,
+          "wins": 12,
+          "losses": 4,
+          "win_rate_pct": 75.0,
+          "pnl_usd": -6.98,
+          "avg_pnl_usd": -0.44
+        },
+        {
+          "hour_et_int": 9,
+          "hour_et": "09:00",
+          "hour_hkt_sample": "21:00",
+          "trades": 5,
+          "wins": 5,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 26.67,
+          "avg_pnl_usd": 5.33
+        },
+        {
+          "hour_et_int": 12,
+          "hour_et": "12:00",
+          "hour_hkt_sample": "00:00",
+          "trades": 18,
+          "wins": 18,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 64.43,
+          "avg_pnl_usd": 3.58
+        }
+      ]
+    },
+    "eth": {
+      "closed_total": 38,
+      "closed_nyse_session": 12,
+      "by_et_hour_all": {
+        "0": {
+          "hour_et": "00:00",
+          "hour_hkt_sample": "12:00",
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 28.2,
+          "avg_pnl_usd": 28.2
+        },
+        "1": {
+          "hour_et": "01:00",
+          "hour_hkt_sample": "13:00",
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 25.16,
+          "avg_pnl_usd": 25.16
+        },
+        "2": {
+          "hour_et": "02:00",
+          "hour_hkt_sample": "14:00",
+          "trades": 5,
+          "wins": 2,
+          "losses": 3,
+          "win_rate_pct": 40.0,
+          "pnl_usd": -318.2,
+          "avg_pnl_usd": -63.64
+        },
+        "3": {
+          "hour_et": "03:00",
+          "hour_hkt_sample": "15:00",
+          "trades": 2,
+          "wins": 2,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 5.8,
+          "avg_pnl_usd": 2.9
+        },
+        "4": {
+          "hour_et": "04:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "5": {
+          "hour_et": "05:00",
+          "hour_hkt_sample": "17:00",
+          "trades": 2,
+          "wins": 2,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 166.31,
+          "avg_pnl_usd": 83.16
+        },
+        "6": {
+          "hour_et": "06:00",
+          "hour_hkt_sample": "18:00",
+          "trades": 2,
+          "wins": 0,
+          "losses": 2,
+          "win_rate_pct": 0.0,
+          "pnl_usd": -54.0,
+          "avg_pnl_usd": -27.0
+        },
+        "7": {
+          "hour_et": "07:00",
+          "hour_hkt_sample": "19:00",
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 113.68,
+          "avg_pnl_usd": 113.68
+        },
+        "8": {
+          "hour_et": "08:00",
+          "hour_hkt_sample": "20:00",
+          "trades": 3,
+          "wins": 2,
+          "losses": 1,
+          "win_rate_pct": 66.7,
+          "pnl_usd": 31.7,
+          "avg_pnl_usd": 10.57
+        },
+        "9": {
+          "hour_et": "09:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "10": {
+          "hour_et": "10:00",
+          "hour_hkt_sample": "22:00",
+          "trades": 2,
+          "wins": 2,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 15.21,
+          "avg_pnl_usd": 7.6
+        },
+        "11": {
+          "hour_et": "11:00",
+          "hour_hkt_sample": "23:00",
+          "trades": 5,
+          "wins": 5,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 44.08,
+          "avg_pnl_usd": 8.82
+        },
+        "12": {
+          "hour_et": "12:00",
+          "hour_hkt_sample": "00:00",
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 4.44,
+          "avg_pnl_usd": 4.44
+        },
+        "13": {
+          "hour_et": "13:00",
+          "hour_hkt_sample": "01:00",
+          "trades": 3,
+          "wins": 3,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 13.01,
+          "avg_pnl_usd": 4.34
+        },
+        "14": {
+          "hour_et": "14:00",
+          "hour_hkt_sample": "02:00",
+          "trades": 2,
+          "wins": 2,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 28.44,
+          "avg_pnl_usd": 14.22
+        },
+        "15": {
+          "hour_et": "15:00",
+          "hour_hkt_sample": "03:00",
+          "trades": 2,
+          "wins": 1,
+          "losses": 1,
+          "win_rate_pct": 50.0,
+          "pnl_usd": -117.54,
+          "avg_pnl_usd": -58.77
+        },
+        "16": {
+          "hour_et": "16:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "17": {
+          "hour_et": "17:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "18": {
+          "hour_et": "18:00",
+          "hour_hkt_sample": "06:00",
+          "trades": 4,
+          "wins": 4,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 154.44,
+          "avg_pnl_usd": 38.61
+        },
+        "19": {
+          "hour_et": "19:00",
+          "hour_hkt_sample": "07:00",
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 9.78,
+          "avg_pnl_usd": 9.78
+        },
+        "20": {
+          "hour_et": "20:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "21": {
+          "hour_et": "21:00",
+          "hour_hkt_sample": "09:00",
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 50.77,
+          "avg_pnl_usd": 50.77
+        },
+        "22": {
+          "hour_et": "22:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "23": {
+          "hour_et": "23:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        }
+      },
+      "by_et_hour_nyse_only": {
+        "0": {
+          "hour_et": "00:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "1": {
+          "hour_et": "01:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "2": {
+          "hour_et": "02:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "3": {
+          "hour_et": "03:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "4": {
+          "hour_et": "04:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "5": {
+          "hour_et": "05:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "6": {
+          "hour_et": "06:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "7": {
+          "hour_et": "07:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "8": {
+          "hour_et": "08:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "9": {
+          "hour_et": "09:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "10": {
+          "hour_et": "10:00",
+          "hour_hkt_sample": "22:00",
+          "trades": 2,
+          "wins": 2,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 15.21,
+          "avg_pnl_usd": 7.6
+        },
+        "11": {
+          "hour_et": "11:00",
+          "hour_hkt_sample": "23:00",
+          "trades": 4,
+          "wins": 4,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 15.77,
+          "avg_pnl_usd": 3.94
+        },
+        "12": {
+          "hour_et": "12:00",
+          "hour_hkt_sample": "00:00",
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 4.44,
+          "avg_pnl_usd": 4.44
+        },
+        "13": {
+          "hour_et": "13:00",
+          "hour_hkt_sample": "01:00",
+          "trades": 3,
+          "wins": 3,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 13.01,
+          "avg_pnl_usd": 4.34
+        },
+        "14": {
+          "hour_et": "14:00",
+          "hour_hkt_sample": "02:00",
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 2.29,
+          "avg_pnl_usd": 2.29
+        },
+        "15": {
+          "hour_et": "15:00",
+          "hour_hkt_sample": "03:00",
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 2.46,
+          "avg_pnl_usd": 2.46
+        },
+        "16": {
+          "hour_et": "16:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "17": {
+          "hour_et": "17:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "18": {
+          "hour_et": "18:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "19": {
+          "hour_et": "19:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "20": {
+          "hour_et": "20:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "21": {
+          "hour_et": "21:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "22": {
+          "hour_et": "22:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        },
+        "23": {
+          "hour_et": "23:00",
+          "hour_hkt_sample": null,
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_pct": null,
+          "pnl_usd": 0.0,
+          "avg_pnl_usd": null
+        }
+      },
+      "top_et_hours_nyse": [
+        {
+          "hour_et_int": 11,
+          "hour_et": "11:00",
+          "hour_hkt_sample": "23:00",
+          "trades": 4,
+          "wins": 4,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 15.77,
+          "avg_pnl_usd": 3.94
+        },
+        {
+          "hour_et_int": 13,
+          "hour_et": "13:00",
+          "hour_hkt_sample": "01:00",
+          "trades": 3,
+          "wins": 3,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 13.01,
+          "avg_pnl_usd": 4.34
+        }
+      ],
+      "worst_et_hours_nyse": [
+        {
+          "hour_et_int": 13,
+          "hour_et": "13:00",
+          "hour_hkt_sample": "01:00",
+          "trades": 3,
+          "wins": 3,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 13.01,
+          "avg_pnl_usd": 4.34
+        },
+        {
+          "hour_et_int": 11,
+          "hour_et": "11:00",
+          "hour_hkt_sample": "23:00",
+          "trades": 4,
+          "wins": 4,
+          "losses": 0,
+          "win_rate_pct": 100.0,
+          "pnl_usd": 15.77,
+          "avg_pnl_usd": 3.94
+        }
+      ]
+    }
+  },
+  "combined_nyse_hours_et": {
+    "0": {
+      "hour_et": "00:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "1": {
+      "hour_et": "01:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "2": {
+      "hour_et": "02:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "3": {
+      "hour_et": "03:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "4": {
+      "hour_et": "04:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "5": {
+      "hour_et": "05:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "6": {
+      "hour_et": "06:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "7": {
+      "hour_et": "07:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "8": {
+      "hour_et": "08:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "9": {
+      "hour_et": "09:00",
+      "hour_hkt_sample": "21:00",
+      "trades": 5,
+      "wins": 5,
+      "losses": 0,
+      "win_rate_pct": 100.0,
+      "pnl_usd": 26.67,
+      "avg_pnl_usd": 5.33
+    },
+    "10": {
+      "hour_et": "10:00",
+      "hour_hkt_sample": "22:00",
+      "trades": 13,
+      "wins": 10,
+      "losses": 3,
+      "win_rate_pct": 76.9,
+      "pnl_usd": 6.72,
+      "avg_pnl_usd": 0.52
+    },
+    "11": {
+      "hour_et": "11:00",
+      "hour_hkt_sample": "23:00",
+      "trades": 23,
+      "wins": 19,
+      "losses": 4,
+      "win_rate_pct": 82.6,
+      "pnl_usd": -8.03,
+      "avg_pnl_usd": -0.35
+    },
+    "12": {
+      "hour_et": "12:00",
+      "hour_hkt_sample": "00:00",
+      "trades": 19,
+      "wins": 19,
+      "losses": 0,
+      "win_rate_pct": 100.0,
+      "pnl_usd": 68.87,
+      "avg_pnl_usd": 3.62
+    },
+    "13": {
+      "hour_et": "13:00",
+      "hour_hkt_sample": "01:00",
+      "trades": 19,
+      "wins": 15,
+      "losses": 4,
+      "win_rate_pct": 78.9,
+      "pnl_usd": 6.03,
+      "avg_pnl_usd": 0.32
+    },
+    "14": {
+      "hour_et": "14:00",
+      "hour_hkt_sample": "02:00",
+      "trades": 18,
+      "wins": 14,
+      "losses": 4,
+      "win_rate_pct": 77.8,
+      "pnl_usd": 88.02,
+      "avg_pnl_usd": 4.89
+    },
+    "15": {
+      "hour_et": "15:00",
+      "hour_hkt_sample": "03:00",
+      "trades": 19,
+      "wins": 17,
+      "losses": 2,
+      "win_rate_pct": 89.5,
+      "pnl_usd": 108.98,
+      "avg_pnl_usd": 5.74
+    },
+    "16": {
+      "hour_et": "16:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "17": {
+      "hour_et": "17:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "18": {
+      "hour_et": "18:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "19": {
+      "hour_et": "19:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "20": {
+      "hour_et": "20:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "21": {
+      "hour_et": "21:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "22": {
+      "hour_et": "22:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    },
+    "23": {
+      "hour_et": "23:00",
+      "hour_hkt_sample": null,
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate_pct": null,
+      "pnl_usd": 0.0,
+      "avg_pnl_usd": null
+    }
+  },
+  "recommendations": {
+    "best_et_hours_min3trades": [
+      {
+        "hour_et_int": 15,
+        "hour_et": "15:00",
+        "hour_hkt_sample": "03:00",
+        "trades": 19,
+        "wins": 17,
+        "losses": 2,
+        "win_rate_pct": 89.5,
+        "pnl_usd": 108.98,
+        "avg_pnl_usd": 5.74
+      },
+      {
+        "hour_et_int": 14,
+        "hour_et": "14:00",
+        "hour_hkt_sample": "02:00",
+        "trades": 18,
+        "wins": 14,
+        "losses": 4,
+        "win_rate_pct": 77.8,
+        "pnl_usd": 88.02,
+        "avg_pnl_usd": 4.89
+      },
+      {
+        "hour_et_int": 12,
+        "hour_et": "12:00",
+        "hour_hkt_sample": "00:00",
+        "trades": 19,
+        "wins": 19,
+        "losses": 0,
+        "win_rate_pct": 100.0,
+        "pnl_usd": 68.87,
+        "avg_pnl_usd": 3.62
+      },
+      {
+        "hour_et_int": 9,
+        "hour_et": "09:00",
+        "hour_hkt_sample": "21:00",
+        "trades": 5,
+        "wins": 5,
+        "losses": 0,
+        "win_rate_pct": 100.0,
+        "pnl_usd": 26.67,
+        "avg_pnl_usd": 5.33
+      },
+      {
+        "hour_et_int": 10,
+        "hour_et": "10:00",
+        "hour_hkt_sample": "22:00",
+        "trades": 13,
+        "wins": 10,
+        "losses": 3,
+        "win_rate_pct": 76.9,
+        "pnl_usd": 6.72,
+        "avg_pnl_usd": 0.52
+      },
+      {
+        "hour_et_int": 13,
+        "hour_et": "13:00",
+        "hour_hkt_sample": "01:00",
+        "trades": 19,
+        "wins": 15,
+        "losses": 4,
+        "win_rate_pct": 78.9,
+        "pnl_usd": 6.03,
+        "avg_pnl_usd": 0.32
+      },
+      {
+        "hour_et_int": 11,
+        "hour_et": "11:00",
+        "hour_hkt_sample": "23:00",
+        "trades": 23,
+        "wins": 19,
+        "losses": 4,
+        "win_rate_pct": 82.6,
+        "pnl_usd": -8.03,
+        "avg_pnl_usd": -0.35
+      }
+    ],
+    "worst_et_hours_min3trades": [
+      {
+        "hour_et_int": 11,
+        "hour_et": "11:00",
+        "hour_hkt_sample": "23:00",
+        "trades": 23,
+        "wins": 19,
+        "losses": 4,
+        "win_rate_pct": 82.6,
+        "pnl_usd": -8.03,
+        "avg_pnl_usd": -0.35
+      },
+      {
+        "hour_et_int": 13,
+        "hour_et": "13:00",
+        "hour_hkt_sample": "01:00",
+        "trades": 19,
+        "wins": 15,
+        "losses": 4,
+        "win_rate_pct": 78.9,
+        "pnl_usd": 6.03,
+        "avg_pnl_usd": 0.32
+      },
+      {
+        "hour_et_int": 10,
+        "hour_et": "10:00",
+        "hour_hkt_sample": "22:00",
+        "trades": 13,
+        "wins": 10,
+        "losses": 3,
+        "win_rate_pct": 76.9,
+        "pnl_usd": 6.72,
+        "avg_pnl_usd": 0.52
+      },
+      {
+        "hour_et_int": 9,
+        "hour_et": "09:00",
+        "hour_hkt_sample": "21:00",
+        "trades": 5,
+        "wins": 5,
+        "losses": 0,
+        "win_rate_pct": 100.0,
+        "pnl_usd": 26.67,
+        "avg_pnl_usd": 5.33
+      },
+      {
+        "hour_et_int": 12,
+        "hour_et": "12:00",
+        "hour_hkt_sample": "00:00",
+        "trades": 19,
+        "wins": 19,
+        "losses": 0,
+        "win_rate_pct": 100.0,
+        "pnl_usd": 68.87,
+        "avg_pnl_usd": 3.62
+      },
+      {
+        "hour_et_int": 14,
+        "hour_et": "14:00",
+        "hour_hkt_sample": "02:00",
+        "trades": 18,
+        "wins": 14,
+        "losses": 4,
+        "win_rate_pct": 77.8,
+        "pnl_usd": 88.02,
+        "avg_pnl_usd": 4.89
+      },
+      {
+        "hour_et_int": 15,
+        "hour_et": "15:00",
+        "hour_hkt_sample": "03:00",
+        "trades": 19,
+        "wins": 17,
+        "losses": 2,
+        "win_rate_pct": 89.5,
+        "pnl_usd": 108.98,
+        "avg_pnl_usd": 5.74
+      }
+    ],
+    "suggested_core_window_et": {
+      "start_et": "12:00",
+      "end_et": "16:00",
+      "hours": 4,
+      "note": "4h contiguous block from top-ranked NYSE hours (≥3 trades, positive PnL preferred)"
+    }
+  }
+}

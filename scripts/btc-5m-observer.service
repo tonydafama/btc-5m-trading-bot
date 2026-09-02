@@ -1,0 +1,15 @@
+[Unit]
+Description=BTC 5m Phase 0 observer (log only, no trades)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/btc-5m-bot
+EnvironmentFile=-/root/btc-5m-bot/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/root/btc-5m-bot/venv/bin/python /root/btc-5m-bot/observer.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

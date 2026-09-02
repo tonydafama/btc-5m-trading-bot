@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>週末暫停時間表 · US ET vs HKT</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      margin: 0;
+      padding: 24px;
+      line-height: 1.55;
+    }
+    h1 { margin: 0 0 8px; font-size: 26px; }
+    h2 { margin: 28px 0 12px; font-size: 18px; color: #58a6ff; }
+    p { margin: 0 0 12px; color: #8b949e; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .label { color: #8b949e; font-size: 12px; text-transform: uppercase; }
+    .value { font-size: 20px; font-weight: 800; margin-top: 4px; }
+    .danger { color: #f85149; }
+    .warn { color: #d29922; }
+    .good { color: #3fb950; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #30363d;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+    th { color: #8b949e; font-weight: 700; }
+    tr:last-child td { border-bottom: none; }
+    .callout {
+      background: rgba(210,153,34,0.12);
+      border: 1px solid rgba(210,153,34,0.55);
+      border-radius: 10px;
+      padding: 14px;
+      margin: 18px 0;
+    }
+    .callout strong { color: #d29922; }
+    code { color: #e6edf3; background: #21262d; padding: 2px 5px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>週末暫停時間表：US ET vs HKT</h1>
+  <p>目前用夏令時間換算：<strong>ET = HKT - 12 小時</strong>。Polymarket crypto 5m 的流動性風險建議以 US ET 判斷，不用 HKT 日曆週末判斷。</p>
+
+  <div class="cards">
+    <div class="card"><div class="label">Bad weekend 核心</div><div class="value danger">Sat 12:00-Mon 12:00 HKT</div></div>
+    <div class="card"><div class="label">對應 US ET</div><div class="value danger">Sat 00:00-Mon 00:00 ET</div></div>
+    <div class="card"><div class="label">Dog 保守停用</div><div class="value warn">Sat 04:00-Mon 21:30 HKT</div></div>
+    <div class="card"><div class="label">正常恢復</div><div class="value good">Mon 21:30 HKT</div></div>
+  </div>
+
+  <div class="callout">
+    <strong>建議：</strong>Quality over quantity。週末核心時段先全停 V1，或至少停 BTC/ETH dog。
+    不要用 HKT Sat 00:00 當週末開始，因為那只是 US Friday 12:00，仍可能有正常流動性。
+  </div>
+
+  <h2>營運 / 開市時間對照</h2>
+  <table>
+    <thead>
+      <tr><th>狀態</th><th>US ET</th><th>HKT</th><th>建議</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>US regular / 最佳流動性</td><td>Mon-Fri 09:30-16:00 ET</td><td>Mon-Fri 21:30-翌日 04:00 HKT</td><td class="good">V1 可正常跑</td></tr>
+      <tr><td>US after-hours</td><td>Mon-Thu 16:00-翌日 09:30 ET</td><td>Tue-Fri 04:00-21:30 HKT</td><td>可跑，但 dog 保守</td></tr>
+      <tr><td>Friday after close</td><td>Fri 16:00-Sat 00:00 ET</td><td>Sat 04:00-12:00 HKT</td><td class="warn">dog 建議停</td></tr>
+      <tr><td>US weekend 核心壞時段</td><td>Sat 00:00-Mon 00:00 ET</td><td>Sat 12:00-Mon 12:00 HKT</td><td class="danger">建議全停或至少停 dog</td></tr>
+      <tr><td>Monday pre-market</td><td>Mon 00:00-09:30 ET</td><td>Mon 12:00-21:30 HKT</td><td class="warn">favorite 可恢復，dog 仍保守</td></tr>
+      <tr><td>Monday regular reopen</td><td>Mon 09:30 ET 起</td><td>Mon 21:30 HKT 起</td><td class="good">正常恢復</td></tr>
+    </tbody>
+  </table>
+
+  <h2>可選暫停方案</h2>
+  <table>
+    <thead>
+      <tr><th>風控等級</th><th>暫停內容</th><th>US ET 暫停</th><th>HKT 暫停</th><th>理由</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Minimum</td><td>只停 BTC/ETH dog</td><td>Sat 00:00-Mon 00:00 ET</td><td>Sat 12:00-Mon 12:00 HKT</td><td>避開 ET weekend dog 連敗核心</td></tr>
+      <tr><td>Recommended</td><td>dog 全停，favorite 降 stake</td><td>Fri 16:00-Mon 09:30 ET</td><td>Sat 04:00-Mon 21:30 HKT</td><td>低流動性全段保守</td></tr>
+      <tr><td>Quality Mode</td><td>BTC/ETH V1 全停</td><td>Sat 00:00-Mon 00:00 ET</td><td>Sat 12:00-Mon 12:00 HKT</td><td>少交易，避開最差核心</td></tr>
+      <tr><td>Ultra Safe</td><td>BTC/ETH V1 全停</td><td>Fri 16:00-Mon 09:30 ET</td><td>Sat 04:00-Mon 21:30 HKT</td><td>最保守，但會錯過一些機會</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>我會採用：</strong>
+    <code>HKT Sat 12:00-Mon 12:00</code> 全停 V1；
+    <code>HKT Sat 04:00-Mon 21:30</code> dog 全停。
+  </div>
+</body>
+</html>

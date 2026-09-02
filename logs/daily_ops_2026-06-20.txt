@@ -1,0 +1,12 @@
+📊 Ops Report · 2026-06-20 · 2026-06-20 07:41:33 HKT
+
+BTC: daily $-19.81 · total $+239.86
+ETH: daily $+9.24 · total $+109.43
+GABAGOOL: daily $-0.06 · total $-0.06
+  skip: sum_ask too high (8943) · ask 0.010 too low (bad book?) (329)
+WEATHER: daily $+0.00 · total $-23.28
+
+Processes: btc_observer=✓ · eth_observer=✓ · gabagool_observer=✓
+Exec btc_live: fills=153 FOK=153 avg_slip=-0.0023
+Exec eth_live: fills=18 FOK=18 avg_slip=+0.0030
+Exec gabagool_live: fills=2 FOK=2 avg_slip=-0.0350 hedge_med=53.0s

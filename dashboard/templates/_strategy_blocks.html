@@ -1,0 +1,214 @@
+{# Shared strategy blocks — strategy_display from strategy_display.build_strategy_display #}
+{% macro _rules_card(card, live_label) %}
+<div class="strategy-card">
+  <div class="strategy-card-head">
+    <span class="strategy-card-title">Package 2+ · {{ card.hours_summary }}</span>
+    {% if live_label %}<span class="strategy-live-tag">{{ live_label }}</span>{% endif %}
+  </div>
+  <div class="strategy-card-grid">
+    <div class="strategy-card-block">
+      <div class="strategy-card-label">下注（USD）</div>
+      <table class="strategy-stakes-table">
+        <thead><tr><th>Tier</th><th>Ask</th><th>Base</th><th>Core</th></tr></thead>
+        <tbody>
+          {% for row in card.stakes %}
+          <tr>
+            <td>{{ row.tier }}</td>
+            <td>{{ row.ask }}</td>
+            <td>{{ row.base }}</td>
+            <td><strong>{{ row.core }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="strategy-card-note">{{ card.core_mult_note }}{% if card.wallet_line %} · {{ card.wallet_line }}{% endif %}</div>
+    </div>
+    <div class="strategy-card-block">
+      <div class="strategy-card-label">時段</div>
+      <ul class="strategy-card-list">
+        {% for row in card.schedule %}
+        <li><strong>{{ row.tier }}</strong> — {{ row.text }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="strategy-card-block">
+      <div class="strategy-card-label">進場 / 過濾</div>
+      <ul class="strategy-card-list">
+        {% for item in card.filters %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="strategy-card-block">
+      <div class="strategy-card-label">風控</div>
+      <ul class="strategy-card-list">
+        <li>Daily loss limit · <strong>−${{ card.daily_loss }}</strong></li>
+        <li>{{ card.pause_rule }}</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro btc_panel_sub(sd) %}
+<p class="panel-sub">{{ sd.btc.panel_sub }}</p>
+{% endmacro %}
+
+{% macro btc_rules(sd, trading_mode) %}
+<section>
+  <h2>Package 2+ 規則</h2>
+  {{ _rules_card(sd.btc.rules_card, '🔴 LIVE' if trading_mode == 'LIVE' else '') }}
+</section>
+{% endmacro %}
+
+{% macro eth_panel_sub(sd) %}
+<p class="panel-sub" id="eth-sub">{{ sd.eth.panel_sub }}</p>
+{% endmacro %}
+
+{% macro eth_rules(sd, eth_trading_mode) %}
+<section style="margin-bottom:1rem">
+  <h2>ETH Package 2+ 規則{% if eth_trading_mode == 'LIVE' %}<span class="live-section-label eth-section-label">LIVE</span>{% else %}<span class="paper-section-label eth-section-label">PAPER</span>{% endif %}</h2>
+  {{ _rules_card(sd.eth.rules_card, '🔴 Polymarket live' if eth_trading_mode == 'LIVE' else 'Paper only') }}
+</section>
+{% endmacro %}
+
+{% macro btc_compact_sub(sd) %}
+<p class="panel-sub">{{ sd.btc.panel_sub }}</p>
+{% endmacro %}
+
+{% macro timetable_ref() %}
+<p class="timetable-ref">查看交易時間表 → <button type="button" class="bot-link" data-goto-tab="timetable">時間表</button></p>
+{% endmacro %}
+
+{% macro timetable_panel(tt, sd) %}
+<section class="timetable-panel">
+  <header class="tt-hero">
+    <h2>Trading Timetable</h2>
+    <p class="tt-hero-sub">V1（Package 2+）與 Alpha-Max（hour cells）兩套策略、兩個 wallet；下方即時狀態每 15 秒更新。</p>
+  </header>
+
+  <div class="tt-now-banner{% if tt.weekend_dog_pause.in_window_now %} tt-now-danger{% endif %}" id="tt-now-banner">
+    <div class="tt-now-row">
+      <div>
+        <div class="tt-now-label">Now · ET</div>
+        <div class="tt-now-value" id="tt-now-et">{{ tt.now_et }}</div>
+      </div>
+      <div>
+        <div class="tt-now-label">Now · HKT</div>
+        <div class="tt-now-value" id="tt-now-hkt">{{ tt.now_hkt }}</div>
+      </div>
+    </div>
+    <div class="tt-pause-status" id="tt-pause-status">
+      {% set wdp = tt.weekend_dog_pause %}
+      {% if wdp.bot_enforced %}
+      <span class="tt-badge tt-badge-live">✅ 週末 dog 暫停 · 已上線</span>
+      {% if wdp.in_window_now %}<span class="tt-badge tt-badge-warn">目前在此暫停窗口內 · dog 不會下單</span>{% endif %}
+      {% else %}
+      <span class="tt-badge tt-badge-pending">⏳ 週末 dog 暫停 · 尚未套用</span>
+      {% if wdp.in_window_now %}<span class="tt-badge tt-badge-danger">⚠ 現正處於建議暫停窗口</span>{% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="tt-section">
+    <div class="tt-section-title">Live · 現在能下嗎？</div>
+    <div class="tt-live-grid" id="tt-live-status">
+      {% for row in tt.live_status %}
+      <div class="tt-live-card tt-state-{{ row.state }}">
+        <div class="tt-live-head">
+          <div>
+            <div class="tt-live-asset">{{ row.asset }}</div>
+            <div class="tt-live-tier">{{ row.tier }}</div>
+          </div>
+          <span class="tt-state-pill tt-pill-{{ row.state }}">{{ row.label }}</span>
+        </div>
+        <div class="tt-detail">{{ row.detail }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="tt-section">
+    <div class="tt-section-title">Weekly · 一週節奏</div>
+    <div class="tt-timeline">
+      {% for row in tt.operation_rows %}
+      <div class="tt-timeline-item tt-tone-{{ row.tone }}">
+        <div>
+          <div class="tt-timeline-name">{{ row.name }}</div>
+          <div class="tt-timeline-note">{{ row.note }}</div>
+        </div>
+        <div class="tt-timeline-times">
+          <div>{{ row.et }}</div>
+          <div>{{ row.hkt }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="tt-strategy-grid">
+    <article class="tt-strategy-card tt-strategy-v1">
+      <div class="tt-strategy-head">
+        <span class="tt-strategy-name">V1 · Package 2+</span>
+        <span class="tt-strategy-tag live">BTC + ETH · 共用 wallet</span>
+      </div>
+      <p class="tt-strategy-lead">只做 US regular hours；Extended 已關；weekend dog 暫停已上線。</p>
+      <ul class="tt-rule-list">
+        <li><strong>HKT Mon–Fri 21:30–04:00</strong> — 可交易</li>
+        <li><strong>HKT 23:00–03:00</strong> — Core 時段 · stake ×1.5</li>
+        <li><strong>Favorite</strong> — {{ tt.schedule_detail.btc_fav }}</li>
+        <li><strong>Underdog</strong> — {{ tt.schedule_detail.btc_dog }}</li>
+        <li><strong>Mid tier</strong> — Skip</li>
+        <li><strong>連輸 2 次</strong> — 同 tier 暫停 2h</li>
+      </ul>
+      <div class="tt-shared-rules">
+        {% for rule in tt.shared_rules %}
+        <span class="tt-shared-pill">{{ rule }}</span>
+        {% endfor %}
+      </div>
+      <div class="tt-callout">只打 US regular hours；最危險的 weekend / extended dog 已切掉。</div>
+    </article>
+
+    <article class="tt-strategy-card tt-strategy-alpha">
+      <div class="tt-strategy-head">
+        <span class="tt-strategy-name">Alpha-Max · Hour Cells</span>
+        <span class="tt-strategy-tag">獨立 $1k wallet</span>
+      </div>
+      <p class="tt-strategy-lead">不是全天交易；只在歷史 positive hour cells 出現合格 ask 時下單。</p>
+      <ul class="tt-rule-list">
+        <li><strong>Cells only</strong> — 不在 cell 內就不下單</li>
+        <li><strong>BTC</strong> — 主力 edge · 樣本最多</li>
+        <li><strong>ETH</strong> — Bonus edge · 樣本較少</li>
+        <li><strong>Core cells</strong> — ×1.5 · 以 Alpha wallet cash scale</li>
+        <li><strong>Daily loss</strong> — 獨立上限 $250</li>
+      </ul>
+      <div class="tt-callout">Alpha 規則 ≠ V1；兩套分開監控在 Strategy Monitor。</div>
+    </article>
+  </div>
+
+  <div class="tt-section">
+    <div class="tt-section-title">Wallet · 資金與 stake 上限</div>
+    <p class="tt-strategy-lead" style="margin-bottom:0.65rem">每個 Polymarket wallet 約 $1,000 起；stake 變大時拆 wallet，避免單筆過大。</p>
+    <div class="tt-wallet-wrap">
+      <table class="tt-wallet-table">
+        <thead>
+          <tr>
+            <th>Wallet</th>
+            <th>V1 max core dog</th>
+            <th>Alpha $1k 參考</th>
+            <th>建議</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>$1,000</strong></td><td>約 $135</td><td>BTC fav ~$81 · ETH fav ~$72</td><td>標準起點</td></tr>
+          <tr><td><strong>$5,000</strong></td><td>約 $675</td><td>Core 會 scale · 留意 slippage</td><td>安全</td></tr>
+          <tr><td><strong>$10,000</strong></td><td>約 $1,350</td><td>不建議單 wallet 無限放大</td><td>留意 slippage</td></tr>
+          <tr><td><strong>$15,000</strong></td><td>約 $2,025</td><td>準備拆 wallet</td><td>考慮 split</td></tr>
+          <tr><td><strong>$18k–20k</strong></td><td>約 $2,430–2,700</td><td>建議 split</td><td>不要再集中加大</td></tr>
+          <tr><td><strong>$22,000+</strong></td><td>接近 / 超過 $3,000</td><td>硬上限</td><td>必須開新 wallet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endmacro %}

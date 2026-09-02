@@ -1,0 +1,24 @@
+{
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/__pycache__/**": true,
+    "**/.pytest_cache/**": true,
+    "**/venv/**": true,
+    "**/.venv/**": true,
+    "**/logs/**": true,
+    "**/*.log": true,
+    "**/*.sqlite": true,
+    "**/*.db": true,
+    "**/data/**": true
+  },
+  "search.exclude": {
+    "**/venv/**": true,
+    "**/.venv/**": true,
+    "**/__pycache__/**": true,
+    "**/logs/**": true,
+    "**/*.log": true,
+    "**/*.sqlite": true,
+    "**/*.db": true,
+    "**/data/**": true
+  }
+}

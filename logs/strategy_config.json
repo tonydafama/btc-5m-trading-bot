@@ -1,0 +1,124 @@
+{
+  "current_strategy": "PACKAGE2+",
+  "switched_at_hkt": "2026-06-24 16:30:00",
+  "dynamic_bankroll": false,
+  "stake_scaling_mode": "v1_wallet_threshold",
+  "bankroll_source": "polymarket_wallet",
+  "capital_plan": {
+    "base_usd": 1000,
+    "btc_mult": 3.0,
+    "eth_fav_mult": 2.0,
+    "eth_dog_mult": 3.0,
+    "mode": "A_hybrid",
+    "note": "Plan B · BTC fav-only · ETH fav + dog · wallet-tier stakes"
+  },
+  "package2": {
+    "favorite_only": true,
+    "skip_mid": true,
+    "us_regular_only": true,
+    "us_weekdays_only": true,
+    "us_regular_start_et": "09:30",
+    "us_regular_end_et": "16:00",
+    "max_ask": 0.88,
+    "max_ask_favorite": 0.85,
+    "max_ask_underdog": 0.88,
+    "min_ask": 0.15,
+    "favorite_ask": 0.7,
+    "mid_low_ask": 0.3,
+    "stake_favorite": 54.0,
+    "stake_mid": 10.0,
+    "stake_underdog": 90.0,
+    "favorite_loss_streak_pause": 2,
+    "underdog_loss_streak_pause": 2,
+    "tier_pause_hours": 2,
+    "underdog_extra_filters": false,
+    "daily_loss_limit_usd": 9999.0,
+    "core_window_start_et": "11:00",
+    "core_window_end_et": "15:00",
+    "core_stake_multiplier": 1.5,
+    "core_wallet_scaling": false,
+    "core_wallet_base_usd": 1000.0,
+    "btc_favorite_skip_hours_et": [
+      13
+    ],
+    "favorite_core_only": true
+  },
+  "eth_package2": {
+    "stake_favorite": 48.0,
+    "stake_underdog": 90.0,
+    "core_stake_multiplier": 1.5,
+    "daily_loss_limit_usd": 9999.0,
+    "favorite_us_only": true,
+    "favorite_core_only": true,
+    "underdog_only": false,
+    "underdog_extra_filters": false,
+    "underdog_min_move_usd": 2.5,
+    "underdog_min_depth": 30.0,
+    "underdog_min_delta_pct": 0.025,
+    "underdog_t_min": 30,
+    "underdog_t_max": 75,
+    "favorite_loss_streak_pause": 2,
+    "underdog_loss_streak_pause": 2,
+    "tier_pause_hours": 2
+  },
+  "v1_risk": {
+    "combined_daily_loss_limit_usd": 500.0,
+    "combined_only_daily_stop": true,
+    "daily_pnl_reset": "us_session_open",
+    "combined_daily_loss_scaling": {
+      "enabled": true,
+      "note": "Progressive combined BTC+ETH daily stop; mirrors wallet stake tiers.",
+      "thresholds": [
+        { "wallet_usd": 1500.0, "limit_usd": 350.0 },
+        { "wallet_usd": 2000.0, "limit_usd": 500.0 },
+        { "wallet_usd": 3500.0, "limit_usd": 550.0 },
+        { "wallet_usd": 4000.0, "limit_usd": 600.0 },
+        { "wallet_usd": 4500.0, "limit_usd": 650.0 },
+        { "wallet_usd": 5000.0, "limit_usd": 700.0 },
+        { "wallet_usd": 5500.0, "limit_usd": 750.0 }
+      ]
+    },
+    "cross_asset_tier_streak": true,
+    "favorite_loss_streak_pause": 2,
+    "underdog_loss_streak_pause": 2
+  },
+  "v1_stake_scaling": {
+    "enabled": true,
+    "basis": "polymarket_wallet_cash",
+    "note": "Fixed USD stakes with wallet thresholds; not bankroll percentage sizing.",
+    "thresholds": [
+      {
+        "wallet_usd": 1500.0,
+        "multiplier": 1.5
+      },
+      {
+        "wallet_usd": 2000.0,
+        "multiplier": 2.5
+      },
+      {
+        "wallet_usd": 3500.0,
+        "multiplier": 3.0
+      },
+      {
+        "wallet_usd": 4000.0,
+        "multiplier": 3.25
+      },
+      {
+        "wallet_usd": 4500.0,
+        "multiplier": 3.5
+      },
+      {
+        "wallet_usd": 5000.0,
+        "multiplier": 3.75
+      },
+      {
+        "wallet_usd": 5500.0,
+        "multiplier": 4.0
+      }
+    ]
+  },
+  "old_strategy": {
+    "enabled_as_hidden_comparison": false
+  },
+  "note": "Plan B · wallet tiers to 4x@$5500 · progressive daily stop · BTC fav-only · ETH fav+dog"
+}

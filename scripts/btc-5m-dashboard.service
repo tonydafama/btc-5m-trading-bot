@@ -1,0 +1,15 @@
+[Unit]
+Description=BTC 5m on-demand dashboard proxy (port 8082)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/btc-5m-bot
+EnvironmentFile=-/root/btc-5m-bot/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/root/btc-5m-bot/venv/bin/python /root/btc-5m-bot/scripts/dashboard_ondemand.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,64 @@
+{
+  "start_bankroll": 102.03,
+  "method": "Replay from trade log rows · same timing checkpoint · dynamic bankroll for NEW",
+  "datasets": {
+    "paper_full (484 windows)": {
+      "resolved_windows": 484,
+      "old_strategy": {
+        "trades": 57,
+        "wins": 49,
+        "losses": 8,
+        "win_rate": 86.0,
+        "total_pnl": 61.49,
+        "final_bankroll": 163.52,
+        "ev_per_trade": 1.08
+      },
+      "new_strategy": {
+        "trades": 11,
+        "wins": 6,
+        "losses": 5,
+        "win_rate": 54.5,
+        "total_pnl": 8.92,
+        "final_bankroll": 110.95,
+        "ev_per_trade": 0.81
+      },
+      "overlap": {
+        "old_only_trades": 46,
+        "old_only_wins": 43,
+        "old_only_losses": 3,
+        "old_only_pnl_if_taken": 42.93,
+        "both_would_enter": 11
+      },
+      "winner": "OLD"
+    },
+    "validation_period (268 windows)": {
+      "resolved_windows": 267,
+      "old_strategy": {
+        "trades": 30,
+        "wins": 25,
+        "losses": 5,
+        "win_rate": 83.3,
+        "total_pnl": 43.45,
+        "final_bankroll": 145.48,
+        "ev_per_trade": 1.45
+      },
+      "new_strategy": {
+        "trades": 9,
+        "wins": 6,
+        "losses": 3,
+        "win_rate": 66.7,
+        "total_pnl": 74.09,
+        "final_bankroll": 176.12,
+        "ev_per_trade": 8.23
+      },
+      "overlap": {
+        "old_only_trades": 21,
+        "old_only_wins": 19,
+        "old_only_losses": 2,
+        "old_only_pnl_if_taken": 14.89,
+        "both_would_enter": 9
+      },
+      "winner": "NEW"
+    }
+  }
+}

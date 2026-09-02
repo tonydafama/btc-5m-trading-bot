@@ -1,0 +1,116 @@
+{
+  "params": {
+    "t_max": 60,
+    "t_min": 22,
+    "min_move": 12,
+    "old_max_ask": 0.88,
+    "stake": 5.0
+  },
+  "scenarios": [
+    {
+      "label": "Baseline（現況）",
+      "min_delta": 0.025
+    },
+    {
+      "label": "建議試調",
+      "min_delta": 0.022
+    },
+    {
+      "label": "激進對照",
+      "min_delta": 0.02
+    }
+  ],
+  "paper": {
+    "Baseline（現況）": {
+      "n": 169,
+      "wins": 121,
+      "losses": 48,
+      "wr": 71.6,
+      "pnl": 23.74,
+      "avg_pnl": 0.14,
+      "roi_pct": 2.81
+    },
+    "建議試調": {
+      "n": 169,
+      "wins": 121,
+      "losses": 48,
+      "wr": 71.6,
+      "pnl": 23.74,
+      "avg_pnl": 0.14,
+      "roi_pct": 2.81
+    },
+    "激進對照": {
+      "n": 169,
+      "wins": 121,
+      "losses": 48,
+      "wr": 71.6,
+      "pnl": 23.74,
+      "avg_pnl": 0.14,
+      "roi_pct": 2.81
+    }
+  },
+  "skipped": {
+    "Baseline（現況）": {
+      "n": 11,
+      "wins": 9,
+      "losses": 2,
+      "wr": 81.8,
+      "pnl": 4.69,
+      "avg_pnl": 0.43,
+      "roi_pct": 8.53,
+      "windows": 96,
+      "no_entry": 84
+    },
+    "建議試調": {
+      "n": 15,
+      "wins": 12,
+      "losses": 3,
+      "wr": 80.0,
+      "pnl": 10.63,
+      "avg_pnl": 0.71,
+      "roi_pct": 14.17,
+      "windows": 96,
+      "no_entry": 80
+    },
+    "激進對照": {
+      "n": 16,
+      "wins": 12,
+      "losses": 4,
+      "wr": 75.0,
+      "pnl": 5.63,
+      "avg_pnl": 0.35,
+      "roi_pct": 7.04,
+      "windows": 96,
+      "no_entry": 79
+    }
+  },
+  "combined": {
+    "Baseline（現況）": {
+      "n": 180,
+      "wins": 130,
+      "losses": 50,
+      "wr": 72.2,
+      "pnl": 28.43,
+      "avg_pnl": 0.16,
+      "roi_pct": 3.16
+    },
+    "建議試調": {
+      "n": 184,
+      "wins": 133,
+      "losses": 51,
+      "wr": 72.3,
+      "pnl": 34.37,
+      "avg_pnl": 0.19,
+      "roi_pct": 3.74
+    },
+    "激進對照": {
+      "n": 185,
+      "wins": 133,
+      "losses": 52,
+      "wr": 71.9,
+      "pnl": 29.37,
+      "avg_pnl": 0.16,
+      "roi_pct": 3.18
+    }
+  }
+}

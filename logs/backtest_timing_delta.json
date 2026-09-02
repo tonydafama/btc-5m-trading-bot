@@ -1,0 +1,789 @@
+{
+  "method": "OLD strategy · ask≤0.88 · $5 · move≥$12 · bot _pick_new_snap logic",
+  "paper_n": 169,
+  "skipped_windows": 98,
+  "grid": [
+    {
+      "key": "T60-22 (現況) · delta 0.022%",
+      "timing": "T60-22 (現況)",
+      "t_max": 60,
+      "t_min": 22,
+      "min_delta": 0.022,
+      "paper": {
+        "n": 169,
+        "wins": 121,
+        "losses": 48,
+        "wr": 71.6,
+        "pnl": 23.74,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.81
+      },
+      "skipped": {
+        "n": 8,
+        "wins": 8,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 13.64,
+        "avg_pnl": 1.71,
+        "roi_pct": 34.1
+      },
+      "combined": {
+        "n": 177,
+        "wins": 129,
+        "losses": 48,
+        "wr": 72.9,
+        "pnl": 37.38,
+        "avg_pnl": 0.21,
+        "roi_pct": 4.22
+      }
+    },
+    {
+      "key": "T60-20 · delta 0.022%",
+      "timing": "T60-20",
+      "t_max": 60,
+      "t_min": 20,
+      "min_delta": 0.022,
+      "paper": {
+        "n": 169,
+        "wins": 121,
+        "losses": 48,
+        "wr": 71.6,
+        "pnl": 23.74,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.81
+      },
+      "skipped": {
+        "n": 8,
+        "wins": 8,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 13.64,
+        "avg_pnl": 1.71,
+        "roi_pct": 34.1
+      },
+      "combined": {
+        "n": 177,
+        "wins": 129,
+        "losses": 48,
+        "wr": 72.9,
+        "pnl": 37.38,
+        "avg_pnl": 0.21,
+        "roi_pct": 4.22
+      }
+    },
+    {
+      "key": "T60-18 · delta 0.022%",
+      "timing": "T60-18",
+      "t_max": 60,
+      "t_min": 18,
+      "min_delta": 0.022,
+      "paper": {
+        "n": 169,
+        "wins": 121,
+        "losses": 48,
+        "wr": 71.6,
+        "pnl": 23.74,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.81
+      },
+      "skipped": {
+        "n": 8,
+        "wins": 8,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 13.64,
+        "avg_pnl": 1.71,
+        "roi_pct": 34.1
+      },
+      "combined": {
+        "n": 177,
+        "wins": 129,
+        "losses": 48,
+        "wr": 72.9,
+        "pnl": 37.38,
+        "avg_pnl": 0.21,
+        "roi_pct": 4.22
+      }
+    },
+    {
+      "key": "T60-15 · delta 0.022%",
+      "timing": "T60-15",
+      "t_max": 60,
+      "t_min": 15,
+      "min_delta": 0.022,
+      "paper": {
+        "n": 169,
+        "wins": 121,
+        "losses": 48,
+        "wr": 71.6,
+        "pnl": 23.74,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.81
+      },
+      "skipped": {
+        "n": 8,
+        "wins": 8,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 13.64,
+        "avg_pnl": 1.71,
+        "roi_pct": 34.1
+      },
+      "combined": {
+        "n": 177,
+        "wins": 129,
+        "losses": 48,
+        "wr": 72.9,
+        "pnl": 37.38,
+        "avg_pnl": 0.21,
+        "roi_pct": 4.22
+      }
+    },
+    {
+      "key": "T60-22 (現況) · delta 0.025%",
+      "timing": "T60-22 (現況)",
+      "t_max": 60,
+      "t_min": 22,
+      "min_delta": 0.025,
+      "paper": {
+        "n": 169,
+        "wins": 121,
+        "losses": 48,
+        "wr": 71.6,
+        "pnl": 23.74,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.81
+      },
+      "skipped": {
+        "n": 5,
+        "wins": 5,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 9.57,
+        "avg_pnl": 1.91,
+        "roi_pct": 38.28
+      },
+      "combined": {
+        "n": 174,
+        "wins": 126,
+        "losses": 48,
+        "wr": 72.4,
+        "pnl": 33.31,
+        "avg_pnl": 0.19,
+        "roi_pct": 3.83
+      }
+    },
+    {
+      "key": "T60-20 · delta 0.025%",
+      "timing": "T60-20",
+      "t_max": 60,
+      "t_min": 20,
+      "min_delta": 0.025,
+      "paper": {
+        "n": 169,
+        "wins": 121,
+        "losses": 48,
+        "wr": 71.6,
+        "pnl": 23.74,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.81
+      },
+      "skipped": {
+        "n": 5,
+        "wins": 5,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 9.57,
+        "avg_pnl": 1.91,
+        "roi_pct": 38.28
+      },
+      "combined": {
+        "n": 174,
+        "wins": 126,
+        "losses": 48,
+        "wr": 72.4,
+        "pnl": 33.31,
+        "avg_pnl": 0.19,
+        "roi_pct": 3.83
+      }
+    },
+    {
+      "key": "T60-18 · delta 0.025%",
+      "timing": "T60-18",
+      "t_max": 60,
+      "t_min": 18,
+      "min_delta": 0.025,
+      "paper": {
+        "n": 169,
+        "wins": 121,
+        "losses": 48,
+        "wr": 71.6,
+        "pnl": 23.74,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.81
+      },
+      "skipped": {
+        "n": 5,
+        "wins": 5,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 9.57,
+        "avg_pnl": 1.91,
+        "roi_pct": 38.28
+      },
+      "combined": {
+        "n": 174,
+        "wins": 126,
+        "losses": 48,
+        "wr": 72.4,
+        "pnl": 33.31,
+        "avg_pnl": 0.19,
+        "roi_pct": 3.83
+      }
+    },
+    {
+      "key": "T60-15 · delta 0.025%",
+      "timing": "T60-15",
+      "t_max": 60,
+      "t_min": 15,
+      "min_delta": 0.025,
+      "paper": {
+        "n": 169,
+        "wins": 121,
+        "losses": 48,
+        "wr": 71.6,
+        "pnl": 23.74,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.81
+      },
+      "skipped": {
+        "n": 5,
+        "wins": 5,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 9.57,
+        "avg_pnl": 1.91,
+        "roi_pct": 38.28
+      },
+      "combined": {
+        "n": 174,
+        "wins": 126,
+        "losses": 48,
+        "wr": 72.4,
+        "pnl": 33.31,
+        "avg_pnl": 0.19,
+        "roi_pct": 3.83
+      }
+    },
+    {
+      "key": "T60-22 (現況) · delta 0.020%",
+      "timing": "T60-22 (現況)",
+      "t_max": 60,
+      "t_min": 22,
+      "min_delta": 0.02,
+      "paper": {
+        "n": 169,
+        "wins": 121,
+        "losses": 48,
+        "wr": 71.6,
+        "pnl": 23.74,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.81
+      },
+      "skipped": {
+        "n": 10,
+        "wins": 8,
+        "losses": 2,
+        "wr": 80.0,
+        "pnl": 3.64,
+        "avg_pnl": 0.36,
+        "roi_pct": 7.28
+      },
+      "combined": {
+        "n": 179,
+        "wins": 129,
+        "losses": 50,
+        "wr": 72.1,
+        "pnl": 27.38,
+        "avg_pnl": 0.15,
+        "roi_pct": 3.06
+      }
+    },
+    {
+      "key": "T60-20 · delta 0.020%",
+      "timing": "T60-20",
+      "t_max": 60,
+      "t_min": 20,
+      "min_delta": 0.02,
+      "paper": {
+        "n": 169,
+        "wins": 121,
+        "losses": 48,
+        "wr": 71.6,
+        "pnl": 23.74,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.81
+      },
+      "skipped": {
+        "n": 10,
+        "wins": 8,
+        "losses": 2,
+        "wr": 80.0,
+        "pnl": 3.64,
+        "avg_pnl": 0.36,
+        "roi_pct": 7.28
+      },
+      "combined": {
+        "n": 179,
+        "wins": 129,
+        "losses": 50,
+        "wr": 72.1,
+        "pnl": 27.38,
+        "avg_pnl": 0.15,
+        "roi_pct": 3.06
+      }
+    },
+    {
+      "key": "T60-18 · delta 0.020%",
+      "timing": "T60-18",
+      "t_max": 60,
+      "t_min": 18,
+      "min_delta": 0.02,
+      "paper": {
+        "n": 169,
+        "wins": 121,
+        "losses": 48,
+        "wr": 71.6,
+        "pnl": 23.74,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.81
+      },
+      "skipped": {
+        "n": 10,
+        "wins": 8,
+        "losses": 2,
+        "wr": 80.0,
+        "pnl": 3.64,
+        "avg_pnl": 0.36,
+        "roi_pct": 7.28
+      },
+      "combined": {
+        "n": 179,
+        "wins": 129,
+        "losses": 50,
+        "wr": 72.1,
+        "pnl": 27.38,
+        "avg_pnl": 0.15,
+        "roi_pct": 3.06
+      }
+    },
+    {
+      "key": "T60-15 · delta 0.020%",
+      "timing": "T60-15",
+      "t_max": 60,
+      "t_min": 15,
+      "min_delta": 0.02,
+      "paper": {
+        "n": 169,
+        "wins": 121,
+        "losses": 48,
+        "wr": 71.6,
+        "pnl": 23.74,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.81
+      },
+      "skipped": {
+        "n": 10,
+        "wins": 8,
+        "losses": 2,
+        "wr": 80.0,
+        "pnl": 3.64,
+        "avg_pnl": 0.36,
+        "roi_pct": 7.28
+      },
+      "combined": {
+        "n": 179,
+        "wins": 129,
+        "losses": 50,
+        "wr": 72.1,
+        "pnl": 27.38,
+        "avg_pnl": 0.15,
+        "roi_pct": 3.06
+      }
+    },
+    {
+      "key": "T50-22 · delta 0.022%",
+      "timing": "T50-22",
+      "t_max": 50,
+      "t_min": 22,
+      "min_delta": 0.022,
+      "paper": {
+        "n": 74,
+        "wins": 53,
+        "losses": 21,
+        "wr": 71.6,
+        "pnl": 10.76,
+        "avg_pnl": 0.15,
+        "roi_pct": 2.91
+      },
+      "skipped": {
+        "n": 6,
+        "wins": 6,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 11.64,
+        "avg_pnl": 1.94,
+        "roi_pct": 38.8
+      },
+      "combined": {
+        "n": 80,
+        "wins": 59,
+        "losses": 21,
+        "wr": 73.8,
+        "pnl": 22.4,
+        "avg_pnl": 0.28,
+        "roi_pct": 5.6
+      }
+    },
+    {
+      "key": "T50-22 · delta 0.025%",
+      "timing": "T50-22",
+      "t_max": 50,
+      "t_min": 22,
+      "min_delta": 0.025,
+      "paper": {
+        "n": 74,
+        "wins": 53,
+        "losses": 21,
+        "wr": 71.6,
+        "pnl": 10.76,
+        "avg_pnl": 0.15,
+        "roi_pct": 2.91
+      },
+      "skipped": {
+        "n": 3,
+        "wins": 3,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 7.57,
+        "avg_pnl": 2.52,
+        "roi_pct": 50.47
+      },
+      "combined": {
+        "n": 77,
+        "wins": 56,
+        "losses": 21,
+        "wr": 72.7,
+        "pnl": 18.33,
+        "avg_pnl": 0.24,
+        "roi_pct": 4.76
+      }
+    },
+    {
+      "key": "T55-22 · delta 0.022%",
+      "timing": "T55-22",
+      "t_max": 55,
+      "t_min": 22,
+      "min_delta": 0.022,
+      "paper": {
+        "n": 112,
+        "wins": 78,
+        "losses": 34,
+        "wr": 69.6,
+        "pnl": 3.78,
+        "avg_pnl": 0.03,
+        "roi_pct": 0.68
+      },
+      "skipped": {
+        "n": 7,
+        "wins": 7,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 12.39,
+        "avg_pnl": 1.77,
+        "roi_pct": 35.4
+      },
+      "combined": {
+        "n": 119,
+        "wins": 85,
+        "losses": 34,
+        "wr": 71.4,
+        "pnl": 16.17,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.72
+      }
+    },
+    {
+      "key": "T55-18 · delta 0.022%",
+      "timing": "T55-18",
+      "t_max": 55,
+      "t_min": 18,
+      "min_delta": 0.022,
+      "paper": {
+        "n": 112,
+        "wins": 78,
+        "losses": 34,
+        "wr": 69.6,
+        "pnl": 3.78,
+        "avg_pnl": 0.03,
+        "roi_pct": 0.68
+      },
+      "skipped": {
+        "n": 7,
+        "wins": 7,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 12.39,
+        "avg_pnl": 1.77,
+        "roi_pct": 35.4
+      },
+      "combined": {
+        "n": 119,
+        "wins": 85,
+        "losses": 34,
+        "wr": 71.4,
+        "pnl": 16.17,
+        "avg_pnl": 0.14,
+        "roi_pct": 2.72
+      }
+    },
+    {
+      "key": "T50-22 · delta 0.020%",
+      "timing": "T50-22",
+      "t_max": 50,
+      "t_min": 22,
+      "min_delta": 0.02,
+      "paper": {
+        "n": 74,
+        "wins": 53,
+        "losses": 21,
+        "wr": 71.6,
+        "pnl": 10.76,
+        "avg_pnl": 0.15,
+        "roi_pct": 2.91
+      },
+      "skipped": {
+        "n": 8,
+        "wins": 6,
+        "losses": 2,
+        "wr": 75.0,
+        "pnl": 1.64,
+        "avg_pnl": 0.2,
+        "roi_pct": 4.1
+      },
+      "combined": {
+        "n": 82,
+        "wins": 59,
+        "losses": 23,
+        "wr": 72.0,
+        "pnl": 12.4,
+        "avg_pnl": 0.15,
+        "roi_pct": 3.02
+      }
+    },
+    {
+      "key": "T55-22 · delta 0.025%",
+      "timing": "T55-22",
+      "t_max": 55,
+      "t_min": 22,
+      "min_delta": 0.025,
+      "paper": {
+        "n": 112,
+        "wins": 78,
+        "losses": 34,
+        "wr": 69.6,
+        "pnl": 3.78,
+        "avg_pnl": 0.03,
+        "roi_pct": 0.68
+      },
+      "skipped": {
+        "n": 4,
+        "wins": 4,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 8.32,
+        "avg_pnl": 2.08,
+        "roi_pct": 41.6
+      },
+      "combined": {
+        "n": 116,
+        "wins": 82,
+        "losses": 34,
+        "wr": 70.7,
+        "pnl": 12.1,
+        "avg_pnl": 0.1,
+        "roi_pct": 2.09
+      }
+    },
+    {
+      "key": "T55-18 · delta 0.025%",
+      "timing": "T55-18",
+      "t_max": 55,
+      "t_min": 18,
+      "min_delta": 0.025,
+      "paper": {
+        "n": 112,
+        "wins": 78,
+        "losses": 34,
+        "wr": 69.6,
+        "pnl": 3.78,
+        "avg_pnl": 0.03,
+        "roi_pct": 0.68
+      },
+      "skipped": {
+        "n": 4,
+        "wins": 4,
+        "losses": 0,
+        "wr": 100.0,
+        "pnl": 8.32,
+        "avg_pnl": 2.08,
+        "roi_pct": 41.6
+      },
+      "combined": {
+        "n": 116,
+        "wins": 82,
+        "losses": 34,
+        "wr": 70.7,
+        "pnl": 12.1,
+        "avg_pnl": 0.1,
+        "roi_pct": 2.09
+      }
+    },
+    {
+      "key": "T55-22 · delta 0.020%",
+      "timing": "T55-22",
+      "t_max": 55,
+      "t_min": 22,
+      "min_delta": 0.02,
+      "paper": {
+        "n": 112,
+        "wins": 78,
+        "losses": 34,
+        "wr": 69.6,
+        "pnl": 3.78,
+        "avg_pnl": 0.03,
+        "roi_pct": 0.68
+      },
+      "skipped": {
+        "n": 9,
+        "wins": 7,
+        "losses": 2,
+        "wr": 77.8,
+        "pnl": 2.39,
+        "avg_pnl": 0.27,
+        "roi_pct": 5.31
+      },
+      "combined": {
+        "n": 121,
+        "wins": 85,
+        "losses": 36,
+        "wr": 70.2,
+        "pnl": 6.17,
+        "avg_pnl": 0.05,
+        "roi_pct": 1.02
+      }
+    },
+    {
+      "key": "T55-18 · delta 0.020%",
+      "timing": "T55-18",
+      "t_max": 55,
+      "t_min": 18,
+      "min_delta": 0.02,
+      "paper": {
+        "n": 112,
+        "wins": 78,
+        "losses": 34,
+        "wr": 69.6,
+        "pnl": 3.78,
+        "avg_pnl": 0.03,
+        "roi_pct": 0.68
+      },
+      "skipped": {
+        "n": 9,
+        "wins": 7,
+        "losses": 2,
+        "wr": 77.8,
+        "pnl": 2.39,
+        "avg_pnl": 0.27,
+        "roi_pct": 5.31
+      },
+      "combined": {
+        "n": 121,
+        "wins": 85,
+        "losses": 36,
+        "wr": 70.2,
+        "pnl": 6.17,
+        "avg_pnl": 0.05,
+        "roi_pct": 1.02
+      }
+    }
+  ],
+  "best": {
+    "key": "T60-22 (現況) · delta 0.022%",
+    "timing": "T60-22 (現況)",
+    "t_max": 60,
+    "t_min": 22,
+    "min_delta": 0.022,
+    "paper": {
+      "n": 169,
+      "wins": 121,
+      "losses": 48,
+      "wr": 71.6,
+      "pnl": 23.74,
+      "avg_pnl": 0.14,
+      "roi_pct": 2.81
+    },
+    "skipped": {
+      "n": 8,
+      "wins": 8,
+      "losses": 0,
+      "wr": 100.0,
+      "pnl": 13.64,
+      "avg_pnl": 1.71,
+      "roi_pct": 34.1
+    },
+    "combined": {
+      "n": 177,
+      "wins": 129,
+      "losses": 48,
+      "wr": 72.9,
+      "pnl": 37.38,
+      "avg_pnl": 0.21,
+      "roi_pct": 4.22
+    }
+  },
+  "best_delta_022": {
+    "key": "T60-22 (現況) · delta 0.022%",
+    "timing": "T60-22 (現況)",
+    "t_max": 60,
+    "t_min": 22,
+    "min_delta": 0.022,
+    "paper": {
+      "n": 169,
+      "wins": 121,
+      "losses": 48,
+      "wr": 71.6,
+      "pnl": 23.74,
+      "avg_pnl": 0.14,
+      "roi_pct": 2.81
+    },
+    "skipped": {
+      "n": 8,
+      "wins": 8,
+      "losses": 0,
+      "wr": 100.0,
+      "pnl": 13.64,
+      "avg_pnl": 1.71,
+      "roi_pct": 34.1
+    },
+    "combined": {
+      "n": 177,
+      "wins": 129,
+      "losses": 48,
+      "wr": 72.9,
+      "pnl": 37.38,
+      "avg_pnl": 0.21,
+      "roi_pct": 4.22
+    }
+  }
+}

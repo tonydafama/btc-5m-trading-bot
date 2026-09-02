@@ -1,0 +1,264 @@
+{
+  "start_bankroll_default": 102.03,
+  "start_bankroll_current_wallet": 102.29,
+  "results": {
+    "Full paper log (484 windows) | Package 2+ (no underdog extra filters)": {
+      "start": 102.03,
+      "final": 199.28,
+      "total_pnl": 97.25,
+      "return_pct": 95.32,
+      "trades": 59,
+      "wins": 52,
+      "losses": 7,
+      "wr": 88.1,
+      "ev": 1.65,
+      "max_dd": 10.86,
+      "by_tier": {
+        "favorite": {
+          "n": 41,
+          "w": 39,
+          "pnl": 46.019999999999996
+        },
+        "mid": {
+          "n": 17,
+          "w": 12,
+          "pnl": 22.77
+        },
+        "underdog": {
+          "n": 1,
+          "w": 1,
+          "pnl": 28.46
+        }
+      },
+      "skips": {
+        "timing": 274,
+        "ask > 0.88": 194,
+        "ask < 0.15": 2
+      },
+      "windows_judged": 529
+    },
+    "Full paper log (484 windows) | Package 2+ (with underdog filters)": {
+      "start": 102.03,
+      "final": 199.28,
+      "total_pnl": 97.25,
+      "return_pct": 95.32,
+      "trades": 59,
+      "wins": 52,
+      "losses": 7,
+      "wr": 88.1,
+      "ev": 1.65,
+      "max_dd": 10.86,
+      "by_tier": {
+        "favorite": {
+          "n": 41,
+          "w": 39,
+          "pnl": 46.019999999999996
+        },
+        "mid": {
+          "n": 17,
+          "w": 12,
+          "pnl": 22.77
+        },
+        "underdog": {
+          "n": 1,
+          "w": 1,
+          "pnl": 28.46
+        }
+      },
+      "skips": {
+        "timing": 274,
+        "ask > 0.88": 194,
+        "ask < 0.15": 2
+      },
+      "windows_judged": 529
+    },
+    "Validation set (268 windows) | Package 2+ (no underdog extra filters)": {
+      "start": 102.03,
+      "final": 169.34,
+      "total_pnl": 67.31,
+      "return_pct": 65.97,
+      "trades": 29,
+      "wins": 25,
+      "losses": 4,
+      "wr": 86.2,
+      "ev": 2.32,
+      "max_dd": 10.86,
+      "by_tier": {
+        "favorite": {
+          "n": 17,
+          "w": 16,
+          "pnl": 16.16
+        },
+        "mid": {
+          "n": 11,
+          "w": 8,
+          "pnl": 22.689999999999998
+        },
+        "underdog": {
+          "n": 1,
+          "w": 1,
+          "pnl": 28.46
+        }
+      },
+      "skips": {
+        "timing": 139,
+        "ask > 0.88": 98,
+        "ask < 0.15": 1
+      },
+      "windows_judged": 267
+    },
+    "Validation set (268 windows) | Package 2+ (with underdog filters)": {
+      "start": 102.03,
+      "final": 169.34,
+      "total_pnl": 67.31,
+      "return_pct": 65.97,
+      "trades": 29,
+      "wins": 25,
+      "losses": 4,
+      "wr": 86.2,
+      "ev": 2.32,
+      "max_dd": 10.86,
+      "by_tier": {
+        "favorite": {
+          "n": 17,
+          "w": 16,
+          "pnl": 16.16
+        },
+        "mid": {
+          "n": 11,
+          "w": 8,
+          "pnl": 22.689999999999998
+        },
+        "underdog": {
+          "n": 1,
+          "w": 1,
+          "pnl": 28.46
+        }
+      },
+      "skips": {
+        "timing": 139,
+        "ask > 0.88": 98,
+        "ask < 0.15": 1
+      },
+      "windows_judged": 267
+    }
+  },
+  "current_wallet_scenario": {
+    "start": 102.29,
+    "final": 199.54,
+    "total_pnl": 97.25,
+    "return_pct": 95.07,
+    "trades": 59,
+    "wins": 52,
+    "losses": 7,
+    "wr": 88.1,
+    "ev": 1.65,
+    "max_dd": 10.86,
+    "by_tier": {
+      "favorite": {
+        "n": 41,
+        "w": 39,
+        "pnl": 46.019999999999996
+      },
+      "mid": {
+        "n": 17,
+        "w": 12,
+        "pnl": 22.77
+      },
+      "underdog": {
+        "n": 1,
+        "w": 1,
+        "pnl": 28.46
+      }
+    },
+    "skips": {
+      "timing": 274,
+      "ask > 0.88": 194,
+      "ask < 0.15": 2
+    },
+    "windows_judged": 529
+  },
+  "comparison_old_fixed_5": {
+    "pnl": 59.83,
+    "trades": 61
+  },
+  "package2plus_losses": [
+    {
+      "ts": "2026-06-15 11:40",
+      "ask": 0.63,
+      "tier": "mid",
+      "stake": 5.0,
+      "won": false,
+      "pnl": -5.0,
+      "bankroll": 164.45,
+      "side": "up",
+      "res": "DOWN"
+    },
+    {
+      "ts": "2026-06-15 12:50",
+      "ask": 0.4,
+      "tier": "mid",
+      "stake": 5.0,
+      "won": false,
+      "pnl": -5.0,
+      "bankroll": 169.0,
+      "side": "up",
+      "res": "DOWN"
+    },
+    {
+      "ts": "2026-06-15 17:00",
+      "ask": 0.58,
+      "tier": "mid",
+      "stake": 5.0,
+      "won": false,
+      "pnl": -5.0,
+      "bankroll": 170.53,
+      "side": "up",
+      "res": "DOWN"
+    },
+    {
+      "ts": "2026-06-15 19:05",
+      "ask": 0.7,
+      "tier": "favorite",
+      "stake": 7.0,
+      "won": false,
+      "pnl": -7.0,
+      "bankroll": 164.67,
+      "side": "up",
+      "res": "DOWN"
+    },
+    {
+      "ts": "2026-06-16 06:10",
+      "ask": 0.81,
+      "tier": "favorite",
+      "stake": 7.0,
+      "won": false,
+      "pnl": -7.0,
+      "bankroll": 182.57,
+      "side": "up",
+      "res": "DOWN"
+    },
+    {
+      "ts": "2026-06-16 10:45",
+      "ask": 0.41,
+      "tier": "mid",
+      "stake": 5.0,
+      "won": false,
+      "pnl": -5.0,
+      "bankroll": 185.84,
+      "side": "down",
+      "res": "UP"
+    },
+    {
+      "ts": "2026-06-16 17:00",
+      "ask": 0.37,
+      "tier": "mid",
+      "stake": 5.0,
+      "won": false,
+      "pnl": -5.0,
+      "bankroll": 198.33,
+      "side": "up",
+      "res": "DOWN"
+    }
+  ]
+}

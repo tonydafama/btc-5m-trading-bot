@@ -1,0 +1,285 @@
+{
+  "generated_at_hkt": "2026-07-06 21:06:07 HKT",
+  "source": "live",
+  "research_question": "If we pause fav/dog during US hours, core, or outside-US \u2014 which improves PnL?",
+  "period_definitions": {
+    "us_hours": "Mon\u2013Fri 09:30\u201316:00 ET (excludes core overlap counted separately in core)",
+    "core": "Mon\u2013Fri 11:00\u201315:00 ET",
+    "outside_us": "Evenings, weekends, non-NYSE window"
+  },
+  "btc": {
+    "us_hours": {
+      "favorite": {
+        "n": 0,
+        "wins": 0,
+        "losses": 0,
+        "wr_pct": null,
+        "pnl": 0.0,
+        "avg_pnl": null
+      },
+      "underdog": {
+        "n": 2,
+        "wins": 0,
+        "losses": 2,
+        "wr_pct": 0.0,
+        "pnl": -180.0,
+        "avg_pnl": -90.0
+      },
+      "all": {
+        "n": 2,
+        "wins": 0,
+        "losses": 2,
+        "wr_pct": 0.0,
+        "pnl": -180.0,
+        "avg_pnl": -90.0
+      }
+    },
+    "core": {
+      "favorite": {
+        "n": 18,
+        "wins": 16,
+        "losses": 2,
+        "wr_pct": 88.9,
+        "pnl": 187.8,
+        "avg_pnl": 10.43
+      },
+      "underdog": {
+        "n": 1,
+        "wins": 0,
+        "losses": 1,
+        "wr_pct": 0.0,
+        "pnl": -141.6,
+        "avg_pnl": -141.6
+      },
+      "all": {
+        "n": 19,
+        "wins": 16,
+        "losses": 3,
+        "wr_pct": 84.2,
+        "pnl": 46.2,
+        "avg_pnl": 2.43
+      }
+    },
+    "outside_us": {
+      "favorite": {
+        "n": 0,
+        "wins": 0,
+        "losses": 0,
+        "wr_pct": null,
+        "pnl": 0.0,
+        "avg_pnl": null
+      },
+      "underdog": {
+        "n": 0,
+        "wins": 0,
+        "losses": 0,
+        "wr_pct": null,
+        "pnl": 0.0,
+        "avg_pnl": null
+      },
+      "all": {
+        "n": 0,
+        "wins": 0,
+        "losses": 0,
+        "wr_pct": null,
+        "pnl": 0.0,
+        "avg_pnl": null
+      }
+    },
+    "all": {
+      "favorite": {
+        "n": 18,
+        "wins": 16,
+        "losses": 2,
+        "wr_pct": 88.9,
+        "pnl": 187.8,
+        "avg_pnl": 10.43
+      },
+      "underdog": {
+        "n": 3,
+        "wins": 0,
+        "losses": 3,
+        "wr_pct": 0.0,
+        "pnl": -321.6,
+        "avg_pnl": -107.2
+      },
+      "all": {
+        "n": 21,
+        "wins": 16,
+        "losses": 5,
+        "wr_pct": 76.2,
+        "pnl": -133.8,
+        "avg_pnl": -6.37
+      }
+    },
+    "asset": "BTC"
+  },
+  "eth": {
+    "us_hours": {
+      "favorite": {
+        "n": 0,
+        "wins": 0,
+        "losses": 0,
+        "wr_pct": null,
+        "pnl": 0.0,
+        "avg_pnl": null
+      },
+      "underdog": {
+        "n": 2,
+        "wins": 0,
+        "losses": 2,
+        "wr_pct": 0.0,
+        "pnl": -180.0,
+        "avg_pnl": -90.0
+      },
+      "all": {
+        "n": 2,
+        "wins": 0,
+        "losses": 2,
+        "wr_pct": 0.0,
+        "pnl": -180.0,
+        "avg_pnl": -90.0
+      }
+    },
+    "core": {
+      "favorite": {
+        "n": 9,
+        "wins": 9,
+        "losses": 0,
+        "wr_pct": 100.0,
+        "pnl": 172.42,
+        "avg_pnl": 19.16
+      },
+      "underdog": {
+        "n": 2,
+        "wins": 1,
+        "losses": 1,
+        "wr_pct": 50.0,
+        "pnl": 405.0,
+        "avg_pnl": 202.5
+      },
+      "all": {
+        "n": 11,
+        "wins": 10,
+        "losses": 1,
+        "wr_pct": 90.9,
+        "pnl": 577.42,
+        "avg_pnl": 52.49
+      }
+    },
+    "outside_us": {
+      "favorite": {
+        "n": 0,
+        "wins": 0,
+        "losses": 0,
+        "wr_pct": null,
+        "pnl": 0.0,
+        "avg_pnl": null
+      },
+      "underdog": {
+        "n": 0,
+        "wins": 0,
+        "losses": 0,
+        "wr_pct": null,
+        "pnl": 0.0,
+        "avg_pnl": null
+      },
+      "all": {
+        "n": 0,
+        "wins": 0,
+        "losses": 0,
+        "wr_pct": null,
+        "pnl": 0.0,
+        "avg_pnl": null
+      }
+    },
+    "all": {
+      "favorite": {
+        "n": 9,
+        "wins": 9,
+        "losses": 0,
+        "wr_pct": 100.0,
+        "pnl": 172.42,
+        "avg_pnl": 19.16
+      },
+      "underdog": {
+        "n": 4,
+        "wins": 1,
+        "losses": 3,
+        "wr_pct": 25.0,
+        "pnl": 225.0,
+        "avg_pnl": 56.25
+      },
+      "all": {
+        "n": 13,
+        "wins": 10,
+        "losses": 3,
+        "wr_pct": 76.9,
+        "pnl": 397.42,
+        "avg_pnl": 30.57
+      }
+    },
+    "asset": "ETH"
+  },
+  "pause_scenarios": [
+    {
+      "paused_period": "us_hours",
+      "paused_tier": "underdog",
+      "trades_removed": 2,
+      "pnl_removed": -180.0,
+      "pnl_without_these_trades": 46.2,
+      "wise_to_pause": true,
+      "asset": "BTC"
+    },
+    {
+      "paused_period": "us_hours",
+      "paused_tier": "underdog",
+      "trades_removed": 2,
+      "pnl_removed": -180.0,
+      "pnl_without_these_trades": 577.42,
+      "wise_to_pause": true,
+      "asset": "ETH"
+    },
+    {
+      "paused_period": "core",
+      "paused_tier": "underdog",
+      "trades_removed": 1,
+      "pnl_removed": -141.6,
+      "pnl_without_these_trades": 7.8,
+      "wise_to_pause": true,
+      "asset": "BTC"
+    },
+    {
+      "paused_period": "core",
+      "paused_tier": "favorite",
+      "trades_removed": 9,
+      "pnl_removed": 172.42,
+      "pnl_without_these_trades": 225.0,
+      "wise_to_pause": false,
+      "asset": "ETH"
+    },
+    {
+      "paused_period": "core",
+      "paused_tier": "favorite",
+      "trades_removed": 18,
+      "pnl_removed": 187.8,
+      "pnl_without_these_trades": -321.6,
+      "wise_to_pause": false,
+      "asset": "BTC"
+    },
+    {
+      "paused_period": "core",
+      "paused_tier": "underdog",
+      "trades_removed": 2,
+      "pnl_removed": 405.0,
+      "pnl_without_these_trades": -7.58,
+      "wise_to_pause": false,
+      "asset": "ETH"
+    }
+  ],
+  "notes": [
+    "wise_to_pause=True means that bucket lost money \u2014 skipping it would have helped historically.",
+    "This is descriptive backtest only; sample size may be small for ETH dog / outside-US.",
+    "Use backtest_tape.jsonl for custom filters; full logs in backtest_archive/."
+  ]
+}

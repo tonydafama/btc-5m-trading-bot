@@ -1,0 +1,15 @@
+[Unit]
+Description=ETH 5m observer (Package 2+ paper or live via ETH_TRADING_MODE)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/btc-5m-bot
+EnvironmentFile=-/root/btc-5m-bot/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/root/btc-5m-bot/venv/bin/python /root/btc-5m-bot/eth_observer.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

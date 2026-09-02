@@ -1,0 +1,231 @@
+{
+  "document": "5 Wallet Deployment Playbook",
+  "version": "2026-06-27",
+  "status": "FOR_USER_REVIEW",
+  "deploy_live_changes": false,
+  "author_note": "Strategy logic unchanged. Capital structure + ops only.",
+
+  "current_snapshot": {
+    "total_usdc_approx": 2479.63,
+    "session_start_usdc": 1021.15,
+    "session_start_hkt": "2026-06-24 20:10:58",
+    "live_closed_trades": 79,
+    "live_total_pnl_usdc": 1683.21,
+    "primary_wallet_deposit_hint": "see logs/wallet_cache.json — do not commit private keys"
+  },
+
+  "favorite_diagnosis": {
+    "summary_zh": "Favorite 是 short-gamma 稳定器：胜率高但赢小输大。Live 小亏是 sample + stake 放大后的正常摩擦，不是策略失效。",
+    "live_combined_fav_pnl": -112.13,
+    "live_dog_pnl": 1795.34,
+    "net_after_fav_drag": 1683.21,
+    "backtest_v1_btc_core_fav": {"n": 82, "wr_pct": 88, "pnl_usdc": 906.27},
+    "backtest_v1_eth_core_fav": {"n": 33, "wr_pct": 94, "pnl_usdc": 508.89},
+    "live_leaks": {
+      "eth_fav_ask_0.70_0.79": {"n": 16, "wr_pct": 62, "pnl_usdc": -159.87},
+      "eth_fav_ask_0.80_0.85": {"n": 11, "wr_pct": 91, "pnl_usdc": 115.60},
+      "btc_fav_hkt_01xx": {"n": 7, "wr_pct": 57, "pnl_usdc": -265.78},
+      "eth_fav_hkt_22xx": {"n": 4, "wr_pct": 25, "pnl_usdc": -130.21}
+    },
+    "recommendation_tiers": {
+      "now": "Keep favorite ON. Accept ~$112 drag vs +$1,795 dog. Do not rewrite strategy.",
+      "monitor": "Track next 20 favorite trades. If combined fav still negative and dog positive, consider tier-2 tweaks only.",
+      "tier2_optional_user_approve": [
+        "ETH favorite: require ask >= 0.80 (live 0.80-0.85 bucket +$116)",
+        "BTC favorite: keep 13 ET skip; paper-test skip HKT 01:xx window before live",
+        "Favorite wallet scaling: cap fav at 1.0x wallet mult while dog keeps full mult (fav losses smaller)"
+      ],
+      "do_not": [
+        "Shut off all favorite (backtest strongly positive)",
+        "Increase favorite stake to chase losses",
+        "Major V2/V3 rewrite because fav is slightly red"
+      ]
+    }
+  },
+
+  "capital_architecture": {
+    "target_end_state": "5 bots × $1,000 trading float each = $5,000 deployed",
+    "master_wallet_role": "Profit vault + float redistribution. Not trading.",
+    "sweep_rule": {
+      "trigger_usdc": 1500,
+      "sweep_amount_usdc": 500,
+      "target_float_usdc": 1000,
+      "note": "When any bot exceeds $1,500, withdraw $500 to Master. Redeploy to new/underfunded bot."
+    },
+    "per_bot_rules": {
+      "strategy": "PACKAGE2+ V1 unchanged",
+      "core_wallet_base_usd": 1000,
+      "core_wallet_scaling": true,
+      "eth_dog_hard_cap_usdc": 400,
+      "eth_dog_hard_cap_status": "recommended_at_3k_total_not_yet_deployed"
+    }
+  },
+
+  "user_question_2400_split": {
+    "question": "Should I split $2,400 into 3 wallets × $800 each?",
+    "cfo_verdict": "NOT_YET_3x800 — start 2 wallets first",
+    "recommended_now": {
+      "name": "Phase 1 — Two-bot split (recommended)",
+      "bot_1_main": {
+        "usdc": 1600,
+        "role": "Keep current Polymarket account + existing bot session",
+        "wallet_mult": 1.6,
+        "eth_dog_core_stake_approx": 216,
+        "note": "Slightly above $1k sweet spot but acceptable. Reduce to $1,200 when Bot 2 funded."
+      },
+      "bot_2_new": {
+        "usdc": 800,
+        "role": "New MetaMask + new Polymarket account",
+        "wallet_mult": 0.8,
+        "eth_dog_core_stake_approx": 108,
+        "note": "Proves multi-wallet ops before committing to 3rd account."
+      },
+      "master_reserve": {
+        "usdc": 279,
+        "role": "Keep in Main MetaMask or Polymarket cash — gas, failed FOK buffer, emergency"
+      }
+    },
+    "alternative_if_user_insists_3x800": {
+      "name": "Phase 1b — Three equal wallets",
+      "bot_1": 800,
+      "bot_2": 800,
+      "bot_3": 800,
+      "reserve": 79,
+      "pros": ["Maximum book diversification immediately", "Each stake ~$108 dog core — very safe slippage"],
+      "cons": [
+        "3× operational complexity on day 1",
+        "Each bot below $1,000 playbook — wallet mult 0.8x forever until sweep refills",
+        "Must migrate ~$1,680 out of current wallet — downtime + withdrawal risk",
+        "Too thin to absorb one bad day per bot ($800 → pause thresholds hit faster)"
+      ],
+      "cfo_grade": "B- — workable but premature"
+    },
+    "why_not_all_in_3x800_today": [
+      "You have ONE working bot with proven session — don't disrupt 100% on day 1",
+      "800 × 3 = no reserve; one ETH dog loss streak hits daily loss limit faster",
+      "$1,000/bot is the validated unit; $800 is acceptable but suboptimal",
+      "Learn 2-bot ops first (1 week), then add Bot 3"
+    ]
+  },
+
+  "phased_roadmap": {
+    "phase_1_now": {
+      "total_usdc": 2400,
+      "action": "Bot1 $1,600 + Bot2 $800 + Reserve $279",
+      "timeline": "This week",
+      "success_criteria": "Both bots live 5+ sessions, zero API/geoblock issues, combined PnL tracked"
+    },
+    "phase_2_at_3200": {
+      "action": "Sweep Bot1 to $1,200 if >$1,500; fund Bot2 toward $1,000; open Bot3 at $800",
+      "timeline": "~1-2 weeks if momentum holds"
+    },
+    "phase_3_at_5000": {
+      "action": "5 bots × $1,000 via sweeps from Master",
+      "timeline": "Target node — review slippage data first"
+    }
+  },
+
+  "account_setup_order": [
+    {
+      "step": 1,
+      "title": "Create Master MetaMask (if not separate)",
+      "detail": "One cold-ish wallet for USDC storage only. Never runs bot."
+    },
+    {
+      "step": 2,
+      "title": "Keep Bot #1 = current Polymarket account",
+      "detail": "Do NOT migrate Bot #1 yet. Reduce float to $1,600 by withdrawing $879 to Master MetaMask (manual, user-initiated)."
+    },
+    {
+      "step": 3,
+      "title": "Create Bot #2 MetaMask wallet",
+      "detail": "New seed phrase. Store in password manager. Label: polymarket-bot-2."
+    },
+    {
+      "step": 4,
+      "title": "Fund Bot #2",
+      "detail": "Master → Bot #2 MetaMask: $800 USDC on Polygon + ~$5 MATIC gas."
+    },
+    {
+      "step": 5,
+      "title": "Bot #2 Polymarket onboarding",
+      "detail": "Connect wallet, enable trading, USDC deposit, set allowances (same as Bot #1 setup)."
+    },
+    {
+      "step": 6,
+      "title": "Bot #2 droplet instance",
+      "detail": "Clone repo OR second systemd instance with BOT_INSTANCE=2, separate .env, separate logs/trade_log_live.json path."
+    },
+    {
+      "step": 7,
+      "title": "Reset Bot #2 session baseline",
+      "detail": "starting_wallet_usdc = actual deposit. New session_id. Do NOT copy Bot #1 PnL."
+    },
+    {
+      "step": 8,
+      "title": "Dashboard split",
+      "detail": "Tab or port per bot: :8080 Bot1, :8081 Bot2. Combined PnL sheet in spreadsheet."
+    },
+    {
+      "step": 9,
+      "title": "Run parallel 3-5 US sessions",
+      "detail": "Compare fill slippage, win rate, EV per bot before adding Bot #3."
+    },
+    {
+      "step": 10,
+      "title": "Bot #3 only after Phase 2 trigger ($3,200 total)",
+      "detail": "Repeat steps 3-7 for third wallet at $800-1000."
+    }
+  ],
+
+  "per_bot_config_template": {
+    "strategy_config": "IDENTICAL — copy logs/strategy_config.json unchanged",
+    "env_separate_keys": [
+      "POLYMARKET_PRIVATE_KEY",
+      "POLYMARKET_API_KEY",
+      "POLYMARKET_API_SECRET",
+      "POLYMARKET_API_PASSPHRASE"
+    ],
+    "env_instance_vars": {
+      "BOT_INSTANCE": "1 | 2 | 3",
+      "LOG_DIR_SUFFIX": "bot2",
+      "DASHBOARD_PORT": "8081"
+    },
+    "systemd_naming": "btc-5m-observer@bot1.service, btc-5m-observer@bot2.service",
+    "note": "Multi-instance code changes NOT yet implemented — manual ops until user approves engineering work"
+  },
+
+  "sweep_rules_detailed": {
+    "weekly_review": "Every Sunday HKT — total AUM, per-bot float, slippage log",
+    "sweep_out": "Bot trading float > $1,500 → withdraw $500 to Master",
+    "sweep_in": "Bot trading float < $700 → top up from Master to $1,000",
+    "never": "Do not combine bot wallets into one to chase scaling multiplier"
+  },
+
+  "risk_controls_multi_bot": {
+    "correlation_warning": "5 bots same strategy = 5× exposure same windows. Wins/losses cluster.",
+    "daily_loss_per_bot": "Keep existing $225 BTC / $450 ETH limits PER BOT",
+    "total_daily_loss_cap": "Consider manual stop if ALL bots combined -$600/day",
+    "address_opsec": "Different MetaMask seeds. Different deposit addresses. Same IP acceptable initially."
+  },
+
+  "stake_math_reference": {
+    "formula": "stake = base × core(1.5 if core) × max(1, wallet/1000)",
+    "examples": [
+      {"wallet": 800, "eth_dog_core": 108, "btc_fav_core": 65},
+      {"wallet": 1000, "eth_dog_core": 135, "btc_fav_core": 81},
+      {"wallet": 1600, "eth_dog_core": 216, "btc_fav_core": 130},
+      {"wallet": 2480, "eth_dog_core": 335, "btc_fav_core": 201}
+    ]
+  },
+
+  "checklist_before_bot2_live": [
+    "Master reserve ≥ $200 USDC + MATIC gas",
+    "Bot #2 allowances verified (api_ready true)",
+    "Bot #2 session starting_wallet_usdc set to actual deposit",
+    "Bot #1 float reduced to ≤ $1,600 (user manual withdrawal)",
+    "Both bots strategy_config.json identical",
+    "Telegram/ops alerts working per instance",
+    "User confirms favorite tier-2 tweaks NOT deployed yet"
+  ]
+}

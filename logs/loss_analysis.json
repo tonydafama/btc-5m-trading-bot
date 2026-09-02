@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-06-14T04:55:12.911740+00:00",
+  "trades_settled": 160,
+  "losses": 43,
+  "wins": 117,
+  "loss_rate_pct": 26.9,
+  "loss_patterns": {
+    "momentum_reversal": 23,
+    "choppy_whipsaw": 18,
+    "weak_window_move_lt_20": 14,
+    "expensive_favorite": 12,
+    "underdog_entry": 6
+  },
+  "win_patterns": {
+    "momentum_reversal": 36
+  },
+  "recommendations": [
+    "Skip when 5m Binance move opposes bet side (momentum_reversal)",
+    "Raise MIN_BTC_MOVE_USD to 18+ (weak moves lose more)",
+    "Require extra move for underdog entries (ask <= 0.55)",
+    "Skip choppy windows (high range / low net move)"
+  ],
+  "note": "Observation only — these recommendations are NOT applied as live entry filters.",
+  "active_entry_filters": {
+    "MAX_ENTRY_ASK": 0.6,
+    "MAX_SPREAD": 0.06,
+    "MIN_DEPTH_USD": 50,
+    "MIN_BTC_MOVE_USD": 12,
+    "MIN_DELTA_PCT": 0.025,
+    "ENTRY_WINDOW": "T-60 to T-22"
+  },
+  "loss_pattern_filters_disabled": {
+    "USE_LOSS_PATTERN_FILTERS": false,
+    "REQUIRE_MOMENTUM_ALIGN": false,
+    "MAX_CHOP_RATIO": null,
+    "UNDERDOG_MIN_MOVE_USD": null
+  }
+}

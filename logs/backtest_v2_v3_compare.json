@@ -1,0 +1,224 @@
+{
+  "dataset": {
+    "source": "backtest_tape.jsonl + archives",
+    "unique_trades": 420,
+    "date_range_hkt": "2026-06-15 → 2026-06-26",
+    "actual_all_entered_pnl": 1273.59,
+    "note": "420 closed trades Jun15–Jun26. Normalized = same outcomes at $1000 plan stakes."
+  },
+  "strategies_normalized_1000": {
+    "V1_baseline": {
+      "name": "V1 Baseline @ $1000 plan stakes",
+      "trades": 155,
+      "wins": 121,
+      "losses": 34,
+      "wr_pct": 78.1,
+      "pnl": 3705.56,
+      "avg_pnl": 23.91,
+      "by_segment": {
+        "BTC|core|favorite": {
+          "n": 82,
+          "w": 72,
+          "pnl": 906.27
+        },
+        "BTC|core|underdog": {
+          "n": 8,
+          "w": 2,
+          "pnl": 559.29
+        },
+        "BTC|outside_us|underdog": {
+          "n": 7,
+          "w": 4,
+          "pnl": 470.75
+        },
+        "BTC|us_hours|underdog": {
+          "n": 3,
+          "w": 2,
+          "pnl": 358.57
+        },
+        "ETH|core|favorite": {
+          "n": 33,
+          "w": 31,
+          "pnl": 508.89
+        },
+        "ETH|core|underdog": {
+          "n": 3,
+          "w": 2,
+          "pnl": 252.54
+        },
+        "ETH|outside_us|underdog": {
+          "n": 11,
+          "w": 5,
+          "pnl": 620.05
+        },
+        "ETH|us_hours|underdog": {
+          "n": 8,
+          "w": 3,
+          "pnl": 29.2
+        }
+      },
+      "reasons": [
+        "Fav core-only · Dog core+non-core · 固定 $1000 注碼",
+        "Normalized：同一批 win/loss，用 plan A 注碼重算"
+      ]
+    },
+    "V2_core_strict": {
+      "name": "V2 Core-only + strict dog",
+      "trades": 120,
+      "wins": 104,
+      "losses": 16,
+      "wr_pct": 86.7,
+      "pnl": 1415.16,
+      "avg_pnl": 11.79,
+      "by_segment": {
+        "BTC|core|favorite": {
+          "n": 82,
+          "w": 72,
+          "pnl": 906.27
+        },
+        "BTC|core|underdog": {
+          "n": 5,
+          "w": 1,
+          "pnl": 0.0
+        },
+        "ETH|core|favorite": {
+          "n": 33,
+          "w": 31,
+          "pnl": 508.89
+        }
+      },
+      "reasons": [
+        "只做 core · Dog ask 0.18–0.28 · 砍掉 non-core"
+      ]
+    },
+    "V3_hour_fav": {
+      "name": "V3 Hour-filter fav only",
+      "trades": 73,
+      "wins": 65,
+      "losses": 8,
+      "wr_pct": 89.0,
+      "pnl": 499.85,
+      "avg_pnl": 6.85,
+      "by_segment": {
+        "BTC|core|favorite": {
+          "n": 46,
+          "w": 40,
+          "pnl": 283.73
+        },
+        "ETH|core|favorite": {
+          "n": 27,
+          "w": 25,
+          "pnl": 216.12
+        }
+      },
+      "reasons": [
+        "BTC 12–14 ET · ETH 11–14 ET · fav only · 半注碼"
+      ]
+    }
+  },
+  "v1_actual_historical": {
+    "name": "V1 rules · actual historical stakes/PnL",
+    "trades": 155,
+    "wins": 121,
+    "losses": 34,
+    "wr_pct": 78.1,
+    "pnl": 1468.11,
+    "avg_pnl": 9.47,
+    "by_segment": {
+      "BTC|core|favorite": {
+        "n": 82,
+        "w": 72,
+        "pnl": 303.78
+      },
+      "BTC|core|underdog": {
+        "n": 8,
+        "w": 2,
+        "pnl": 262.86
+      },
+      "BTC|outside_us|underdog": {
+        "n": 7,
+        "w": 4,
+        "pnl": 60.33
+      },
+      "BTC|us_hours|underdog": {
+        "n": 3,
+        "w": 2,
+        "pnl": 81.91
+      },
+      "ETH|core|favorite": {
+        "n": 33,
+        "w": 31,
+        "pnl": 281.11
+      },
+      "ETH|core|underdog": {
+        "n": 3,
+        "w": 2,
+        "pnl": 129.97
+      },
+      "ETH|outside_us|underdog": {
+        "n": 11,
+        "w": 5,
+        "pnl": 261.64
+      },
+      "ETH|us_hours|underdog": {
+        "n": 8,
+        "w": 3,
+        "pnl": 86.51
+      }
+    },
+    "reasons": [
+      "真實歷史成交注碼，不標準化"
+    ]
+  },
+  "comparison_normalized": {
+    "V1_pnl": 3705.56,
+    "V2_pnl": 1415.16,
+    "V3_pnl": 499.85,
+    "V2_minus_V1": -2290.4,
+    "V3_minus_V1": -3205.71
+  },
+  "v2_removed_trades": {
+    "name": "V1 took · V2 skipped (normalized PnL removed)",
+    "trades": 35,
+    "wins": 17,
+    "losses": 18,
+    "wr_pct": 48.6,
+    "pnl": 2290.4,
+    "avg_pnl": 65.44,
+    "by_segment": {
+      "BTC|core|underdog": {
+        "n": 3,
+        "w": 1,
+        "pnl": 559.29
+      },
+      "BTC|outside_us|underdog": {
+        "n": 7,
+        "w": 4,
+        "pnl": 470.75
+      },
+      "BTC|us_hours|underdog": {
+        "n": 3,
+        "w": 2,
+        "pnl": 358.57
+      },
+      "ETH|core|underdog": {
+        "n": 3,
+        "w": 2,
+        "pnl": 252.54
+      },
+      "ETH|outside_us|underdog": {
+        "n": 11,
+        "w": 5,
+        "pnl": 620.05
+      },
+      "ETH|us_hours|underdog": {
+        "n": 8,
+        "w": 3,
+        "pnl": 29.2
+      }
+    },
+    "reasons": [
+      "V2 砍掉的交易，normalized 口徑"
+    ]
+  }
+}

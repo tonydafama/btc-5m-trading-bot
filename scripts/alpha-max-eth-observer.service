@@ -1,0 +1,17 @@
+[Unit]
+Description=Alpha-Max live ETH 5m observer (Bot #2)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/btc-5m-bot
+EnvironmentFile=-/root/btc-5m-bot/.env.bot2
+Environment=BOT_INSTANCE=bot2
+Environment=BOT_ENV_FILE=/root/btc-5m-bot/.env.bot2
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/root/btc-5m-bot/venv/bin/python /root/btc-5m-bot/alpha_max_eth_observer.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

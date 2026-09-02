@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}BTC Trading{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+{% import "_strategy_blocks.html" as sb %}
+  <h1>BTC 5m Bot <span class="badge {{ 'live' if trading_mode == 'LIVE' else 'paper' }}" id="mode-badge">{{ trading_mode }}</span></h1>
+  <p class="sub">{{ strategy_display.btc.panel_sub }} · 更新 <span id="updated">—</span></p>
+
+  {% if live_session.session_id and trading_mode == 'LIVE' %}
+  <div class="session-banner" id="session-banner">
+    <div class="title">🔴 實盤 Session · {{ live_session.session_id }}</div>
+    <div class="meta">
+      開始 {{ live_session.started_at_hkt }} · 起始 ${{ "%.2f"|format(live_session.starting_wallet_usdc) }} USDC · 策略 <strong>Package 2+</strong>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="wallet-bar" id="wallet-bar">
+    <div class="card"><div class="label">Polymarket Cash（即時）</div><div class="value green" id="wallet-cash">—</div><div id="wallet-ready" class="ready-warn">載入中…</div></div>
+    <div class="card"><div class="label">可用資金</div><div class="value" id="v-available">—</div></div>
+    <div class="card"><div class="label">今日 Bot PnL</div><div class="value" id="v-daily-pnl">—</div></div>
+    <div class="card"><div class="label">Overall PnL</div><div class="value" id="v-overall-pnl">—</div><div class="hint" id="v-overall-hint">本 session 起</div></div>
+    <div class="card"><div class="label">Bot 模式</div><div class="value" id="bot-mode">{{ trading_mode }}</div></div>
+  </div>
+
+  <section>
+    <h2>Package 2+ 下注分級（固定 USD）</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Ask 區間</th><th>分級</th><th>固定下注</th></tr></thead>
+        <tbody id="tiers-body"><tr><td colspan="3" style="color:var(--muted);text-align:center;padding:1rem">載入中…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="grid" id="stats-grid">
+    <div class="card"><div class="label">錢包現金</div><div class="value" id="v-wallet">—</div></div>
+    <div class="card"><div class="label">今日 Bot PnL</div><div class="value" id="v-daily-stat">—</div></div>
+    <div class="card"><div class="label">Overall PnL</div><div class="value" id="v-pnl">—</div></div>
+    <div class="card"><div class="label">損益 %</div><div class="value" id="v-pnl-pct">—</div></div>
+    <div class="card"><div class="label">本 session 窗口</div><div class="value" id="v-judged">—</div></div>
+    <div class="card"><div class="label">已進場</div><div class="value" id="v-entered">—</div></div>
+    <div class="card"><div class="label">已跳過</div><div class="value" id="v-skipped">—</div></div>
+    <div class="card"><div class="label">勝率</div><div class="value" id="v-wr">—</div><div class="hint" id="v-wl">—</div></div>
+    <div class="card"><div class="label">每筆 EV</div><div class="value" id="v-ev">—</div></div>
+    <div class="card"><div class="label">最大回撤</div><div class="value neg" id="v-dd">—</div></div>
+  </div>
+
+  <section>
+    <h2>Equity{% if trading_mode == 'LIVE' %}<span class="live-section-label">LIVE</span>{% endif %}</h2>
+    <div class="chart-box"><canvas id="equity-chart"></canvas></div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>BTC Trade Log{% if trading_mode == 'LIVE' %}<span class="live-section-label">LIVE</span>{% endif %}</h2>
+      <span style="color:var(--muted);font-size:0.78rem" id="live-log-meta"></span>
+    </div>
+    <div class="log-filters-wrap" id="btc-log-filters-wrap">
+      <div class="log-filters-title">Log 篩選</div>
+      <div class="log-date-row">
+        <span class="filter-label">日期 HKT</span>
+        <div class="filter-group date-pills-wrap" id="btc-date-pills"></div>
+      </div>
+      <div class="day-summary-bar" id="btc-day-summary"></div>
+      <div class="log-filters" id="btc-log-filters">
+        <span class="filter-label">狀態</span>
+        <div class="filter-group" data-filter-group="status">
+          <button type="button" class="filter-pill active" data-filter="status" data-value="all">全部</button>
+          <button type="button" class="filter-pill" data-filter="status" data-value="entered">成交</button>
+          <button type="button" class="filter-pill" data-filter="status" data-value="skipped">跳過</button>
+          <button type="button" class="filter-pill" data-filter="status" data-value="win">WIN</button>
+          <button type="button" class="filter-pill" data-filter="status" data-value="loss">LOSS</button>
+          <button type="button" class="filter-pill" data-filter="status" data-value="pending">待結算</button>
+          <button type="button" class="filter-pill" data-filter="status" data-value="no_fill">未成交</button>
+          <button type="button" class="filter-pill" data-filter="status" data-value="failed">FAILED</button>
+        </div>
+        <span class="filter-sep"></span>
+        <span class="filter-label">跳過原因</span>
+        <div class="filter-group" data-filter-group="skip">
+          <button type="button" class="filter-pill active" data-filter="skip" data-value="all">全部</button>
+          <button type="button" class="filter-pill" data-filter="skip" data-value="outside_session">非交易時段</button>
+          <button type="button" class="filter-pill" data-filter="skip" data-value="timing">時機/過濾</button>
+          <button type="button" class="filter-pill" data-filter="skip" data-value="mid_disabled">Mid 關閉</button>
+          <button type="button" class="filter-pill" data-filter="skip" data-value="strategy">Ask/策略</button>
+          <button type="button" class="filter-pill" data-filter="skip" data-value="no_ask">無 Ask</button>
+        </div>
+        <span class="filter-sep"></span>
+        <span class="filter-label">Tier</span>
+        <div class="filter-group" data-filter-group="tier">
+          <button type="button" class="filter-pill active" data-filter="tier" data-value="all">全部</button>
+          <button type="button" class="filter-pill" data-filter="tier" data-value="favorite">Fav</button>
+          <button type="button" class="filter-pill" data-filter="tier" data-value="underdog">Dog</button>
+          <button type="button" class="filter-pill" data-filter="tier" data-value="mid">Mid</button>
+          <button type="button" class="filter-pill" data-filter="tier" data-value="skip">Skip</button>
+        </div>
+        <input type="search" class="log-search" id="btc-log-search" placeholder="搜尋 reason / market…" autocomplete="off">
+        <button type="button" class="filter-reset" id="btc-log-reset">重置</button>
+        <span class="log-filter-count" id="btc-log-filter-count"></span>
+        <div class="log-sort-row" id="btc-log-sort">
+          <span class="filter-label">排序</span>
+          <button type="button" class="sort-pill active" data-sort-key="date" data-sort-dir="desc">日期 ↓ 新→舊</button>
+          <button type="button" class="sort-pill" data-sort-key="date" data-sort-dir="asc">日期 ↑ 舊→新</button>
+          <button type="button" class="sort-pill" data-sort-key="pnl" data-sort-dir="desc">PnL ↓</button>
+          <button type="button" class="sort-pill" data-sort-key="pnl" data-sort-dir="asc">PnL ↑</button>
+          <button type="button" class="sort-pill" data-sort-key="ask" data-sort-dir="desc">Ask ↓</button>
+          <button type="button" class="sort-pill" data-sort-key="ask" data-sort-dir="asc">Ask ↑</button>
+          <label class="sort-group-toggle"><input type="checkbox" id="btc-group-date" checked> 依日期分組</label>
+        </div>
+      </div>
+    </div>
+    <div class="table-wrap log-table-wrap">
+      <table class="log-table" id="btc-log-table">
+        <thead>
+          <tr>
+            <th class="th-sortable" data-sort-key="date">日期<span class="sort-arrow">▼</span></th>
+            <th class="th-sortable" data-sort-key="date">時間<span class="sort-arrow">▼</span></th>
+            <th>Market</th><th>Contract</th>
+            <th class="th-sortable" data-sort-key="ask">Ask<span class="sort-arrow">▼</span></th>
+            <th>Stake</th><th>Tier</th><th>Outcome</th>
+            <th class="th-sortable" data-sort-key="result">Result<span class="sort-arrow">▼</span></th>
+            <th class="th-sortable" data-sort-key="pnl">PnL<span class="sort-arrow">▼</span></th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody id="log-body"><tr><td colspan="11" style="color:var(--muted);text-align:center;padding:2rem">載入 trade log…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>BTC 即時窗口</h2>
+    <div class="card live-box" id="live-panel">載入中…</div>
+  </section>
+
+  {{ sb.btc_rules(strategy_display, trading_mode) }}
+{% endblock %}
+{% block scripts %}
+<script>
+  let eqChart;
+  const tierSkipNote = '(依目前策略略過)';
+
+  function renderTiers(t) {
+    const tb = document.getElementById('tiers-body');
+    if (!t || !t.examples) return;
+    tb.innerHTML = t.examples.map(row => {
+      const skipped = !!row.skipped;
+      const stakeVal = row.stake ? '$' + Number(row.stake).toFixed(0) : '—';
+      const stake = skipped
+        ? `<span style="color:#8b949e">${stakeVal} <span style="font-size:0.72rem">${tierSkipNote}</span></span>`
+        : stakeVal;
+      const mult = skipped
+        ? `${row.multiplier} <span style="color:#8b949e;font-size:0.72rem">${tierSkipNote}</span>`
+        : row.multiplier;
+      return `<tr class="${skipped ? 'row-skipped' : ''}"><td>${row.ask_range}</td><td>${mult}</td><td>${stake}</td></tr>`;
+    }).join('');
+  }
+
+  function renderEquityChart(s) {
+    const labels = (s.equity_curve || []).map((_, i) => i === 0 ? 'Start' : 'T' + i);
+    if (eqChart) eqChart.destroy();
+    eqChart = new Chart(document.getElementById('equity-chart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: s.trading_mode === 'live' ? 'BTC 實盤 LIVE' : 'BTC Paper',
+          data: s.equity_curve || [],
+          borderColor: '#f85149',
+          backgroundColor: 'rgba(248,81,73,0.08)',
+          fill: true,
+          tension: 0.2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#8b949e' } } },
+        scales: {
+          x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+          y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+        },
+      },
+    });
+  }
+
+  function updateStats(s) {
+    document.getElementById('v-wallet').textContent = '$' + (s.wallet_cash || 0).toFixed(2);
+    document.getElementById('v-available').textContent = '$' + (s.current_bankroll || 0).toFixed(2);
+    if (s.dynamic_tiers) renderTiers(s.dynamic_tiers);
+    const p2 = s.package2 || {};
+    const dailyVal = s.daily_pnl_hkt ?? p2.daily_pnl_hkt ?? 0;
+    ['v-daily-pnl', 'v-daily-stat'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = fmtPnl(dailyVal); el.className = 'value ' + (dailyVal >= 0 ? 'pos' : 'neg'); }
+    });
+    const overallVal = s.overall_pnl ?? s.total_pnl ?? 0;
+    ['v-overall-pnl', 'v-pnl'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = fmtPnl(overallVal); el.className = 'value ' + (overallVal >= 0 ? 'pos' : 'neg'); }
+    });
+    const overallHint = document.getElementById('v-overall-hint');
+    if (overallHint && s.starting_bankroll != null) {
+      overallHint.textContent = '本 session 起 · 起始 $' + Number(s.starting_bankroll).toFixed(2);
+    }
+    const pctEl = document.getElementById('v-pnl-pct');
+    pctEl.textContent = (s.total_pnl_pct ?? 0) + '%';
+    pctEl.className = 'value ' + ((s.total_pnl_pct ?? 0) >= 0 ? 'pos' : 'neg');
+    document.getElementById('v-entered').textContent = s.trades_entered ?? 0;
+    document.getElementById('v-skipped').textContent = s.trades_skipped ?? 0;
+    document.getElementById('v-judged').textContent = (s.observation || {}).windows_judged ?? s.trades_total ?? 0;
+    document.getElementById('v-wr').textContent = s.win_rate != null ? s.win_rate + '%' : '—';
+    document.getElementById('v-wl').textContent = (s.wins || 0) + 'W / ' + (s.losses || 0) + 'L';
+    document.getElementById('v-ev').textContent = fmtPnl(s.ev_per_trade || 0);
+    document.getElementById('v-dd').textContent = '$' + (s.max_drawdown || 0).toFixed(2);
+    const meta = document.getElementById('live-log-meta');
+    if (meta) {
+      meta.textContent = `${(s.observation || {}).windows_judged ?? 0} 窗口 · ${s.trades_entered ?? 0} 成交 · ${s.trades_skipped ?? 0} 跳過`;
+    }
+    renderEquityChart(s);
+  }
+
+  const btcLogFilters = createLogFilterController({
+    wrapId: 'btc-log-filters-wrap',
+    rootId: 'btc-log-filters',
+    datePillsId: 'btc-date-pills',
+    daySummaryId: 'btc-day-summary',
+    bodyId: 'log-body',
+    tableId: 'btc-log-table',
+    sortRootId: 'btc-log-sort',
+    groupDateId: 'btc-group-date',
+    countId: 'btc-log-filter-count',
+    searchId: 'btc-log-search',
+    resetId: 'btc-log-reset',
+    storageKey: 'btc-log-filters-v3',
+    emptyMsg: '沒有符合篩選條件的紀錄',
+    noDataMsg: '尚無本 session 紀錄',
+    ethTable: false,
+  });
+
+  async function refresh() {
+    try {
+      const [sumR, logR, liveR, walletR, tiersR] = await Promise.all([
+        fetch('/api/summary'), fetch('/api/trade-log'), fetch('/api/live'), fetch('/api/wallet'), fetch('/api/tiers'),
+      ]);
+      const s = await sumR.json();
+      const log = await logR.json();
+      const live = await liveR.json();
+      const w = await walletR.json();
+      const tiers = await tiersR.json();
+      s.dynamic_tiers = tiers;
+      updateStats(s);
+      btcLogFilters.setRows(log);
+      if (w.cash_usdc != null) {
+        document.getElementById('wallet-cash').textContent = '$' + w.cash_usdc.toFixed(2);
+        const readyEl = document.getElementById('wallet-ready');
+        readyEl.textContent = w.ready_label || (w.api_ready ? '✅ API 可交易' : '⚠️ API 未就緒');
+        readyEl.className = w.api_ready ? 'ready-ok' : 'ready-warn';
+        readyEl.title = w.ready_detail || w.error || '';
+        const mode = (w.trading_mode || '{{ trading_mode }}').toUpperCase();
+        const mb = document.getElementById('mode-badge');
+        if (mb) { mb.textContent = mode; mb.className = 'badge ' + (mode === 'LIVE' ? 'live' : 'paper'); }
+        document.getElementById('bot-mode').textContent = mode;
+      }
+      document.getElementById('updated').textContent = new Date().toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong' });
+      if (live.status === 'ok') {
+        const px = live.spot || {};
+        document.getElementById('live-panel').innerHTML =
+          `<strong>${live.market.title}</strong> · 剩餘 ${live.market.t_remaining}s<br>` +
+          `BTC $${Math.round(px.price || 0)} · Up ${live.up_book.best_ask ?? '—'} · Down ${live.down_book.best_ask ?? '—'}`;
+      }
+    } catch (e) { console.warn(e); }
+  }
+  refresh();
+  setInterval(refresh, 15000);
+</script>
+{% endblock %}

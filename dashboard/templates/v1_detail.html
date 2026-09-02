@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>V1 Detail Log</title>
+  <style>
+    :root {
+      --bg:#0d1117; --panel:#161b22; --panel2:#0f1621; --border:#30363d;
+      --text:#e6edf3; --muted:#8b949e; --green:#3fb950; --red:#f85149;
+      --blue:#58a6ff; --orange:#d29922;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    .wrap { max-width:1280px; margin:0 auto; padding:1rem; }
+    a { color:var(--blue); text-decoration:none; }
+    header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+    h1 { margin:0; font-size:1.35rem; }
+    h2 { margin:0 0 .55rem; font-size:1rem; }
+    .sub,.hint { color:var(--muted); font-size:.8rem; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; }
+    .grid.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:.85rem; }
+    .rules { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.55rem; }
+    .rule-row { border:1px solid var(--border); border-radius:10px; padding:.55rem; background:var(--panel2); }
+    .time-card { border-left:3px solid var(--blue); }
+    .time-card.core { border-left-color:var(--green); }
+    .time-card.off { border-left-color:var(--red); }
+    .big-time { font-size:1.45rem; font-weight:800; margin:.15rem 0; }
+    .mini-table { width:100%; min-width:0; border-collapse:collapse; font-size:.82rem; }
+    .mini-table th,.mini-table td { padding:.5rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    .mini-table th { color:var(--muted); font-weight:600; background:rgba(255,255,255,.025); }
+    .mini-table tr:last-child td { border-bottom:0; }
+    .label { color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.03em; }
+    .value { font-size:1rem; font-weight:700; margin-top:.15rem; }
+    .pill { display:inline-flex; align-items:center; border:1px solid var(--border); border-radius:999px; padding:.25rem .5rem; font-size:.76rem; color:var(--muted); background:var(--panel2); }
+    .pill.live { color:var(--green); border-color:rgba(63,185,80,.45); }
+    .pill.warn { color:var(--orange); border-color:rgba(210,153,34,.45); }
+    .controls { display:flex; flex-wrap:wrap; gap:.45rem; align-items:center; }
+    button,select,input { border:1px solid var(--border); background:var(--panel2); color:var(--text); border-radius:8px; padding:.4rem .55rem; font-size:.8rem; }
+    button { cursor:pointer; }
+    button:hover { border-color:var(--blue); }
+    section { margin-top:.85rem; }
+    .table-wrap { overflow:auto; border:1px solid var(--border); border-radius:12px; }
+    table { width:100%; min-width:1180px; border-collapse:collapse; font-size:.76rem; }
+    th,td { padding:.48rem .5rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th { color:var(--muted); background:rgba(255,255,255,.025); position:sticky; top:0; z-index:1; }
+    tr:last-child td { border-bottom:0; }
+    .pos { color:var(--green); } .neg { color:var(--red); } .muted { color:var(--muted); }
+    .reason { max-width:460px; white-space:normal; color:var(--muted); }
+    .nowrap { white-space:nowrap; }
+    @media (max-width:860px) { header { display:block; } .grid,.grid.three,.rules { grid-template-columns:1fr; } .wrap { padding:.75rem; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>V1 Detail Log / Rules</h1>
+        <div class="sub">包含 entered、skipped、failed decision log · 只顯示 V1 BTC/ETH</div>
+      </div>
+      <div class="controls">
+        <a href="/"><button type="button">← Back to Dashboard</button></a>
+        <span class="pill live">V1 only</span>
+      </div>
+    </header>
+
+    <section class="grid three">
+      <div class="card time-card">
+        <div class="label">Regular Trading Window · HKT</div>
+        <div class="big-time">21:30 → 04:00</div>
+        <div class="hint">只在美股交易日晚上/凌晨工作。美國時間：09:30–16:00 ET。</div>
+      </div>
+      <div class="card time-card core">
+        <div class="label">Core Window · HKT</div>
+        <div class="big-time">23:00 → 03:00</div>
+        <div class="hint">研究支持的高 edge 時段；stake 會乘 core ×1.5。美國時間：11:00–15:00 ET。</div>
+      </div>
+      <div class="card time-card off">
+        <div class="label">Outside Window</div>
+        <div class="big-time">Skip</div>
+        <div class="hint">04:00–21:30 HKT 不開新 V1 單；Extended hours 目前關閉。</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>V1 目前交易規則（以香港時間為主）</h2>
+      <div class="hint" style="margin-bottom:.55rem">這裡只是顯示規則，沒有改策略。每個 5 分鐘市場只在接近收盤前 T-75 到 T-22 秒評估。</div>
+      <div class="table-wrap" style="border-radius:10px">
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Bot / Tier</th>
+              <th>會交易的香港時間</th>
+              <th>注碼</th>
+              <th>Ask / Filter</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>BTC Favorite</strong></td>
+              <td>23:00–03:00 HKT core<br><span class="hint">但 01:00–02:00 HKT 暫停 BTC fav</span></td>
+              <td>US {{ strategy_display.btc.rules_card.stakes[0].base }} · core {{ strategy_display.btc.rules_card.stakes[0].core }}</td>
+              <td>ask ≥ 0.70，max fav ask 0.85</td>
+            </tr>
+            <tr>
+              <td><strong>ETH Favorite</strong></td>
+              <td>23:00–03:00 HKT core</td>
+              <td>US {{ strategy_display.eth.rules_card.stakes[0].base }} · core {{ strategy_display.eth.rules_card.stakes[0].core }}</td>
+              <td>ask ≥ 0.70，max fav ask 0.85</td>
+            </tr>
+            <tr>
+              <td><strong>BTC Underdog</strong></td>
+              <td colspan="3"><span class="muted">關閉（BTC fav-only）</span></td>
+            </tr>
+            <tr>
+              <td><strong>ETH Underdog</strong></td>
+              <td>21:30–04:00 HKT US window</td>
+              <td>US {{ strategy_display.eth.rules_card.stakes[2].base }} · core {{ strategy_display.eth.rules_card.stakes[2].core }}</td>
+              <td>ask 0.15–0.30；mid tier disabled</td>
+            </tr>
+            <tr>
+              <td><strong>Mid tier</strong></td>
+              <td>永遠不打</td>
+              <td>—</td>
+              <td>ask 0.30–0.70 → skip</td>
+            </tr>
+            <tr>
+              <td><strong>Wallet tier</strong></td>
+              <td>全天有效</td>
+              <td colspan="2">
+                {% if v1_scaling.enabled %}
+                  {% for t in v1_scaling.thresholds|sort(attribute='wallet_usd') %}
+                    ${{ t.wallet_usd|int }}→×{{ t.multiplier }}{% if not loop.last %} · {% endif %}
+                  {% endfor %}
+                  · 現 ×{{ stake_plan.current_multiplier }}（wallet ${{ '%.2f'|format(stake_plan.wallet_usd) }}）
+                {% else %}
+                  未啟用
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td><strong>公式</strong></td>
+              <td colspan="3" class="hint">stake = base × wallet tier × (1.5 if core window) · 固定 USD 階梯，不是 bankroll %</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Daily Stop（合併停損）</h2>
+      <div class="hint" style="margin-bottom:.55rem">只計 BTC+ETH 本 US session 已平倉 PnL（21:30 HKT 開盤歸零）；觸發後兩邊一起暫停。</div>
+      <div class="table-wrap" style="border-radius:10px">
+        <table class="mini-table">
+          <thead><tr><th>Wallet ≥</th><th>Combined daily stop</th></tr></thead>
+          <tbody>
+            {% for t in stake_plan.daily_stop.tiers %}
+            <tr{% if t.current %} style="background:rgba(88,166,255,0.1)"{% endif %}>
+              <td>${{ t.wallet_usd|int }}{% if t.current %} ← now{% endif %}</td>
+              <td>−${{ t.limit_usd|int }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="hint" style="margin-top:.45rem">現 wallet ${{ '%.2f'|format(stake_plan.wallet_usd) }} · 生效 −${{ stake_plan.daily_stop.current_limit_usd|int }}</div>
+    </section>
+
+    <section class="grid">
+      {% for asset_key, card in [("btc", strategy_display.btc.rules_card), ("eth", strategy_display.eth.rules_card)] %}
+      <div class="card">
+        <h2>{{ card.asset }} 注碼 / 風控摘要</h2>
+        <div class="rules">
+          <div class="rule-row">
+            <div class="label">Mode</div>
+            <div class="value">{{ card.mode }}</div>
+            <div class="hint">Entry: T-75 → T-22 秒</div>
+          </div>
+          <div class="rule-row">
+            <div class="label">Risk</div>
+            <div class="value">Combined −${{ card.daily_loss }}</div>
+            <div class="hint">V1 combined stop: −${{ stake_plan.daily_stop.current_limit_usd|int }} (progressive) · per-asset off · same tier 2 losses stop</div>
+          </div>
+          {% for s in card.stakes %}
+          <div class="rule-row">
+            <div class="label">{{ s.tier }} · ask {{ s.ask }}</div>
+            <div class="value">{{ s.base }} <span class="hint">core {{ s.core }}</span></div>
+          </div>
+          {% endfor %}
+          <div class="rule-row">
+            <div class="label">Core / Scaling</div>
+            <div class="value">{{ card.core_mult_note }}</div>
+            <div class="hint">
+              {% if v1_scaling.enabled %}
+                V1 wallet tier · 現 ×{{ stake_plan.current_multiplier }} · core 再 ×1.5
+              {% else %}
+                Fixed USD stake; not bankroll-% dynamic
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:.6rem">
+          {% for item in card.filters %}
+            <span class="pill">{{ item }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+
+    <section class="card">
+      <div class="controls" style="justify-content:space-between">
+        <h2 style="margin:0">Decision Log</h2>
+        <div class="controls">
+          <select id="asset-filter">
+            <option value="all">BTC + ETH</option>
+            <option value="BTC">BTC only</option>
+            <option value="ETH">ETH only</option>
+          </select>
+          <select id="status-filter">
+            <option value="all">All decisions</option>
+            <option value="entered">Entered only</option>
+            <option value="unsuccessful">Skipped / failed only</option>
+            <option value="closed">Closed only</option>
+          </select>
+          <select id="limit-filter">
+            <option value="100">100</option>
+            <option value="250">250</option>
+            <option value="500">500</option>
+            <option value="1000">1000</option>
+          </select>
+          <button type="button" id="refresh-btn">Refresh</button>
+        </div>
+      </div>
+      <div class="hint" style="margin:.35rem 0 .65rem">Skipped 代表規則擋下；FAILED 代表曾嘗試下單但未成功成交；PENDING/OPEN 是尚未結算。</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>時間</th><th>Bot</th><th>Status</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Window</th><th>Result</th><th>PnL</th><th>Rule / Reason</th>
+            </tr>
+          </thead>
+          <tbody id="log-body"><tr><td colspan="10" class="muted">載入中…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const body = document.getElementById('log-body');
+    const money = (v) => {
+      if (v === null || v === undefined || v === '') return '—';
+      const n = Number(v || 0);
+      return (n >= 0 ? '+$' : '-$') + Math.abs(n).toFixed(2);
+    };
+    const get = (id) => document.getElementById(id);
+    function rowStatus(r) {
+      if (r.entered && (r.trade_result === 'WIN' || r.trade_result === 'LOSS')) return 'closed';
+      if (r.entered && (r.trade_result === 'FAILED' || r.status === 'failed')) return 'failed';
+      if (r.entered) return r.status || 'entered';
+      return 'skipped';
+    }
+    function askVal(r) {
+      const v = r.entry_ask ?? r.fill_price ?? r.decision_ask ?? r.ask;
+      return v === null || v === undefined ? '—' : Number(v).toFixed(4);
+    }
+    function render(rows) {
+      if (!rows.length) {
+        body.innerHTML = '<tr><td colspan="10" class="muted">沒有符合條件的 log</td></tr>';
+        return;
+      }
+      body.innerHTML = rows.map((r) => {
+        const pnl = r.pnl === null || r.pnl === undefined ? '—' : money(r.pnl);
+        const status = rowStatus(r);
+        const pnlClass = Number(r.pnl || 0) >= 0 ? 'pos' : 'neg';
+        return `<tr>
+          <td class="nowrap">${(r.timestamp_hkt || r.logged_at || '').slice(0, 19)}</td>
+          <td>${r.bot || '—'}</td>
+          <td><span class="pill ${status === 'skipped' || status === 'failed' ? 'warn' : ''}">${status}</span></td>
+          <td>${r.tier || '—'}</td>
+          <td>${askVal(r)}</td>
+          <td>$${Number(r.stake || 0).toFixed(2)}</td>
+          <td>${r.checkpoint || r.t_remaining || '—'}</td>
+          <td>${r.trade_result || r.status || '—'}</td>
+          <td class="${pnlClass}">${pnl}</td>
+          <td class="reason">${r.strategy_reason || r.reason || r.skip_category || ''}</td>
+        </tr>`;
+      }).join('');
+    }
+    async function refresh() {
+      const params = new URLSearchParams({
+        asset: get('asset-filter').value,
+        status: get('status-filter').value,
+        limit: get('limit-filter').value,
+      });
+      const rows = await (await fetch('/api/v1-detail-log?' + params.toString(), { cache: 'no-store' })).json();
+      render(rows);
+    }
+    ['asset-filter', 'status-filter', 'limit-filter'].forEach((id) => get(id).addEventListener('change', refresh));
+    get('refresh-btn').onclick = refresh;
+    refresh();
+  </script>
+</body>
+</html>

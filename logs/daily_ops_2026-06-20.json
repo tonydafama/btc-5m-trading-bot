@@ -1,0 +1,106 @@
+{
+  "generated_at_hkt": "2026-06-20 07:41:33",
+  "report_date_hkt": "2026-06-20",
+  "bots": {
+    "btc": {
+      "bot": "btc",
+      "mode": "—",
+      "daily_pnl": -19.81,
+      "total_pnl": 239.86,
+      "trades_entered": 153,
+      "trades_skipped": 820,
+      "win_rate": 79.1,
+      "windows_judged": 1005
+    },
+    "eth": {
+      "bot": "eth",
+      "mode": "live",
+      "daily_pnl": 9.24,
+      "total_pnl": 109.43,
+      "trades_entered": 18,
+      "trades_skipped": 429,
+      "win_rate": 100.0,
+      "windows_judged": 447
+    },
+    "gabagool": {
+      "bot": "gabagool",
+      "mode": "live",
+      "daily_pnl": -0.06,
+      "total_pnl": -0.06,
+      "windows_closed": 1,
+      "fills": 2,
+      "avg_pair_cost": 0.8327,
+      "top_skips": [
+        {
+          "reason": "sum_ask too high",
+          "count": 8943
+        },
+        {
+          "reason": "ask 0.010 too low (bad book?)",
+          "count": 329
+        },
+        {
+          "reason": "ask 0.001 too low (bad book?)",
+          "count": 178
+        }
+      ],
+      "last_trade_hkt": "2026-06-20 01:19:35"
+    },
+    "weather": {
+      "bot": "weather",
+      "mode": "paper",
+      "daily_pnl": 0,
+      "total_pnl": -23.28,
+      "settled": null,
+      "win_rate": 65.4
+    }
+  },
+  "processes": {
+    "btc_observer": true,
+    "eth_observer": true,
+    "gabagool_observer": true
+  },
+  "execution": {
+    "generated_at_hkt": "2026-06-20 07:41:33",
+    "lookback_days": 7,
+    "btc_live": {
+      "bot": "btc",
+      "live_fills": 153,
+      "fok_fills": 153,
+      "fok_success_rate": 100.0,
+      "avg_slippage": -0.0023,
+      "median_slippage": 0.0,
+      "slippage_samples": 153,
+      "note": "FOK rejections may not appear in trade_log; rate is fills with FOK path / all fills."
+    },
+    "eth_live": {
+      "bot": "eth",
+      "live_fills": 18,
+      "fok_fills": 18,
+      "fok_success_rate": 100.0,
+      "avg_slippage": 0.003,
+      "median_slippage": 0.0,
+      "slippage_samples": 18,
+      "note": "FOK rejections may not appear in trade_log; rate is fills with FOK path / all fills."
+    },
+    "gabagool_live": {
+      "bot": "gabagool",
+      "live_fills": 2,
+      "fok_fills": 2,
+      "fok_success_rate": 100.0,
+      "avg_slippage": -0.035,
+      "median_slippage": -0.035,
+      "slippage_samples": 2,
+      "note": "FOK rejections may not appear in trade_log; rate is fills with FOK path / all fills.",
+      "hedge_latency_samples": 1,
+      "median_hedge_latency_sec": 53.0,
+      "avg_hedge_latency_sec": 53.0
+    }
+  },
+  "alerts": [],
+  "last_trade_hkt": {
+    "btc": "2026-06-20 07:40:00",
+    "eth": "2026-06-20 07:39:13",
+    "gabagool": "2026-06-20 01:19:35"
+  }
+}

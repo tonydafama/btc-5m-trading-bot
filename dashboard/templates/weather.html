@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Weather{% endblock %}
+{% block content %}
+  <h1>Weather Bot <span class="badge paper">PAPER</span> <span class="badge" style="background:#6e7681;color:#fff">R&amp;D</span></h1>
+  <p class="sub">Polymarket 天氣預測 · 永遠 <strong>Paper</strong>（不受 BTC/ETH Extended Hours 按鈕影響）· 資料來自 <code>/root/weather-bot</code> · 更新 <span id="updated">—</span></p>
+
+  <div class="grid" id="weather-stats">
+    <div class="card"><div class="label">Paper 餘額</div><div class="value" id="w-balance">—</div></div>
+    <div class="card"><div class="label">Total PnL</div><div class="value" id="w-pnl">—</div></div>
+    <div class="card"><div class="label">勝率</div><div class="value" id="w-wr">—</div><div class="hint" id="w-wl">—</div></div>
+    <div class="card"><div class="label">平均 Edge</div><div class="value" id="w-edge">—</div></div>
+    <div class="card"><div class="label">已結算 / 待結</div><div class="value" id="w-settled">—</div></div>
+    <div class="card"><div class="label">今日下注</div><div class="value" id="w-today">—</div></div>
+    <div class="card"><div class="label">最佳城市</div><div class="value" id="w-best">—</div></div>
+    <div class="card"><div class="label">總筆數</div><div class="value" id="w-total">—</div></div>
+  </div>
+
+  <section id="city-section" style="display:none">
+    <h2>各城市表現 <span style="color:var(--muted);font-size:0.75rem;font-weight:400">最佳 → 最差 · 依 PnL</span></h2>
+    <div class="weather-city-grid" id="city-grid"></div>
+  </section>
+
+  <section>
+    <h2>Weather Trade Log</h2>
+    <div class="table-wrap log-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>時間</th><th>城市</th><th>Event</th><th>Side</th><th>Bucket</th>
+            <th>Stake</th><th>Edge</th><th>Win%</th><th>Result</th><th>PnL</th>
+          </tr>
+        </thead>
+        <tbody id="weather-log"><tr><td colspan="10" style="color:var(--muted);text-align:center;padding:2rem">載入中…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="sub" style="margin-top:1rem">
+    <a href="http://127.0.0.1:8084/" class="weather-link" target="_blank" rel="noopener">Weather 獨立 Dashboard（若已啟動）</a>
+  </p>
+{% endblock %}
+{% block scripts %}
+<script>
+  function updateWeatherStats(s) {
+    if (!s.available) {
+      document.getElementById('w-balance').textContent = 'N/A';
+      document.getElementById('weather-log').innerHTML =
+        '<tr><td colspan="10" style="color:var(--muted);text-align:center;padding:2rem">找不到 weather-bot trades 檔案</td></tr>';
+      return;
+    }
+    document.getElementById('w-balance').textContent = '$' + (s.balance || 0).toFixed(2);
+    const pnlEl = document.getElementById('w-pnl');
+    pnlEl.textContent = fmtPnl(s.total_pnl || 0);
+    pnlEl.className = 'value ' + ((s.total_pnl || 0) >= 0 ? 'pos' : 'neg');
+    document.getElementById('w-wr').textContent = (s.win_rate || 0) + '%';
+    document.getElementById('w-wl').textContent = (s.wins || 0) + 'W / ' + (s.losses || 0) + 'L';
+    document.getElementById('w-edge').textContent = (s.avg_edge_pct || 0) + '%';
+    document.getElementById('w-settled').textContent = (s.settled_trades || 0) + ' / ' + (s.pending_trades || 0);
+    document.getElementById('w-today').textContent = '$' + (s.today_staked || 0).toFixed(2) + ' · ' + (s.today_trades || 0) + ' 筆';
+    document.getElementById('w-best').textContent = s.best_city || '—';
+    document.getElementById('w-total').textContent = s.total_trades || 0;
+    renderWeatherCityGrid(s.city_ranked || s.city_stats || {});
+  }
+
+  function sortCityRows(cities) {
+    return Object.entries(cities || {})
+      .map(([city, cs]) => ({ city, ...cs }))
+      .sort((a, b) => {
+        const dp = (Number(b.pnl) || 0) - (Number(a.pnl) || 0);
+        if (dp !== 0) return dp;
+        const dw = (Number(b.win_rate) || 0) - (Number(a.win_rate) || 0);
+        if (dw !== 0) return dw;
+        return (Number(b.settled) || 0) - (Number(a.settled) || 0);
+      });
+  }
+
+  function renderWeatherCityGrid(cities) {
+    const citySection = document.getElementById('city-section');
+    const cityGrid = document.getElementById('city-grid');
+    if (!cityGrid) return;
+    const rows = Array.isArray(cities) ? cities : sortCityRows(cities);
+    if (!rows.length) {
+      if (citySection) citySection.style.display = 'none';
+      cityGrid.innerHTML = '';
+      return;
+    }
+    if (citySection) citySection.style.display = 'block';
+    cityGrid.innerHTML = rows.map((row, idx) => {
+      const pnl = Number(row.pnl) || 0;
+      const pnlClass = pnl >= 0 ? 'pos' : 'neg';
+      const city = row.city || '';
+      return (
+        '<div class="card weather-city-card" data-city="' + city + '">' +
+        '<div class="label"><span class="city-rank">#' + (idx + 1) + '</span><span class="city-name">' + city + '</span></div>' +
+        '<div class="value city-wr">' + (row.win_rate || 0) + '%</div>' +
+        '<div class="hint"><span class="city-settled">' + (row.settled || 0) + '</span> 筆 · ' +
+        '<span class="city-pnl ' + pnlClass + '">' + fmtPnl(pnl) + '</span></div></div>'
+      );
+    }).join('');
+  }
+
+  function renderWeatherLog(rows) {
+    const tb = document.getElementById('weather-log');
+    if (!rows || !rows.length) {
+      tb.innerHTML = '<tr><td colspan="10" style="color:var(--muted);text-align:center;padding:2rem">尚無 weather paper 紀錄</td></tr>';
+      return;
+    }
+    tb.innerHTML = rows.map(t => {
+      const pnl = t.pnl_val != null
+        ? `<span class="${t.pnl_val >= 0 ? 'pos' : 'neg'}">${t.pnl_display}</span>` : '—';
+      return `<tr class="${t.row_class || ''}">
+        <td>${t.time_display || '—'}<br><span style="color:var(--muted);font-size:0.7rem">${(t.date || '').slice(5)}</span></td>
+        <td>${t.city_name || t.city_key || '—'}</td>
+        <td title="${(t.event_title || '').replace(/"/g, '&quot;')}">${(t.event_title || '').slice(0, 28)}…</td>
+        <td>${t.side || '—'}</td>
+        <td>${t.bucket_label || '—'}</td>
+        <td>$${(t.stake || 0).toFixed(2)}</td>
+        <td>${t.edge_pct != null ? t.edge_pct + '%' : '—'}</td>
+        <td>${t.win_prob_pct != null ? t.win_prob_pct + '%' : '—'}</td>
+        <td class="result-${t.result}">${t.result}</td>
+        <td>${pnl}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function refresh() {
+    try {
+      const [sumR, logR] = await Promise.all([fetch('/api/weather-summary'), fetch('/api/weather-trades')]);
+      const s = await sumR.json();
+      const log = await logR.json();
+      updateWeatherStats(s);
+      renderWeatherLog(log);
+      document.getElementById('updated').textContent = new Date().toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong' });
+    } catch (e) { console.warn(e); }
+  }
+  refresh();
+  setInterval(refresh, 30000);
+</script>
+{% endblock %}
