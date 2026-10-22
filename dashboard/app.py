@@ -17,8 +17,12 @@ from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from flask import Flask, jsonify, redirect, render_template, request
 
-ROOT = Path("/root/btc-5m-bot")
-sys.path.insert(0, str(ROOT))
+DASHBOARD_DIR = Path(__file__).resolve().parent
+if str(DASHBOARD_DIR) not in sys.path:
+    sys.path.insert(0, str(DASHBOARD_DIR))
+ROOT = Path(os.getenv("BTC_5M_ROOT", "/root/btc-5m-bot"))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 load_dotenv(ROOT / ".env")
 
 from bot_common import (  # noqa: E402
@@ -358,6 +362,51 @@ def health():
     return jsonify({"ok": True, "bot": "btc-5m-package2plus"})
 
 
+@app.route("/api/services-status")
+def api_services_status():
+    import subprocess
+
+    units = {
+        "btc-5m-observer": "BTC 5m",
+        "eth-5m-observer": "ETH 5m",
+        "crypto-15m-observer": "15m " + os.getenv("CRYPTO_15M_TRADING_MODE", "paper").upper(),
+        "btc-5m-dashboard": "Dashboard",
+    }
+    out: dict[str, Any] = {}
+    for unit, label in units.items():
+        try:
+            r = subprocess.run(
+                ["systemctl", "is-active", unit],
+                capture_output=True,
+                text=True,
+                timeout=2,
+            )
+            state = (r.stdout or "").strip() or "unknown"
+        except Exception:
+            state = "unknown"
+        out[unit] = {"label": label, "state": state, "active": state == "active"}
+    try:
+        from paper_board import funding_carry_service_row
+
+        out["funding-carry-loop"] = funding_carry_service_row()
+    except Exception:
+        out["funding-carry-loop"] = {
+            "label": "Funding PAPER",
+            "state": "unknown",
+            "active": False,
+            "via": "error",
+        }
+    return jsonify(out)
+
+
+@app.route("/api/all-paper-strategies")
+def api_all_paper_strategies():
+    """Bots running now, paper ledgers, and research — display only."""
+    from paper_board import build_all_paper_strategies
+
+    return jsonify(build_all_paper_strategies(bot_root_path=ROOT))
+
+
 @app.route("/api/strategy-overview")
 def api_strategy_overview():
     return jsonify(build_strategy_overview())
@@ -468,6 +517,26 @@ def api_tiers():
 @app.route("/api/wallet")
 def api_wallet():
     try:
+        btc_paper = os.getenv("TRADING_MODE", "paper").lower() == "paper"
+        eth_paper = os.getenv("ETH_TRADING_MODE", "paper").lower() == "paper"
+        if btc_paper and eth_paper:
+            from package2_strategy import v1_bankroll_snapshot, v1_paper_session
+
+            snap = v1_bankroll_snapshot()
+            sess = v1_paper_session()
+            return jsonify(
+                {
+                    "cash_usdc": snap["wallet_cash"],
+                    "available_usdc": snap["bankroll"],
+                    "api_ready": True,
+                    "paper": True,
+                    "stale": False,
+                    "trading_mode": "paper",
+                    "eth_trading_mode": "paper",
+                    "paper_session_id": sess.get("session_id"),
+                    "paper_started_at_hkt": sess.get("started_at_hkt"),
+                }
+            )
         w = fetch_wallet_status()
         w["trading_mode"] = os.getenv("TRADING_MODE", "paper").lower()
         w["eth_trading_mode"] = os.getenv("ETH_TRADING_MODE", "paper").lower()
@@ -788,6 +857,112 @@ def api_stats():
 @app.route("/api/eth-summary")
 def api_eth_summary():
     return jsonify(eth_summary())
+
+
+@app.route("/api/crypto15m/summary")
+def api_crypto15m_summary():
+    from paper_15m_engine import crypto_15m_summary
+
+    return jsonify(crypto_15m_summary())
+
+
+@app.route("/api/crypto15m/quality")
+def api_crypto15m_quality():
+    from paper_15m_engine import crypto_15m_quality_report
+
+    return jsonify(crypto_15m_quality_report())
+
+
+@app.route("/api/dual-leg/summary")
+def api_dual_leg_summary():
+    from dual_leg_paper import summary
+
+    return jsonify(summary())
+
+
+@app.route("/api/dual-leg/trades")
+def api_dual_leg_trades():
+    from dual_leg_paper import recent_trades
+
+    limit = min(int(request.args.get("limit", 30)), 200)
+    return jsonify(recent_trades(limit=limit))
+
+
+@app.route("/api/crypto15m/trades")
+def api_crypto15m_trades():
+    from paper_15m_engine import recent_trades
+
+    limit = min(int(request.args.get("limit", 30)), 200)
+    return jsonify(recent_trades(limit=limit))
+
+
+def _crypto15m_control_payload() -> dict[str, Any]:
+    from paper_15m_engine import (
+        crypto_15m_paused,
+        crypto_15m_summary,
+        crypto_15m_trading_mode,
+        load_session,
+    )
+
+    summary = crypto_15m_summary()
+    sess = load_session()
+    mode = crypto_15m_trading_mode()
+    return {
+        "mode": mode,
+        "live": mode == "live",
+        "paused": crypto_15m_paused(),
+        "running": mode == "live" and not crypto_15m_paused(),
+        "session": sess,
+        "summary": summary,
+    }
+
+
+@app.route("/api/crypto15m/control", methods=["GET", "POST"])
+def api_crypto15m_control():
+    import subprocess
+
+    if request.method == "GET":
+        return jsonify(_crypto15m_control_payload())
+
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action", "")).lower()
+    env_file = ROOT / ".env"
+
+    def _set_env_key(key: str, value: str) -> None:
+        lines = env_file.read_text().splitlines() if env_file.exists() else []
+        out: list[str] = []
+        found = False
+        prefix = f"{key}="
+        for line in lines:
+            if line.startswith(prefix):
+                out.append(f"{key}={value}")
+                found = True
+            else:
+                out.append(line)
+        if not found:
+            out.append(f"{key}={value}")
+        env_file.write_text("\n".join(out) + "\n")
+
+    if action in ("pause", "resume", "start"):
+        from bot_control import set_bot_paused
+
+        paused = action == "pause"
+        set_bot_paused("crypto_15m", paused)
+        return jsonify({"ok": True, "action": action, **_crypto15m_control_payload()})
+
+    if action == "enable_live":
+        py = ROOT / "venv/bin/python3"
+        script = ROOT / "scripts/start_crypto_15m_live_session.py"
+        subprocess.run([str(py), str(script)], check=False, cwd=str(ROOT))
+        return jsonify({"ok": True, "action": action, **_crypto15m_control_payload()})
+
+    if action == "disable_live":
+        _set_env_key("CRYPTO_15M_TRADING_MODE", "paper")
+        _set_env_key("CRYPTO_15M_DATA_COLLECTION", "1")
+        subprocess.run(["systemctl", "restart", "crypto-15m-observer"], check=False)
+        return jsonify({"ok": True, "action": action, **_crypto15m_control_payload()})
+
+    return jsonify({"error": "action must be pause, resume, enable_live, or disable_live"}), 400
 
 
 @app.route("/api/eth-trade-log")
