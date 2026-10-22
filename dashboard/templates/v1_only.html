@@ -3,234 +3,461 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>V1 BTC/ETH</title>
+  <title>V1 DRY RUN · BTC/ETH Paper $1000</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg:#0d1117; --panel:#161b22; --panel2:#0f1621; --border:#30363d;
-      --text:#e6edf3; --muted:#8b949e; --green:#3fb950; --red:#f85149;
-      --blue:#58a6ff; --orange:#d29922;
+      --bg:#080b10; --panel:#121820; --panel2:#0c1018; --border:#2a3340;
+      --text:#e8eef5; --muted:#8b98a8; --green:#34d399; --red:#f87171;
+      --blue:#60a5fa; --orange:#fbbf24; --accent:#6366f1;
     }
     * { box-sizing:border-box; }
-    body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-    .wrap { max-width:1100px; margin:0 auto; padding:1rem; }
-    header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
-    h1 { margin:0; font-size:1.35rem; }
-    .sub { color:var(--muted); font-size:.82rem; margin-top:.2rem; }
-    .pill { display:inline-flex; align-items:center; border:1px solid var(--border); background:var(--panel2); color:var(--muted); padding:.25rem .5rem; border-radius:999px; font-size:.76rem; }
-    .pill.live { color:var(--green); border-color:rgba(63,185,80,.45); }
-    .pill.warn { color:var(--orange); border-color:rgba(210,153,34,.45); }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; line-height:1.45; }
+    .wrap { max-width:1200px; margin:0 auto; padding:1rem 1.1rem 2rem; }
+    .topbar {
+      display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:.75rem;
+      padding-bottom:.85rem; border-bottom:1px solid var(--border); margin-bottom:1rem;
+    }
+    h1 { margin:0; font-size:1.25rem; font-weight:700; letter-spacing:-.02em; }
+    .sub { color:var(--muted); font-size:.78rem; margin-top:.15rem; }
+    .pill {
+      display:inline-flex; align-items:center; gap:.25rem;
+      border:1px solid var(--border); background:var(--panel2);
+      color:var(--muted); padding:.22rem .55rem; border-radius:999px; font-size:.72rem;
+    }
+    .pill.live { color:var(--green); border-color:rgba(52,211,153,.35); background:rgba(52,211,153,.06); }
+    .pill.warn { color:var(--orange); border-color:rgba(251,191,36,.35); background:rgba(251,191,36,.06); }
+    .pill.down { color:var(--red); border-color:rgba(248,113,113,.35); }
+    .hero { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.65rem; margin-bottom:1rem; }
+    .profile-card {
+      background:linear-gradient(145deg,rgba(96,165,250,.08),var(--panel2));
+      border:1px solid rgba(96,165,250,.28);
+      border-radius:14px;
+      padding:.8rem .9rem;
+      margin-bottom:1rem;
+    }
+    .profile-title { font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); }
+    .profile-main { font-size:1rem; font-weight:700; margin-top:.15rem; }
+    .profile-sub { color:var(--muted); font-size:.8rem; margin-top:.25rem; }
+    .metric {
+      background:linear-gradient(145deg,var(--panel),var(--panel2));
+      border:1px solid var(--border); border-radius:14px; padding:.75rem .85rem;
+    }
+    .metric.highlight { border-color:rgba(96,165,250,.35); }
+    .metric.m15 { border-color:rgba(251,191,36,.3); }
+    .metric.m15.live-on { border-color:rgba(52,211,153,.45); background:linear-gradient(145deg,rgba(52,211,153,.08),var(--panel2)); }
+    .bot-card.m15 { border-left-color: var(--orange); }
+    .bot-card.m15.live-on { border-left-color: var(--green); }
+    .label { color:var(--muted); font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; }
+    .value { font-size:1.45rem; font-weight:700; margin-top:.1rem; letter-spacing:-.02em; }
+    .hint { color:var(--muted); font-size:.72rem; margin-top:.2rem; }
+    .tabs { display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.75rem; }
+    .tab {
+      cursor:pointer; border:1px solid var(--border); background:var(--panel2);
+      color:var(--muted); border-radius:10px; padding:.45rem .75rem; font-size:.78rem; font-weight:500;
+    }
+    .tab.active { color:var(--text); border-color:rgba(96,165,250,.5); background:rgba(96,165,250,.08); }
+    .panel { display:none; }
+    .panel.active { display:block; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:.85rem; margin-bottom:.75rem; }
     .grid { display:grid; gap:.75rem; }
-    .grid.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
     .grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:.85rem; }
-    .pnl-panel { border-left:3px solid var(--blue); }
-    .pnl-panel.today { border-left-color:var(--orange); }
-    .wallet-bar { display:flex; flex-wrap:wrap; gap:1.25rem; align-items:baseline; }
-    .wallet-bar .value { font-size:1.5rem; font-weight:700; }
-    .label { color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.03em; }
-    .value { font-size:1.35rem; font-weight:700; margin-top:.15rem; }
-    .hint { color:var(--muted); font-size:.74rem; margin-top:.2rem; }
-    .tag { font-size:.68rem; color:var(--muted); font-weight:500; text-transform:none; letter-spacing:0; margin-left:.35rem; }
-    .pos { color:var(--green); } .neg { color:var(--red); } .muted { color:var(--muted); }
-    section { margin-top:.75rem; }
+    .grid.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
     .section-head { display:flex; align-items:center; justify-content:space-between; gap:.75rem; margin-bottom:.55rem; }
-    h2 { font-size:.95rem; margin:0; }
-    button { cursor:pointer; border:1px solid var(--border); background:var(--panel2); color:var(--text); border-radius:8px; padding:.4rem .6rem; font-size:.76rem; }
+    h2 { font-size:.92rem; margin:0; font-weight:600; }
+    .tag { font-size:.65rem; color:var(--muted); font-weight:500; margin-left:.3rem; }
+    button {
+      cursor:pointer; border:1px solid var(--border); background:var(--panel2);
+      color:var(--text); border-radius:8px; padding:.38rem .6rem; font-size:.74rem;
+    }
     button:hover { border-color:var(--blue); }
-    button.danger { border-color:rgba(248,81,73,.45); color:var(--red); }
-    button.good { border-color:rgba(63,185,80,.45); color:var(--green); }
-    .controls { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.55rem; }
+    button.danger { border-color:rgba(248,113,113,.4); color:var(--red); }
+    button.good { border-color:rgba(52,211,153,.4); color:var(--green); }
+    .controls { display:flex; flex-wrap:wrap; gap:.35rem; }
     .bot-card { border-left:3px solid var(--blue); }
     .bot-card.eth { border-left-color:var(--green); }
-    .status-line { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.45rem; }
+    .status-line { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.4rem; }
     .table-wrap { overflow:auto; border:1px solid var(--border); border-radius:12px; }
-    table { width:100%; border-collapse:collapse; font-size:.76rem; min-width:980px; }
-    th,td { padding:.45rem .5rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
-    th { color:var(--muted); background:rgba(255,255,255,.025); font-weight:600; }
+    table { width:100%; border-collapse:collapse; font-size:.74rem; min-width:720px; }
+    th,td { padding:.42rem .5rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th { color:var(--muted); background:rgba(255,255,255,.02); font-weight:600; }
     tr:last-child td { border-bottom:0; }
-    .reason { color:var(--muted); max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .chart-box { height:260px; padding:.2rem 0 .4rem; }
-    .chart-note { font-size:.72rem; color:var(--muted); margin-top:.15rem; }
-    .tier-current { background:rgba(88,166,255,0.1); }
-    .stake-table th, .stake-table td { font-size:.72rem; padding:.38rem .45rem; text-align:right; }
+    .reason { color:var(--muted); max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .chart-box { height:240px; }
+    .chart-note { font-size:.7rem; color:var(--muted); margin-top:.2rem; }
+    .pos { color:var(--green); } .neg { color:var(--red); } .muted { color:var(--muted); }
+    .tier-current { background:rgba(96,165,250,.08); }
+    .stake-table th, .stake-table td { font-size:.7rem; padding:.35rem .42rem; text-align:right; }
     .stake-table th:first-child, .stake-table td:first-child { text-align:left; }
-    .sched-grid { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; font-size:.78rem; }
-    .sched-box { background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:.55rem .65rem; }
-    .sched-box .title { color:var(--muted); font-size:.68rem; text-transform:uppercase; margin-bottom:.25rem; }
-    @media (max-width:760px) {
+    .sched-grid { display:grid; grid-template-columns:1fr 1fr; gap:.55rem; font-size:.76rem; }
+    .sched-box { background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:.5rem .6rem; }
+    .sched-box .title { color:var(--muted); font-size:.65rem; text-transform:uppercase; margin-bottom:.2rem; }
+    details.config-block { border:1px solid var(--border); border-radius:12px; background:var(--panel); margin-bottom:.65rem; }
+    details.config-block summary {
+      cursor:pointer; padding:.65rem .85rem; font-weight:600; font-size:.82rem; list-style:none;
+    }
+    details.config-block summary::-webkit-details-marker { display:none; }
+    details.config-block .inner { padding:0 .85rem .85rem; }
+    .services { display:flex; flex-wrap:wrap; gap:.3rem; }
+    .board { margin: 0 0 1rem; }
+    .board-hero {
+      display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; align-items:flex-end;
+      padding:.95rem 1rem; border:1px solid rgba(96,165,250,.35); border-radius:14px;
+      background:linear-gradient(145deg, rgba(96,165,250,.12), var(--panel2));
+      margin-bottom:.7rem;
+    }
+    .board-kicker { color:var(--blue); font-size:.72rem; letter-spacing:.04em; text-transform:uppercase; }
+    .board-hero h2 { font-size:1.15rem; margin:.15rem 0 .2rem; }
+    .board-hero h2.live-warn { color:var(--orange); }
+    .board-hero-line { color:var(--muted); font-size:.8rem; }
+    .board-counts { display:flex; flex-wrap:wrap; gap:.5rem; }
+    .board-counts div {
+      background:var(--panel); border:1px solid var(--border); border-radius:12px;
+      padding:.4rem .7rem; min-width:6.5rem;
+    }
+    .board-counts b { display:block; font-size:1.2rem; line-height:1.2; }
+    .board-counts span { color:var(--muted); font-size:.68rem; }
+    .board-sec {
+      background:var(--panel); border:1px solid var(--border); border-radius:14px;
+      padding:.85rem .95rem .75rem; margin-bottom:.65rem;
+    }
+    .board-sec h3 { margin:0; font-size:.95rem; }
+    .sec-sub { color:var(--muted); font-size:.75rem; margin:.2rem 0 .65rem; }
+    .paper-banner {
+      color:var(--orange); font-size:.78rem; font-weight:600; margin:0 0 .55rem;
+    }
+    .dot {
+      width:.55rem; height:.55rem; border-radius:50%; display:inline-block;
+      margin-right:.35rem; vertical-align:middle;
+    }
+    .dot.on { background:var(--green); box-shadow:0 0 0 3px rgba(52,211,153,.15); }
+    .dot.off { background:var(--red); box-shadow:0 0 0 3px rgba(248,113,113,.12); }
+    table.board-table { min-width:0; font-size:.82rem; }
+    table.board-table td.name { font-weight:650; }
+    .exp-item { padding:.45rem 0; border-top:1px solid var(--border); }
+    .exp-item:first-child { border-top:0; padding-top:0; }
+    .exp-name { font-weight:650; }
+    .exp-note { color:var(--muted); font-size:.78rem; margin-top:.12rem; }
+    @media (max-width:900px) {
+      .hero { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .grid.two, .grid.three { grid-template-columns:1fr; }
       .sched-grid { grid-template-columns:1fr; }
-      header { display:block; }
-      .grid.three, .grid.two { grid-template-columns:1fr; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header>
+    <div class="topbar">
       <div>
-        <h1>V1 BTC / ETH</h1>
-        <div class="sub">Bot only · <span id="session-start">—</span> · 更新 <span id="updated">—</span></div>
-        <div class="controls">
+        <h1>V1 Live Dashboard</h1>
+        <div class="sub">Session <span id="session-start">—</span> · 更新 <span id="updated">—</span></div>
+        <div class="controls" style="margin-top:.45rem">
           <a href="/logs" style="text-decoration:none"><button type="button">Rules &amp; Log</button></a>
         </div>
       </div>
-      <div class="status-line">
-        <span class="pill live" id="btc-mode">BTC —</span>
-        <span class="pill live" id="eth-mode">ETH —</span>
-        <span class="pill live" id="risk-pill">—</span>
+      <div>
+        <div class="status-line">
+          <span class="pill live" id="btc-mode">BTC —</span>
+          <span class="pill live" id="eth-mode">ETH —</span>
+          <span class="pill live" id="risk-pill">—</span>
+        </div>
+        <div class="services" id="services-line" style="margin-top:.4rem"></div>
       </div>
-    </header>
+    </div>
 
-    <section class="card">
-      <div class="wallet-bar">
+    <section class="board" id="all-paper-board">
+      <div class="board-hero">
         <div>
-          <div class="label">Wallet</div>
-          <div class="value" id="wallet-cash">—</div>
-          <div class="hint" id="wallet-hint">—</div>
+          <div class="board-kicker">全部 Paper</div>
+          <h2 id="board-hero-title">全部 Paper · 載入中</h2>
+          <div class="board-hero-line" id="board-hero-line">分開睇：邊啲程式跑緊、邊啲先係模擬落單、邊啲只係研究。</div>
+        </div>
+        <div class="board-counts">
+          <div><b id="board-n-bots">—</b><span>個 bot 跑緊</span></div>
+          <div><b id="board-n-paper">—</b><span>條 paper 策略</span></div>
+          <div><b id="board-n-exp">—</b><span>項實驗</span></div>
         </div>
       </div>
+
+      <div class="board-sec">
+        <h3>而家跑緊嘅 Bot</h3>
+        <p class="sec-sub">只列進程。綠點 = 跑緊，紅點 = 停咗。唔會夾實驗備註。</p>
+        <div class="table-wrap">
+          <table class="board-table">
+            <thead>
+              <tr><th>名稱</th><th>狀態</th><th>模式</th><th>做緊咩</th></tr>
+            </thead>
+            <tbody id="board-bots"><tr><td colspan="4" class="muted">載入中…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="board-sec">
+        <h3>Paper 交易</h3>
+        <p class="sec-sub">會模擬落單嘅策略。</p>
+        <p class="paper-banner">以下全部係模擬單，唔會用真錢。</p>
+        <div class="table-wrap">
+          <table class="board-table">
+            <thead>
+              <tr><th>策略</th><th>模式</th><th>單數</th><th>紙上盈虧</th><th>最近活動</th></tr>
+            </thead>
+            <tbody id="board-paper"><tr><td colspan="5" class="muted">載入中…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="board-sec">
+        <h3>實驗 / 研究</h3>
+        <p class="sec-sub">唔係下單 bot；只係研究或 scanner。</p>
+        <div id="board-experiments"><div class="exp-note">載入中…</div></div>
+      </div>
     </section>
 
-    <section class="card">
-      <div class="section-head">
-        <h2>Stake Plan</h2>
-        <span class="pill live" id="stake-mult-pill">—</span>
+    <div class="hero">
+      <div class="metric highlight">
+        <div class="label">Wallet</div>
+        <div class="value" id="wallet-cash">—</div>
+        <div class="hint" id="wallet-hint">—</div>
       </div>
-      <div class="hint" id="stake-formula">—</div>
-      <div class="table-wrap" style="margin-top:.5rem">
-        <table class="stake-table">
-          <thead>
-            <tr>
-              <th>Wallet ≥</th><th>Tier</th>
-              <th>BTC fav US</th><th>BTC fav core</th>
-              <th>ETH fav US</th><th>ETH fav core</th>
-              <th>ETH dog US</th><th>ETH dog core</th>
-            </tr>
-          </thead>
-          <tbody id="stake-tiers-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
-        </table>
+      <div class="metric">
+        <div class="label">Today · US Session</div>
+        <div class="value" id="td-total">—</div>
+        <div class="hint" id="daily-stop-hint">—</div>
       </div>
-      <div class="hint" id="stake-current-line" style="margin-top:.45rem">—</div>
-    </section>
+      <div class="metric">
+        <div class="label">Overall · Session</div>
+        <div class="value" id="ov-total">—</div>
+        <div class="hint">BTC <span id="ov-btc-inline">—</span> · ETH <span id="ov-eth-inline">—</span></div>
+      </div>
+      <div class="metric m15" id="c15m-hero-metric">
+        <div class="label" id="c15m-hero-label">15m Bot</div>
+        <div class="value" id="c15m-combined">—</div>
+        <div class="hint" id="c15m-hero-hint">—</div>
+      </div>
+    </div>
 
-    <section class="card">
-      <div class="section-head">
-        <h2>Trading Schedule</h2>
-        <span class="pill" id="sched-now-pill">—</span>
-      </div>
-      <div class="sched-grid" id="sched-grid">—</div>
-      <div class="hint" style="margin-top:.45rem" id="sched-stop-line">Daily stop: combined net PnL ≤ <span id="sched-stop">—</span> · wallet↓ → stake tier↓ auto</div>
-      <div class="table-wrap" style="margin-top:.5rem">
-        <table class="stake-table" id="stop-table">
-          <thead>
-            <tr><th>Wallet ≥</th><th>Daily stop</th><th></th></tr>
-          </thead>
-          <tbody id="stop-tiers-body"><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
-        </table>
-      </div>
-      <div class="hint" id="stop-current-line" style="margin-top:.35rem">—</div>
-    </section>
+    <div class="profile-card">
+      <div class="profile-title">Running Now</div>
+      <div class="profile-main" id="live-profile-main">—</div>
+      <div class="profile-sub" id="live-profile-sub">—</div>
+    </div>
 
-    <section class="card pnl-panel">
-      <div class="section-head">
-        <h2>Overall PnL <span class="tag">Session · 累計</span></h2>
-      </div>
-      <div class="grid three">
-        <div><div class="label">V1 Total</div><div class="value" id="ov-total">—</div></div>
-        <div><div class="label">BTC Bot</div><div class="value" id="ov-btc">—</div></div>
-        <div><div class="label">ETH Bot</div><div class="value" id="ov-eth">—</div></div>
-      </div>
-      <div class="hint">從 session 開始所有已平倉加總 · 對應 Overall 圖表</div>
-    </section>
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="live">Live 5m</button>
+      <button class="tab" data-tab="paper15">15m Bot</button>
+      <button class="tab" data-tab="dualeg">Dual-Leg Paper</button>
+      <button class="tab" data-tab="charts">Charts</button>
+      <button class="tab" data-tab="config">Config</button>
+    </div>
 
-    <section class="card pnl-panel today">
-      <div class="section-head">
-        <h2>Session PnL <span class="tag">US session · 21:30 歸零</span></h2>
+    <div id="panel-live" class="panel active">
+      <div class="grid two">
+        <div class="card bot-card">
+          <div class="section-head">
+            <h2>BTC V1</h2>
+            <span class="pill" id="btc-status">—</span>
+          </div>
+          <div class="status-line">
+            <span class="pill" id="btc-fav-risk">fav —</span>
+            <span class="pill" id="btc-dog-risk">dog —</span>
+          </div>
+          <div class="controls" style="margin-top:.5rem">
+            <button id="btc-toggle">—</button>
+            <button class="good" data-release="btc">解除停損</button>
+          </div>
+        </div>
+        <div class="card bot-card eth">
+          <div class="section-head">
+            <h2>ETH V1</h2>
+            <span class="pill" id="eth-status">—</span>
+          </div>
+          <div class="status-line">
+            <span class="pill" id="eth-fav-risk">fav —</span>
+            <span class="pill" id="eth-dog-risk">dog —</span>
+          </div>
+          <div class="controls" style="margin-top:.5rem">
+            <button id="eth-toggle">—</button>
+            <button class="good" data-release="eth">解除停損</button>
+          </div>
+        </div>
       </div>
-      <div class="grid three">
-        <div><div class="label">V1 Total</div><div class="value" id="td-total">—</div></div>
-        <div><div class="label">BTC Bot</div><div class="value" id="td-btc">—</div></div>
-        <div><div class="label">ETH Bot</div><div class="value" id="td-eth">—</div></div>
-      </div>
-      <div class="hint" id="daily-stop-hint">—</div>
-    </section>
 
-    <section class="grid two">
-      <div class="card bot-card">
+      <div class="card">
         <div class="section-head">
-          <h2>BTC V1</h2>
-          <span class="pill" id="btc-status">—</span>
+          <h2>Live Trades <span class="tag">5m BTC + ETH</span></h2>
+          <div class="controls">
+            <button data-limit="10">10</button>
+            <button data-limit="25">25</button>
+            <button data-limit="50">50</button>
+          </div>
         </div>
-        <div class="status-line">
-          <span class="pill" id="btc-fav-risk">fav —</span>
-          <span class="pill" id="btc-dog-risk">dog —</span>
+        <div class="grid three" style="margin-bottom:.65rem">
+          <div><div class="label">Today BTC</div><div class="value" style="font-size:1.1rem" id="td-btc">—</div></div>
+          <div><div class="label">Today ETH</div><div class="value" style="font-size:1.1rem" id="td-eth">—</div></div>
+          <div><div class="label">Overall split</div><div class="hint" style="margin-top:.35rem"><span id="ov-btc">—</span> · <span id="ov-eth">—</span></div></div>
         </div>
-        <div class="controls">
-          <button id="btc-toggle">—</button>
-          <button class="good" data-release="btc">解除停損</button>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Bot</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th></tr>
+            </thead>
+            <tbody id="trades-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
+          </table>
         </div>
       </div>
-      <div class="card bot-card eth">
+    </div>
+
+    <div id="panel-paper15" class="panel">
+      <div class="grid two">
+        <div class="card bot-card m15" id="c15m-control-card">
+          <div class="section-head">
+            <h2>15m Bot · BTC + ETH</h2>
+            <div class="status-line">
+              <span class="pill" id="c15m-mode-pill">—</span>
+              <span class="pill" id="c15m-status-pill">—</span>
+            </div>
+          </div>
+          <div class="hint" id="c15m-rules">—</div>
+          <div class="controls" style="margin-top:.55rem">
+            <button class="good" id="c15m-toggle">—</button>
+            <button id="c15m-enable-live">Go Live</button>
+            <button class="danger" id="c15m-disable-live">Paper mode</button>
+          </div>
+          <div class="hint" id="c15m-control-hint" style="margin-top:.45rem">—</div>
+        </div>
+        <div class="card">
+          <div class="section-head"><h2>Session</h2><span class="pill" id="c15m-session-pill">—</span></div>
+          <div class="grid three" style="margin-top:.45rem">
+            <div><div class="label">BTC 15m</div><div class="value" style="font-size:1.15rem" id="c15m-btc">—</div><div class="hint" id="c15m-btc-meta">—</div></div>
+            <div><div class="label">ETH 15m</div><div class="value" style="font-size:1.15rem" id="c15m-eth">—</div><div class="hint" id="c15m-eth-meta">—</div></div>
+            <div><div class="label">Quality</div><div class="hint" id="c15m-quality-hint" style="margin-top:.35rem;font-size:.78rem">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="section-head">
-          <h2>ETH V1</h2>
-          <span class="pill" id="eth-status">—</span>
+          <h2>15m Trades <span class="tag" id="c15m-trades-tag">BTC + ETH</span></h2>
         </div>
-        <div class="status-line">
-          <span class="pill" id="eth-fav-risk">fav —</span>
-          <span class="pill" id="eth-dog-risk">dog —</span>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Bot</th><th>Mode</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th></tr>
+            </thead>
+            <tbody id="c15m-trades-body"><tr><td colspan="9" class="muted">Loading…</td></tr></tbody>
+          </table>
         </div>
-        <div class="controls">
-          <button id="eth-toggle">—</button>
-          <button class="good" data-release="eth">解除停損</button>
-        </div>
+        <div class="hint" id="c15m-observer-hint" style="margin-top:.45rem">—</div>
       </div>
-    </section>
+    </div>
 
-    <section class="card">
-      <div class="section-head">
-        <h2>Daily PnL</h2>
-        <span class="hint">每日單日盈虧（柱狀）</span>
-      </div>
-      <div class="chart-box"><canvas id="daily-chart"></canvas></div>
-      <div class="chart-note">每根柱 = 該日當天賺/虧 · 不是累計</div>
-    </section>
-
-    <section class="card">
-      <div class="section-head">
-        <h2>Overall PnL</h2>
-        <span class="hint">Session 累計曲線</span>
-      </div>
-      <div class="chart-box"><canvas id="cumul-chart"></canvas></div>
-      <div class="chart-note">曲線 = 從 session 起逐日累加 · 最後一點 ≈ Overall V1 Total</div>
-    </section>
-
-    <section class="card">
-      <div class="section-head">
-        <h2>Recent Trades</h2>
-        <div class="controls">
-          <button data-limit="10">10</button>
-          <button data-limit="25">25</button>
-          <button data-limit="50">50</button>
+    <div id="panel-dualeg" class="panel">
+      <div class="card" style="border-left:3px solid var(--accent)">
+        <div class="section-head">
+          <h2>5m Dual-Leg Hedge <span class="tag">BTC + ETH · isolated paper</span></h2>
+          <span class="pill warn">PAPER ONLY</span>
+        </div>
+        <div class="hint" id="dl-rules">—</div>
+        <div class="grid three" style="margin-top:.65rem">
+          <div>
+            <div class="label">Net PnL after estimated fees</div>
+            <div class="value" id="dl-pnl">—</div>
+            <div class="hint" id="dl-closed">—</div>
+          </div>
+          <div>
+            <div class="label">Hedge completion</div>
+            <div class="value" id="dl-hedge-rate">—</div>
+            <div class="hint" id="dl-stranded">—</div>
+          </div>
+          <div>
+            <div class="label">Open positions</div>
+            <div class="value" id="dl-open">—</div>
+            <div class="hint" id="dl-open-detail">—</div>
+          </div>
         </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Time</th><th>Bot</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th>
-            </tr>
-          </thead>
-          <tbody id="trades-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
-        </table>
+      <div class="card">
+        <div class="section-head">
+          <h2>Dual-Leg Trades</h2>
+          <span class="hint">重點監察 stranded one-leg，而非只看勝率</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Asset</th><th>Binance regime</th><th>Legs</th><th>UP Ask</th><th>DOWN Ask</th><th>Stake</th><th>Outcome</th><th>Floor</th><th>Net PnL</th></tr>
+            </thead>
+            <tbody id="dl-trades-body"><tr><td colspan="10" class="muted">Loading…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="hint" id="dl-note" style="margin-top:.45rem">—</div>
       </div>
-    </section>
+    </div>
+
+    <div id="panel-charts" class="panel">
+      <div class="card">
+        <div class="section-head"><h2>Daily PnL</h2><span class="hint">單日盈虧</span></div>
+        <div class="chart-box"><canvas id="daily-chart"></canvas></div>
+        <div class="chart-note">每根柱 = 該日當天賺/虧</div>
+      </div>
+      <div class="card">
+        <div class="section-head"><h2>Overall Curve</h2><span class="hint">Session 累計</span></div>
+        <div class="chart-box"><canvas id="cumul-chart"></canvas></div>
+        <div class="chart-note">曲線 ≈ Overall V1 Total</div>
+      </div>
+    </div>
+
+    <div id="panel-config" class="panel">
+      <details class="config-block" open>
+        <summary>Stake Plan · <span class="pill live" id="stake-mult-pill">—</span></summary>
+        <div class="inner">
+          <div class="hint" id="stake-formula">—</div>
+          <div class="table-wrap" style="margin-top:.5rem">
+            <table class="stake-table">
+              <thead>
+                <tr>
+                  <th>Wallet ≥</th><th>Tier</th>
+                  <th>BTC fav US</th><th>BTC fav core</th>
+                  <th>ETH fav US</th><th>ETH fav core</th>
+                  <th>ETH dog US</th><th>ETH dog core</th>
+                </tr>
+              </thead>
+              <tbody id="stake-tiers-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="hint" id="stake-current-line" style="margin-top:.45rem">—</div>
+        </div>
+      </details>
+
+      <details class="config-block">
+        <summary>Trading Schedule · <span class="pill" id="sched-now-pill">—</span></summary>
+        <div class="inner">
+          <div class="sched-grid" id="sched-grid">—</div>
+          <div class="hint" style="margin-top:.45rem" id="sched-stop-line">Daily stop: combined net PnL ≤ <span id="sched-stop">—</span></div>
+          <div class="table-wrap" style="margin-top:.5rem">
+            <table class="stake-table" id="stop-table">
+              <thead><tr><th>Wallet ≥</th><th>Daily stop</th><th></th></tr></thead>
+              <tbody id="stop-tiers-body"><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="hint" id="stop-current-line" style="margin-top:.35rem">—</div>
+        </div>
+      </details>
+    </div>
   </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
     let dailyChart, cumulChart;
     let tradeLimit = 25;
+
+    document.querySelectorAll('.tab').forEach((btn) => {
+      btn.onclick = () => {
+        document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach((p) => p.classList.remove('active'));
+        btn.classList.add('active');
+        $('panel-' + btn.dataset.tab).classList.add('active');
+      };
+    });
 
     function money(v) {
       const n = Number(v || 0);
@@ -243,8 +470,15 @@
     }
     function setPnl(id, value) {
       const el = $(id);
+      if (!el) return;
       el.textContent = money(value);
       cls(el, value);
+    }
+    function setPnlInline(id, value) {
+      const el = $(id);
+      if (!el) return;
+      el.textContent = money(value);
+      el.className = Number(value || 0) >= 0 ? 'pos' : 'neg';
     }
 
     function fmtBar(v) {
@@ -284,11 +518,10 @@
             if (v == null) return;
             ctx.save();
             ctx.font = '600 10px system-ui,sans-serif';
-            ctx.fillStyle = Number(v) >= 0 ? '#3fb950' : '#f85149';
+            ctx.fillStyle = Number(v) >= 0 ? '#34d399' : '#f87171';
             ctx.textAlign = 'center';
             ctx.textBaseline = Number(v) >= 0 ? 'bottom' : 'top';
-            const pad = Number(v) >= 0 ? -4 : 4;
-            ctx.fillText(fmtBar(v), bar.x, bar.y + pad);
+            ctx.fillText(fmtBar(v), bar.x, bar.y + (Number(v) >= 0 ? -4 : 4));
             ctx.restore();
           });
         });
@@ -333,10 +566,10 @@
 
     function baseScales() {
       return {
-        x: { grid: { display: false }, ticks: { color: '#8b949e', font: { size: 11 } }, border: { color: '#30363d' } },
+        x: { grid: { display: false }, ticks: { color: '#8b98a8', font: { size: 11 } }, border: { color: '#2a3340' } },
         y: {
-          grid: { color: 'rgba(48,54,61,0.5)', drawTicks: false },
-          ticks: { color: '#8b949e', font: { size: 10 }, callback: (v) => (v >= 0 ? '+$' : '-$') + Math.abs(v) },
+          grid: { color: 'rgba(42,51,64,0.5)', drawTicks: false },
+          ticks: { color: '#8b98a8', font: { size: 10 }, callback: (v) => (v >= 0 ? '+$' : '-$') + Math.abs(v) },
           border: { display: false },
         },
       };
@@ -352,16 +585,16 @@
         interaction: { mode: 'index', intersect: false },
         layout: { padding: { top: 22 } },
         plugins: {
-          legend: { position: 'top', align: 'end', labels: { color: '#e6edf3', usePointStyle: true, font: { size: 10 } } },
-          tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', borderWidth: 1,
+          legend: { position: 'top', align: 'end', labels: { color: '#e8eef5', usePointStyle: true, font: { size: 10 } } },
+          tooltip: { backgroundColor: '#121820', borderColor: '#2a3340', borderWidth: 1,
             callbacks: { label: (c) => ' ' + c.dataset.label + ': ' + money(c.raw) } },
         },
         scales: baseScales(),
       };
       const datasets = [
-        { label: 'BTC', data: btc, backgroundColor: hexRgba('#d29922', 0.85), borderRadius: 4, barPercentage: 0.75 },
-        { label: 'ETH', data: eth, backgroundColor: hexRgba('#3fb950', 0.85), borderRadius: 4, barPercentage: 0.75 },
-        { label: 'V1 Total', data: total, backgroundColor: hexRgba('#58a6ff', 0.9), borderRadius: 4, barPercentage: 0.75 },
+        { label: 'BTC', data: btc, backgroundColor: hexRgba('#fbbf24', 0.85), borderRadius: 4, barPercentage: 0.75 },
+        { label: 'ETH', data: eth, backgroundColor: hexRgba('#34d399', 0.85), borderRadius: 4, barPercentage: 0.75 },
+        { label: 'V1 Total', data: total, backgroundColor: hexRgba('#60a5fa', 0.9), borderRadius: 4, barPercentage: 0.75 },
       ];
       if (!dailyChart) {
         dailyChart = new Chart($('daily-chart'), { type: 'bar', data: { labels, datasets }, options: opts, plugins: [chartZeroLine, barValueLabels] });
@@ -384,8 +617,8 @@
         interaction: { mode: 'index', intersect: false },
         layout: { padding: { top: 26 } },
         plugins: {
-          legend: { position: 'top', align: 'end', labels: { color: '#e6edf3', usePointStyle: true, font: { size: 10 } } },
-          tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', borderWidth: 1,
+          legend: { position: 'top', align: 'end', labels: { color: '#e8eef5', usePointStyle: true, font: { size: 10 } } },
+          tooltip: { backgroundColor: '#121820', borderColor: '#2a3340', borderWidth: 1,
             callbacks: { label: (c) => ' ' + c.dataset.label + ': ' + money(c.raw) } },
         },
         scales: baseScales(),
@@ -396,13 +629,13 @@
         backgroundColor: main ? hexRgba(color, 0.1) : 'transparent',
         fill: !!main, tension: 0.3,
         pointRadius: main ? 5 : 3, pointHoverRadius: 7,
-        pointBackgroundColor: color, pointBorderColor: '#0d1117', pointBorderWidth: 2,
+        pointBackgroundColor: color, pointBorderColor: '#080b10', pointBorderWidth: 2,
         borderWidth: main ? 2.5 : 1.5,
       });
       const datasets = [
-        mkLine('V1 Total', totC, '#58a6ff', true),
-        mkLine('BTC', btcC, '#d29922', false),
-        mkLine('ETH', ethC, '#3fb950', false),
+        mkLine('V1 Total', totC, '#60a5fa', true),
+        mkLine('BTC', btcC, '#fbbf24', false),
+        mkLine('ETH', ethC, '#34d399', false),
       ];
       if (!cumulChart) {
         cumulChart = new Chart($('cumul-chart'), { type: 'line', data: { labels, datasets }, options: opts, plugins: [chartZeroLine, lineValueLabels] });
@@ -415,14 +648,86 @@
       }
     }
 
-    async function getJson(url) {
-      const res = await fetch(url, { cache: 'no-store' });
-      return res.json();
+    async function getJson(url, fallback = null) {
+      try {
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) return fallback;
+        return await res.json();
+      } catch (e) {
+        return fallback;
+      }
     }
     async function postControl(asset, action) {
       await fetch('/api/bot-control', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ asset, action }) });
       await refresh();
+    }
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[ch]));
+    }
+
+    function renderAllPaper(board) {
+      const title = $('board-hero-title');
+      const line = $('board-hero-line');
+      if (!board || !board.hero) {
+        if (title) {
+          title.textContent = '讀唔到策略面板';
+          title.classList.add('live-warn');
+        }
+        return;
+      }
+      const hero = board.hero;
+      title.textContent = hero.title || '全部 Paper';
+      title.classList.toggle('live-warn', !!hero.any_live);
+      line.textContent = hero.line || '';
+      $('board-n-bots').textContent = hero.bots_running ?? '—';
+      $('board-n-paper').textContent = hero.paper_count ?? '—';
+      $('board-n-exp').textContent = hero.experiment_count ?? '—';
+
+      const bots = Array.isArray(board.bots) ? board.bots : [];
+      $('board-bots').innerHTML = bots.length ? bots.map((row) => {
+        const on = row.status === 'running';
+        const modeClass = row.mode === 'LIVE' ? 'down' : (row.mode === 'PAPER' ? 'warn' : '');
+        return `<tr>
+          <td class="name">${esc(row.name)}</td>
+          <td><span class="dot ${on ? 'on' : 'off'}"></span>${esc(row.status_label || (on ? 'RUNNING' : 'STOPPED'))}</td>
+          <td><span class="pill ${modeClass}">${esc(row.mode || '—')}</span></td>
+          <td>${esc(row.description || '')}</td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="4" class="muted">未有 bot 資料</td></tr>';
+
+      const paper = Array.isArray(board.paper) ? board.paper : [];
+      $('board-paper').innerHTML = paper.length ? paper.map((row) => {
+        const pnl = Number(row.pnl);
+        const pnlClass = row.pnl == null || Number.isNaN(pnl) ? '' : (pnl >= 0 ? 'pos' : 'neg');
+        const pnlText = row.pnl_label || (row.pnl == null ? '—' : money(row.pnl));
+        return `<tr>
+          <td class="name">${esc(row.name)}<div class="hint">${esc(row.note || '模擬單，唔係真錢')}</div></td>
+          <td><span class="pill warn">${esc(row.mode || 'PAPER')}</span></td>
+          <td>${esc(row.count_label || ((row.trade_count ?? 0) + ' 單'))}</td>
+          <td class="${pnlClass}">${esc(pnlText)}</td>
+          <td>${esc(row.last_activity || '—')}</td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="5" class="muted">未有 paper 策略</td></tr>';
+
+      const experiments = Array.isArray(board.experiments) ? board.experiments : [];
+      $('board-experiments').innerHTML = experiments.length ? experiments.map((row) => `
+        <div class="exp-item">
+          <div class="exp-name">${esc(row.name)}</div>
+          <div class="exp-note">${esc(row.summary || '')}</div>
+          ${row.detail ? `<div class="exp-note">${esc(row.detail)}</div>` : ''}
+        </div>`).join('') : '<div class="exp-note">未有實驗</div>';
+    }
+
+    function renderServices(services) {
+      const el = $('services-line');
+      if (!services || !el) return;
+      el.innerHTML = Object.values(services).map((s) =>
+        `<span class="pill ${s.active ? 'live' : 'down'}">${s.label} ${s.state}</span>`
+      ).join('');
     }
 
     function renderWallet(account) {
@@ -431,26 +736,30 @@
       const target = Number(account.bot_target_wallet_usd || start + botSum);
       const gap = Number(account.wallet_gap_vs_bot_usd ?? 0);
       const started = (account.started_at_hkt || '').replace(' HKT', '').slice(0, 16);
-      $('session-start').textContent = started ? 'from ' + usd(start) + ' · ' + started : usd(start);
+      $('session-start').textContent = started ? usd(start) + ' · ' + started : usd(start);
       $('wallet-hint').textContent = Math.abs(gap) < 5
         ? 'aligned · target ' + usd(target)
         : 'target ' + usd(target) + ' · gap ' + money(gap);
     }
 
     function fmtStake(v) {
-      if (v == null || v === undefined) return '—';
+      if (v == null || v === undefined) return 'off';
       return '$' + Number(v).toFixed(2);
     }
 
     function renderStakePlan(plan, walletCash) {
       const wallet = walletCash != null ? Number(walletCash) : Number(plan.wallet_usd || 0);
       const coreM = (plan.schedule && plan.schedule.core_stake_mult) || 1.5;
-      $('stake-mult-pill').textContent = '×' + plan.current_multiplier + ' · wallet ' + usd(wallet);
-      $('stake-formula').textContent =
-        'Stake = base × wallet tier × (' + coreM + ' if core window) · BTC dog off · daily stop −$' + (plan.daily_stop_usd || 500);
       const cs = plan.current_stakes || {};
-      let line = 'Core now: BTC fav ' + fmtStake(cs.btc_fav_core) + ' · ETH fav ' + fmtStake(cs.eth_fav_core) + ' · ETH dog ' + fmtStake(cs.eth_dog_core);
-      line += ' · US (non-core): BTC ' + fmtStake(cs.btc_fav) + ' · ETH ' + fmtStake(cs.eth_fav) + ' · dog ' + fmtStake(cs.eth_dog);
+      const dogOff = !!plan.underdog_stopped || cs.eth_dog == null;
+      const mode = plan.paper_mode ? 'PAPER' : 'LIVE';
+      $('stake-mult-pill').textContent = mode + ' · ×' + plan.current_multiplier + ' · ' + usd(wallet);
+      $('stake-formula').textContent =
+        'Stake = base × wallet tier × (' + coreM + ' if core) · BTC dog off · ETH dog '
+        + (dogOff ? 'off' : 'on') + ' · daily stop −$' + (plan.daily_stop_usd || 500);
+      let line = 'Core: BTC fav ' + fmtStake(cs.btc_fav_core) + ' · ETH fav ' + fmtStake(cs.eth_fav_core);
+      if (!dogOff) line += ' · ETH dog ' + fmtStake(cs.eth_dog_core);
+      line += ' · US: BTC ' + fmtStake(cs.btc_fav) + ' · ETH ' + fmtStake(cs.eth_fav);
       if (plan.next_threshold) {
         line += ' · next $' + plan.next_threshold.wallet_usd + ' (+' + usd(plan.next_threshold.need_usd) + ') → ×' + plan.next_threshold.multiplier;
       }
@@ -464,12 +773,10 @@
       body.innerHTML = tiers.map((t) => `<tr class="${t.current ? 'tier-current' : ''}">
         <td>$${Number(t.wallet_usd).toLocaleString()}${t.current ? ' ← now' : ''}</td>
         <td>${t.multiplier}×</td>
-        <td>${fmtStake(t.btc_fav)}</td>
-        <td>${fmtStake(t.btc_fav_core)}</td>
-        <td>${fmtStake(t.eth_fav)}</td>
-        <td>${fmtStake(t.eth_fav_core)}</td>
-        <td>${fmtStake(t.eth_dog)}</td>
-        <td>${fmtStake(t.eth_dog_core)}</td>
+        <td>${fmtStake(t.btc_fav)}</td><td>${fmtStake(t.btc_fav_core)}</td>
+        <td>${fmtStake(t.eth_fav)}</td><td>${fmtStake(t.eth_fav_core)}</td>
+        <td>${dogOff ? 'off' : fmtStake(t.eth_dog)}</td>
+        <td>${dogOff ? 'off' : fmtStake(t.eth_dog_core)}</td>
       </tr>`).join('');
     }
 
@@ -477,15 +784,11 @@
       const ds = plan.daily_stop || {};
       const limit = ds.current_limit_usd ?? plan.daily_stop_usd ?? 500;
       $('sched-stop').textContent = '−' + usd(limit).slice(1);
-      const combinedOnly = ds.combined_only !== false;
-      $('sched-stop-line').textContent = (combinedOnly
-        ? 'Daily stop: BTC+ETH combined only (per-asset off) · limit '
-        : 'Daily stop: combined net PnL ≤ ')
-        + '−' + usd(limit).slice(1) + ' · wallet↓ → stake & stop tier↓';
+      $('sched-stop-line').textContent = 'Daily stop combined −' + usd(limit).slice(1) + ' · wallet↓ → tier↓';
       const body = $('stop-tiers-body');
       const tiers = ds.tiers || [];
       if (!ds.scaling_enabled || !tiers.length) {
-        body.innerHTML = '<tr><td colspan="3" class="muted">Fixed −' + usd(limit).slice(1) + ' combined</td></tr>';
+        body.innerHTML = '<tr><td colspan="3" class="muted">Fixed −' + usd(limit).slice(1) + '</td></tr>';
       } else {
         body.innerHTML = tiers.map((t) => `<tr class="${t.current ? 'tier-current' : ''}">
           <td>$${Number(t.wallet_usd).toLocaleString()}${t.current ? ' ← now' : ''}</td>
@@ -493,42 +796,63 @@
           <td class="muted">${t.current ? 'active' : ''}</td>
         </tr>`).join('');
       }
-      let line = 'Now: combined stop −$' + Number(limit).toFixed(0);
-      if (ds.next_threshold) {
-        line += ' · next $' + ds.next_threshold.wallet_usd + ' (+' + usd(ds.next_threshold.need_usd) + ') → −$' + ds.next_threshold.limit_usd;
-      }
+      let line = 'Now: −$' + Number(limit).toFixed(0);
+      if (ds.next_threshold) line += ' · next $' + ds.next_threshold.wallet_usd + ' → −$' + ds.next_threshold.limit_usd;
       $('stop-current-line').textContent = line;
     }
 
     function renderSchedule(plan, tt) {
       const s = plan.schedule || {};
-      $('sched-stop').textContent = usd(plan.daily_stop_usd || 500);
       renderDailyStop(plan);
       const now = tt?.now || {};
       $('sched-now-pill').textContent = (now.label || tt?.state || '—') + (now.hkt ? ' · ' + now.hkt : '');
       $('sched-grid').innerHTML = `
         <div class="sched-box"><div class="title">US Session</div>${s.us_hours_et || '—'}<br><span class="muted">HKT ~21:30–04:00</span></div>
-        <div class="sched-box"><div class="title">Core Window</div>${s.core_et || '—'}<br><span class="muted">HKT ~23:00–03:00 · stake ×${s.core_stake_mult || 1.5} on top of wallet tier</span></div>
+        <div class="sched-box"><div class="title">Core</div>${s.core_et || '—'}<br><span class="muted">×${s.core_stake_mult || 1.5} stake</span></div>
         <div class="sched-box"><div class="title">BTC</div>${s.btc || '—'}</div>
         <div class="sched-box"><div class="title">ETH</div>${s.eth || '—'}</div>`;
     }
 
-    function renderControls(control, plan) {
+    function renderProfile(wallet, control) {
+      const btcLive = (wallet.trading_mode || '').toLowerCase() === 'live';
+      const ethLive = (wallet.eth_trading_mode || '').toLowerCase() === 'live';
+      const btcPaused = !!(control.btc || {}).paused;
+      const ethPaused = !!(control.eth || {}).paused;
+      $('live-profile-main').textContent =
+        btcLive && !btcPaused
+          ? 'BTC LIVE only · core favorite-only'
+          : 'No active BTC live profile';
+      $('live-profile-sub').textContent =
+        'Logic: Mon-Fri 11:00–15:00 ET · no mid · no dog · ETH '
+        + (ethLive ? (ethPaused ? 'live paused' : 'live on') : (ethPaused ? 'paper / paused' : 'paper only'))
+        + ' · wallet tier capped at ×1.5';
+    }
+
+    function renderControls(control, plan, wallet) {
       for (const asset of ['btc', 'eth']) {
         const b = control[asset] || {};
         const paused = !!b.paused;
-        $(asset + '-status').textContent = paused ? 'Paused' : 'Running';
-        $(asset + '-status').className = 'pill ' + (paused ? 'warn' : 'live');
         const btn = $(asset + '-toggle');
-        btn.textContent = paused ? 'Resume' : 'Pause';
-        btn.className = paused ? 'good' : 'danger';
-        btn.onclick = () => postControl(asset, paused ? 'resume' : 'pause');
+        const mode = asset === 'eth' ? ((wallet?.eth_trading_mode || 'paper').toLowerCase()) : ((wallet?.trading_mode || 'paper').toLowerCase());
+        if (asset === 'eth' && mode !== 'live') {
+          $(asset + '-status').textContent = paused ? 'Paper / Off Live' : 'Paper';
+          $(asset + '-status').className = 'pill warn';
+          btn.textContent = 'Paper only';
+          btn.className = '';
+          btn.disabled = true;
+          btn.onclick = null;
+        } else {
+          $(asset + '-status').textContent = paused ? 'Paused' : 'Running';
+          $(asset + '-status').className = 'pill ' + (paused ? 'warn' : 'live');
+          btn.disabled = false;
+          btn.textContent = paused ? 'Resume' : 'Pause';
+          btn.className = paused ? 'good' : 'danger';
+          btn.onclick = () => postControl(asset, paused ? 'resume' : 'pause');
+        }
       }
       const ds = control.btc?.daily_stop || control.eth?.daily_stop || {};
-      $('daily-stop-hint').textContent = (ds.effective ? 'session stop −$' + Math.abs(Number(ds.limit || 500)).toFixed(0) + ' hit · ' : 'limit −$' + Math.abs(Number(ds.limit || 500)).toFixed(0) + ' combined · ')
-        + ((plan && plan.schedule && plan.schedule.pnl_reset && plan.schedule.pnl_reset.next_reset_hkt)
-          ? 'resets ' + plan.schedule.pnl_reset.next_reset_hkt + ' · ' : '')
-        + 'Session ≠ Overall';
+      $('daily-stop-hint').textContent = (ds.effective ? 'stop hit · ' : 'limit −$' + Math.abs(Number(ds.limit || 500)).toFixed(0) + ' · ')
+        + ((plan?.schedule?.pnl_reset?.next_reset_hkt) ? 'reset ' + plan.schedule.pnl_reset.next_reset_hkt : '');
       $('risk-pill').textContent = ds.effective ? 'daily stop' : 'risk ok';
       $('risk-pill').className = 'pill ' + (ds.effective ? 'warn' : 'live');
     }
@@ -562,13 +886,176 @@
       </tr>`).join('');
     }
 
+    async function postCrypto15m(action) {
+      await fetch('/api/crypto15m/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      await refresh();
+    }
+
+    function renderCrypto15m(summary, trades, c15mControl) {
+      summary = summary || {};
+      trades = Array.isArray(trades) ? trades : [];
+      c15mControl = c15mControl || {};
+      const mode = (summary.mode || c15mControl.mode || 'paper').toLowerCase();
+      const isLive = mode === 'live';
+      const paused = !!(summary.paused ?? c15mControl.paused);
+      const dc = summary.data_collection !== false && !isLive;
+      const rules = summary.rules || {};
+      const fillNote = isLive ? ' · CLOB FOK · max ask 0.85' : (summary.paper_fill_model === 'live_style_fok' ? ' · FOK sim' : '');
+      const dcNote = dc
+        ? ' · 資料收集（US/core 放寬 · max ask ' + (summary.paper_max_ask_favorite || '0.92') + '）'
+        : (isLive ? ' · US session · fav stop ON · 獨立 session' : '');
+      $('c15m-rules').textContent =
+        `Entry ${rules.entry_window || '—'} · BTC ≥ $${rules.min_btc_move_usd ?? '—'} · ETH ≥ $${rules.min_eth_move_usd ?? '—'} · depth ≥ $${rules.min_depth_usd ?? '—'}${fillNote}${dcNote}`;
+
+      const sess = summary.session || c15mControl.session || {};
+      $('c15m-session-pill').textContent = (sess.session_id || '15m').replace('crypto15m-', '');
+      $('c15m-hero-label').textContent = isLive ? '15m Live PnL' : '15m Paper PnL';
+      $('c15m-hero-metric').className = 'metric m15' + (isLive && !paused ? ' live-on' : '');
+      $('c15m-control-card').className = 'card bot-card m15' + (isLive && !paused ? ' live-on' : '');
+
+      $('c15m-mode-pill').textContent = mode.toUpperCase();
+      $('c15m-mode-pill').className = 'pill ' + (isLive ? 'live' : 'warn');
+      $('c15m-status-pill').textContent = paused ? 'Paused' : (isLive ? 'Running' : 'Paper');
+      $('c15m-status-pill').className = 'pill ' + (paused ? 'warn' : (isLive ? 'live' : ''));
+
+      const toggle = $('c15m-toggle');
+      if (!isLive) {
+        toggle.textContent = 'Resume (需先 Go Live)';
+        toggle.className = '';
+        toggle.disabled = true;
+      } else {
+        toggle.disabled = false;
+        toggle.textContent = paused ? 'Resume trading' : 'Pause trading';
+        toggle.className = paused ? 'good' : 'danger';
+        toggle.onclick = () => postCrypto15m(paused ? 'resume' : 'pause');
+      }
+      $('c15m-enable-live').onclick = () => postCrypto15m('enable_live');
+      $('c15m-enable-live').style.display = isLive ? 'none' : '';
+      $('c15m-disable-live').onclick = () => postCrypto15m('disable_live');
+      $('c15m-disable-live').style.display = isLive ? '' : 'none';
+      $('c15m-control-hint').textContent = isLive
+        ? (paused ? 'Live 模式已開 · 交易暫停中（observer 仍跑）' : 'Live 模式 · 真實 CLOB 下單 · 不計入 5m session')
+        : 'Paper 模式 · 按 Go Live 開始真實下單（會重置 15m live log）';
+
+      setPnl('c15m-combined', summary.combined_overall_pnl ?? 0);
+      setPnl('c15m-btc', summary.btc?.overall_pnl ?? 0);
+      setPnl('c15m-eth', summary.eth?.overall_pnl ?? 0);
+      const b = summary.btc || {};
+      const e = summary.eth || {};
+      $('c15m-btc-meta').textContent = `${b.trades_entered ?? 0} entered · ${b.trades_closed ?? 0} closed · WR ${b.win_rate_pct ?? '—'}%`;
+      $('c15m-eth-meta').textContent = `${e.trades_entered ?? 0} entered · ${e.trades_closed ?? 0} closed · WR ${e.win_rate_pct ?? '—'}%`;
+      $('c15m-hero-hint').textContent = `${mode.toUpperCase()} · ${(b.trades_entered ?? 0) + (e.trades_entered ?? 0)} trades · isolated session`;
+      $('c15m-trades-tag').textContent = isLive ? 'LIVE · BTC + ETH' : 'PAPER · BTC + ETH';
+
+      const q = summary.quality?.combined || {};
+      const ethQ = summary.quality?.eth || {};
+      $('c15m-quality-hint').textContent = (() => {
+        const wr = q.win_rate_pct != null ? `WR ${q.win_rate_pct}%` : 'WR —';
+        const frVal = q.fill_rate_pct != null ? q.fill_rate_pct : null;
+        const ethPass = ethQ.obs_timing_pass_pct != null ? `ETH pass ${ethQ.obs_timing_pass_pct}%` : '';
+        return `${wr} · fill ${frVal ?? '—'}% · closed ${q.closed ?? 0}${ethPass ? ' · ' + ethPass : ''}`;
+      })();
+
+      $('c15m-observer-hint').textContent = (() => {
+        const sig = q.strategy_signals ?? 0;
+        return `Observer · signals ${sig} · ${isLive ? 'CLOB live fills' : 'paper FOK sim'} · 獨立於 5m live PnL`;
+      })();
+
+      const body = $('c15m-trades-body');
+      if (!trades.length) {
+        body.innerHTML = `<tr><td colspan="9" class="muted">15m ${isLive ? 'live' : 'paper'} 尚無紀錄</td></tr>`;
+        return;
+      }
+      body.innerHTML = trades.map((r) => `<tr>
+        <td>${(r.timestamp_hkt || '').slice(0, 16)}</td>
+        <td>${r.bot || '—'}</td>
+        <td>${(r.mode || mode).toUpperCase()}</td>
+        <td>${r.tier || '—'}</td>
+        <td>${r.entry_ask ?? r.ask ?? '—'}</td>
+        <td>$${Number(r.stake || 0).toFixed(2)}</td>
+        <td>${r.trade_result || r.status || '—'}</td>
+        <td class="${Number(r.pnl || 0) >= 0 ? 'pos' : 'neg'}">${r.pnl == null ? '—' : money(r.pnl)}</td>
+        <td class="reason" title="${r.strategy_reason || ''}">${r.strategy_reason || ''}</td>
+      </tr>`).join('');
+    }
+
+    function renderDualLeg(summary, trades) {
+      summary = summary || {};
+      trades = Array.isArray(trades) ? trades : [];
+      const r = summary.rules || {};
+      $('dl-rules').textContent =
+        `每腿 $${Number(r.unit_usd || 3).toFixed(2)} · ask ≤ ${r.max_ask_each_leg ?? '—'}`
+        + ` · 首腿 T≥${r.first_leg_t_min ?? '—'}s · 次腿 T≥${r.second_leg_t_min ?? '—'}s`
+        + ` · opposite ask ≤ ${r.max_opposite_ask ?? '—'}`
+        + ` · Binance gate: ${(r.allowed_binance_regimes || []).join('/') || 'off'} · fee 已估算`;
+      setPnl('dl-pnl', summary.pnl ?? 0);
+      $('dl-closed').textContent =
+        `${summary.closed ?? 0} closed · WR ${summary.win_rate_pct ?? '—'}% · ${summary.bonus_candidates ?? 0} extreme-price signals`;
+      $('dl-hedge-rate').textContent =
+        summary.hedge_rate_pct == null ? '—' : Number(summary.hedge_rate_pct).toFixed(1) + '%';
+      $('dl-stranded').textContent =
+        `${summary.hedged ?? 0} hedged · ${summary.stranded ?? 0} stranded one-leg`;
+      $('dl-open').textContent = summary.open_positions ?? 0;
+      $('dl-open-detail').textContent =
+        `${summary.open_one_leg ?? 0} waiting second leg · ${summary.open_hedged ?? 0} fully hedged`;
+      const dc = summary.data_collection || {};
+      const topReason = Object.entries(dc.gate_reason_counts || {})[0];
+      $('dl-note').textContent =
+        `${summary.note_zh || ''} · samples ${dc.checkpoints ?? 0} checkpoints / ${dc.windows ?? 0} windows`
+        + ` · eligible ${dc.eligible_rate_pct ?? '—'}%`
+        + (topReason ? ` · top blocker ${topReason[0]} (${topReason[1]})` : '');
+
+      const body = $('dl-trades-body');
+      if (!trades.length) {
+        body.innerHTML = '<tr><td colspan="10" class="muted">等待 Binance volatile-chop + 盤口 gate 同時符合</td></tr>';
+        return;
+      }
+      body.innerHTML = trades.map((row) => {
+        const legs = [row.first_leg, row.second_leg].filter(Boolean);
+        const up = legs.find((leg) => leg.side === 'up');
+        const down = legs.find((leg) => leg.side === 'down');
+        const pnl = Number(row.pnl || 0);
+        const floor = row.guaranteed_floor_at_fill;
+        return `<tr>
+          <td>${(row.opened_at_hkt || '').slice(0, 16)}</td>
+          <td>${row.asset || '—'}</td>
+          <td>${row.entry_regime?.regime || '—'}<br><span class="muted">${row.entry_regime?.forecast || ''}</span></td>
+          <td>${row.legs_filled ?? legs.length}</td>
+          <td>${up?.ask ?? '—'}</td>
+          <td>${down?.ask ?? '—'}</td>
+          <td>$${Number(row.total_stake || 0).toFixed(2)}</td>
+          <td>${row.outcome || '—'} · ${row.trade_result || row.status || '—'}</td>
+          <td class="${Number(floor || 0) >= 0 ? 'pos' : 'neg'}">${floor == null ? '—' : money(floor)}</td>
+          <td class="${pnl >= 0 ? 'pos' : 'neg'}">${money(pnl)}</td>
+        </tr>`;
+      }).join('');
+    }
+
     async function refresh() {
-      const [wallet, account, btc, eth, control, tier, trades, daily, stakePlan, timetable] = await Promise.all([
-        getJson('/api/wallet'), getJson('/api/account-pnl'), getJson('/api/summary'),
-        getJson('/api/eth-summary'), getJson('/api/bot-control'), getJson('/api/tier-pause'),
-        getJson('/api/overview-trades?limit=' + tradeLimit), getJson('/api/daily-pnl'),
-        getJson('/api/stake-plan'), getJson('/api/timetable'),
+      let [wallet, account, btc, eth, control, tier, trades, daily, stakePlan, timetable, c15m, c15mTrades, c15mControl, dualLeg, dualLegTrades, services, allPaper] = await Promise.all([
+        getJson('/api/wallet', {}), getJson('/api/account-pnl', {}), getJson('/api/summary', {}),
+        getJson('/api/eth-summary', {}), getJson('/api/bot-control', {}), getJson('/api/tier-pause', {}),
+        getJson('/api/overview-trades?limit=' + tradeLimit, []), getJson('/api/daily-pnl', { btc: [], eth: [], total: [] }),
+        getJson('/api/stake-plan', {}), getJson('/api/timetable', {}),
+        getJson('/api/crypto15m/summary', {}), getJson('/api/crypto15m/trades?limit=25', []),
+        getJson('/api/crypto15m/control', {}),
+        getJson('/api/dual-leg/summary', {}), getJson('/api/dual-leg/trades?limit=50', []),
+        getJson('/api/services-status', {}),
+        getJson('/api/all-paper-strategies', null),
       ]);
+      account = account || {};
+      wallet = wallet || {};
+      btc = btc || {};
+      eth = eth || {};
+      control = control || {};
+      tier = tier || {};
+      trades = Array.isArray(trades) ? trades : (trades?.rows || []);
+      daily = daily || { btc: [], eth: [], total: [] };
+      stakePlan = stakePlan || {};
       account.wallet_cash = wallet.cash_usdc || wallet.available_usdc || account.wallet_cash;
       $('updated').textContent = new Date().toLocaleTimeString('zh-HK');
       $('btc-mode').textContent = 'BTC ' + (wallet.trading_mode || '—').toUpperCase();
@@ -577,11 +1064,16 @@
       renderWallet(account);
       renderStakePlan(stakePlan, account.wallet_cash);
       renderSchedule(stakePlan, timetable);
+      renderServices(services);
+      renderAllPaper(allPaper);
+      renderProfile(wallet, control);
 
       const ovBtc = btc.package2?.overall_pnl ?? btc.overall_pnl ?? account.btc_log_pnl ?? 0;
       const ovEth = eth.package2?.overall_pnl ?? eth.overall_pnl ?? account.eth_log_pnl ?? 0;
       const ovTot = account.bots_log_sum ?? (Number(ovBtc) + Number(ovEth));
       setPnl('ov-total', ovTot);
+      setPnlInline('ov-btc-inline', ovBtc);
+      setPnlInline('ov-eth-inline', ovEth);
       setPnl('ov-btc', ovBtc);
       setPnl('ov-eth', ovEth);
 
@@ -591,11 +1083,13 @@
       setPnl('td-btc', tdBtc);
       setPnl('td-eth', tdEth);
 
-      renderControls(control, stakePlan);
+      renderControls(control, stakePlan, wallet);
       renderTierRisk(tier);
       renderTrades(trades);
       renderDailyChart(daily);
       renderCumulChart(daily);
+      renderCrypto15m(c15m, c15mTrades, c15mControl);
+      renderDualLeg(dualLeg, dualLegTrades);
     }
 
     document.querySelectorAll('[data-release]').forEach((btn) => {
