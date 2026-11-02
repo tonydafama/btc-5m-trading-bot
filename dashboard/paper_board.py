@@ -31,7 +31,16 @@ _ENV_KEYS = (
     "DUAL_LEG_PAPER",
     "ENABLE_DUAL_LEG",
     "DUAL_LEG_LIVE_DRY_RUN",
+    "DUAL_LEG_REAL_MONEY",
+    "DUAL_LEG_TRADING_MODE",
+    "DUAL_LEG_UNIT_USD",
+    "DUAL_LEG_TOTAL_STAKE_USD",
     "SONU_LIVE_ARMED_PREP",
+    "SONU_BET_SIZE",
+    "SONU_STAKE_USD",
+    "V2_LIVE_ARMED_PREP",
+    "V2_BET_SIZE",
+    "V2_STAKE_USD",
 )
 
 _TS_KEYS = (
@@ -1119,7 +1128,7 @@ def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
     trades = int(stats.get("trade_count") or 0)
     considered = int(stats.get("scan_count") or trades)
     filtered = max(0, considered - trades)
-    return {
+    row = {
         "id": SONU_BOT_ID,
         "display_name": "終極5m · Live預備",
         "desk_section": "high_live",
@@ -1129,6 +1138,7 @@ def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
         "launched": True,
         "live_enabled": real_live,
         "dry_run": not real_live,
+        "mode": "live" if real_live else ("prep" if armed else "paper"),
         "status": "RUNNING · paper",
         "status_label": status_label,
         "change": change,
@@ -1142,7 +1152,6 @@ def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
         "wins": wins,
         "losses": losses,
         "wr_label": _fmt_wr(100.0 * wins / settled) if settled else "未有結算",
-        "stake_usd": "10",
         "capital_usd": 100.0,
         "trades_windows_line": f"Trades {trades} 單 · {considered} 窗 · 過濾 {filtered}",
         "window_funnel": {
@@ -1155,43 +1164,65 @@ def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
         "unit": "btc-son-btc-5m-ultimate-live.service",
         "live_unit": "btc-son-btc-5m-ultimate-live-exec.service",
     }
+    from desk_bots import decorate_bet
+
+    return decorate_bet(root, row, env)
 
 
-def _v2_high_live_row(prep: dict[str, Any]) -> dict[str, Any]:
+def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> dict[str, Any]:
+    from desk_bots import decorate_bet, v2_mode_view
+
     pnl = prep.get("realized_pnl_usd")
     settled = prep.get("settled_trades")
-    return {
+    mode = v2_mode_view(root, env)
+    row = {
         "id": "dual-leg-live-v2",
         "display_name": "BTC 2 legs V2",
         "desk_section": "high_live",
         "family": "BTC 2 legs V2",
         "role": "parent",
-        "launched": False,
-        "live_enabled": False,
+        "launched": bool(mode["live_active"] or mode["live_armed"]),
+        "live_enabled": bool(mode["live_active"]),
+        "live_armed": bool(mode["live_armed"] or mode["live_armed_prep"]),
         "had_live": True,
         "live_tag": "曾live",
-        "dry_run": True,
-        "status": "STOPPED · paper",
-        "status_label": "曾live · 紙上 rehearsal · 真倉 OFF",
-        "change": "曾live · DRY_RUN=1 · 真倉 OFF",
-        "note": prep.get("note") or "V2 live prep · 唔會自動 start",
+        "dry_run": not bool(mode["exec_is_real_live"]),
+        "mode": mode["mode"],
+        "status": "RUNNING · live" if mode["live_active"] else "STOPPED · paper",
+        "status_label": mode["status_label"],
+        "change": mode["change"],
+        "note": prep.get("note") or mode["label_tc"],
+        "label_tc": mode["label_tc"],
         "pnl": pnl,
         "pnl_label": _money(float(pnl or 0)),
         "trade_count": settled,
         "count_label": f"{settled or 0} 單" if settled is not None else "—",
         "settled_n": settled,
-        "stake_usd": "1",
+        "wins": None,
+        "losses": None,
+        "wr_label": "曾live",
         "capital_usd": 100.0,
+        "window_funnel": {
+            "considered": 0,
+            "filtered": 0,
+            "entered": 0,
+            "trades": 0,
+            "ledger": "live" if mode["live_active"] else "paper",
+        },
         "unit": "dual-leg-live-v2",
     }
+    return decorate_bet(root, row, env)
 
 
 def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | None = None) -> dict[str, Any]:
     from sonu_live_truth import exec_is_real_live, live_active
 
     prep = _v2_golive_prep(root, env)
-    rows = [_son_u_high_live_row(root, env), _v2_high_live_row(prep)]
-    any_live = exec_is_real_live(root) and live_active(root)
+    from desk_bots import v2_mode_view
+
+    v2_mode = v2_mode_view(root, env)
+    rows = [_son_u_high_live_row(root, env), _v2_high_live_row(prep, root, env)]
+    any_live = (exec_is_real_live(root) and live_active(root)) or bool(v2_mode["live_active"])
     subtitle = (
         "預備區 · 紙上 rehearsal · 真倉 OFF（要錢包≥$100 + Son U go live）"
         if not any_live
