@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><title>Son U ON-AIR preview</title>
+<style>
+  body{font-family:system-ui;background:#080b10;color:#e8eef5;padding:2rem;}
+  .sonu-gold-box{border:1px solid rgba(251,191,36,.45);border-radius:16px;padding:1rem;max-width:520px;margin-bottom:2rem;background:linear-gradient(145deg,rgba(251,191,36,.14),rgba(18,24,32,.92));}
+  @keyframes glow{0%,100%{box-shadow:0 0 6px 2px rgba(255,45,45,.95),0 0 18px 4px rgba(255,0,0,.5)}50%{box-shadow:0 0 10px 3px rgba(255,70,70,1),0 0 28px 8px rgba(255,0,0,.65)}}
+  .on-air{display:inline-flex;align-items:center;gap:.7rem;padding:.5rem 1.15rem;border-radius:12px;border:2px solid rgba(255,55,55,.9);background:linear-gradient(180deg,rgba(90,8,8,.75),rgba(18,2,2,.95));box-shadow:0 0 16px rgba(255,0,0,.35);}
+  .on-air .bulb{width:.9rem;height:.9rem;border-radius:50%;background:#ff2a2a;animation:glow 1.6s ease-in-out infinite;}
+  .on-air .txt{font-size:1.25rem;font-weight:900;letter-spacing:.16em;color:#ff3b3b;text-shadow:0 0 10px rgba(255,0,0,.95);}
+  .on-air-off{display:inline-flex;align-items:center;gap:.7rem;padding:.5rem 1.15rem;border-radius:12px;border:2px solid #060809;background:#020304;opacity:.32;filter:saturate(.15);}
+  .on-air-off .bulb{width:.9rem;height:.9rem;border-radius:50%;background:#0a0606;}
+  .on-air-off .txt{font-size:1.25rem;font-weight:900;letter-spacing:.16em;color:#0c0e10;}
+  .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .85rem;border-radius:10px;border:1px solid #2a3340;margin:.35rem .4rem 0 0;background:#0c1018;font-size:.78rem;}
+  .lamp{width:.55rem;height:.55rem;border-radius:50%;}
+  .green{background:#34d399;box-shadow:0 0 0 3px rgba(52,211,153,.2);}
+  .yellow{background:#fbbf24;box-shadow:0 0 0 3px rgba(251,191,36,.18);}
+</style></head>
+<body>
+  <h1>Live · Son U — ON-AIR 指示</h1>
+  <div class="sonu-gold-box">
+    <strong>Actually LIVE（後端 armed）</strong>
+    <div class="on-air"><span class="bulb"></span><span class="txt">LIVE ON</span></div>
+    <div><span class="btn"><span class="lamp green"></span> Live 實盤</span><span class="btn"><span class="lamp yellow"></span> Paper 模擬</span></div>
+  </div>
+  <div class="sonu-gold-box">
+    <strong>Paper（ON-AIR 熄）</strong>
+    <div class="on-air-off"><span class="bulb"></span><span class="txt">LIVE ON</span></div>
+    <p style="color:#3d4654;font-size:.72rem;font-weight:700;letter-spacing:.1em">PAPER · ON-AIR 熄咗</p>
+    <div><span class="btn"><span class="lamp yellow"></span> Live 實盤</span><span class="btn"><span class="lamp green"></span> Paper 模擬</span></div>
+  </div>
+  <p>Logs: Live log / Paper log 分開 · Paper skipped 預設收起。</p>
+</body></html>

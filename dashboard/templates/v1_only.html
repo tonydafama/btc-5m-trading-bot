@@ -3,234 +3,985 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>V1 BTC/ETH</title>
+  <title>V1 DRY RUN · BTC/ETH Paper $1000</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg:#0d1117; --panel:#161b22; --panel2:#0f1621; --border:#30363d;
-      --text:#e6edf3; --muted:#8b949e; --green:#3fb950; --red:#f85149;
-      --blue:#58a6ff; --orange:#d29922;
+      --bg:#080b10; --panel:#121820; --panel2:#0c1018; --border:#2a3340;
+      --text:#e8eef5; --muted:#8b98a8; --green:#34d399; --red:#f87171;
+      --blue:#60a5fa; --orange:#fbbf24; --accent:#6366f1;
     }
     * { box-sizing:border-box; }
-    body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-    .wrap { max-width:1100px; margin:0 auto; padding:1rem; }
-    header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
-    h1 { margin:0; font-size:1.35rem; }
-    .sub { color:var(--muted); font-size:.82rem; margin-top:.2rem; }
-    .pill { display:inline-flex; align-items:center; border:1px solid var(--border); background:var(--panel2); color:var(--muted); padding:.25rem .5rem; border-radius:999px; font-size:.76rem; }
-    .pill.live { color:var(--green); border-color:rgba(63,185,80,.45); }
-    .pill.warn { color:var(--orange); border-color:rgba(210,153,34,.45); }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; line-height:1.45; }
+    .wrap { max-width:1200px; margin:0 auto; padding:1rem 1.1rem 2rem; }
+    .topbar {
+      display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:.75rem;
+      padding-bottom:.85rem; border-bottom:1px solid var(--border); margin-bottom:1rem;
+    }
+    h1 { margin:0; font-size:1.25rem; font-weight:700; letter-spacing:-.02em; }
+    .sub { color:var(--muted); font-size:.78rem; margin-top:.15rem; }
+    .pill {
+      display:inline-flex; align-items:center; gap:.25rem;
+      border:1px solid var(--border); background:var(--panel2);
+      color:var(--muted); padding:.22rem .55rem; border-radius:999px; font-size:.72rem;
+    }
+    .pill.live { color:var(--green); border-color:rgba(52,211,153,.35); background:rgba(52,211,153,.06); }
+    .pill.warn { color:var(--orange); border-color:rgba(251,191,36,.35); background:rgba(251,191,36,.06); }
+    .pill.down { color:var(--red); border-color:rgba(248,113,113,.35); }
+    .hero { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.65rem; margin-bottom:1rem; }
+    .profile-card {
+      background:linear-gradient(145deg,rgba(96,165,250,.08),var(--panel2));
+      border:1px solid rgba(96,165,250,.28);
+      border-radius:14px;
+      padding:.8rem .9rem;
+      margin-bottom:1rem;
+    }
+    .profile-title { font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); }
+    .profile-main { font-size:1rem; font-weight:700; margin-top:.15rem; }
+    .profile-sub { color:var(--muted); font-size:.8rem; margin-top:.25rem; }
+    .metric {
+      background:linear-gradient(145deg,var(--panel),var(--panel2));
+      border:1px solid var(--border); border-radius:14px; padding:.75rem .85rem;
+    }
+    .metric.highlight { border-color:rgba(96,165,250,.35); }
+    .metric.m15 { border-color:rgba(251,191,36,.3); }
+    .metric.m15.live-on { border-color:rgba(52,211,153,.45); background:linear-gradient(145deg,rgba(52,211,153,.08),var(--panel2)); }
+    .bot-card.m15 { border-left-color: var(--orange); }
+    .bot-card.m15.live-on { border-left-color: var(--green); }
+    .label { color:var(--muted); font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; }
+    .value { font-size:1.45rem; font-weight:700; margin-top:.1rem; letter-spacing:-.02em; }
+    .hint { color:var(--muted); font-size:.72rem; margin-top:.2rem; }
+    .tabs { display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.75rem; }
+    .tab {
+      cursor:pointer; border:1px solid var(--border); background:var(--panel2);
+      color:var(--muted); border-radius:10px; padding:.45rem .75rem; font-size:.78rem; font-weight:500;
+    }
+    .tab.active { color:var(--text); border-color:rgba(96,165,250,.5); background:rgba(96,165,250,.08); }
+    .panel { display:none; }
+    .panel.active { display:block; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:.85rem; margin-bottom:.75rem; }
     .grid { display:grid; gap:.75rem; }
-    .grid.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
     .grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:.85rem; }
-    .pnl-panel { border-left:3px solid var(--blue); }
-    .pnl-panel.today { border-left-color:var(--orange); }
-    .wallet-bar { display:flex; flex-wrap:wrap; gap:1.25rem; align-items:baseline; }
-    .wallet-bar .value { font-size:1.5rem; font-weight:700; }
-    .label { color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.03em; }
-    .value { font-size:1.35rem; font-weight:700; margin-top:.15rem; }
-    .hint { color:var(--muted); font-size:.74rem; margin-top:.2rem; }
-    .tag { font-size:.68rem; color:var(--muted); font-weight:500; text-transform:none; letter-spacing:0; margin-left:.35rem; }
-    .pos { color:var(--green); } .neg { color:var(--red); } .muted { color:var(--muted); }
-    section { margin-top:.75rem; }
+    .grid.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
     .section-head { display:flex; align-items:center; justify-content:space-between; gap:.75rem; margin-bottom:.55rem; }
-    h2 { font-size:.95rem; margin:0; }
-    button { cursor:pointer; border:1px solid var(--border); background:var(--panel2); color:var(--text); border-radius:8px; padding:.4rem .6rem; font-size:.76rem; }
+    h2 { font-size:.92rem; margin:0; font-weight:600; }
+    .tag { font-size:.65rem; color:var(--muted); font-weight:500; margin-left:.3rem; }
+    button {
+      cursor:pointer; border:1px solid var(--border); background:var(--panel2);
+      color:var(--text); border-radius:8px; padding:.38rem .6rem; font-size:.74rem;
+    }
     button:hover { border-color:var(--blue); }
-    button.danger { border-color:rgba(248,81,73,.45); color:var(--red); }
-    button.good { border-color:rgba(63,185,80,.45); color:var(--green); }
-    .controls { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.55rem; }
+    button.danger { border-color:rgba(248,113,113,.4); color:var(--red); }
+    button.good { border-color:rgba(52,211,153,.4); color:var(--green); }
+    .controls { display:flex; flex-wrap:wrap; gap:.35rem; }
     .bot-card { border-left:3px solid var(--blue); }
     .bot-card.eth { border-left-color:var(--green); }
-    .status-line { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.45rem; }
+    .status-line { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.4rem; }
     .table-wrap { overflow:auto; border:1px solid var(--border); border-radius:12px; }
-    table { width:100%; border-collapse:collapse; font-size:.76rem; min-width:980px; }
-    th,td { padding:.45rem .5rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
-    th { color:var(--muted); background:rgba(255,255,255,.025); font-weight:600; }
+    table { width:100%; border-collapse:collapse; font-size:.74rem; min-width:720px; }
+    th,td { padding:.42rem .5rem; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th { color:var(--muted); background:rgba(255,255,255,.02); font-weight:600; }
     tr:last-child td { border-bottom:0; }
-    .reason { color:var(--muted); max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .chart-box { height:260px; padding:.2rem 0 .4rem; }
-    .chart-note { font-size:.72rem; color:var(--muted); margin-top:.15rem; }
-    .tier-current { background:rgba(88,166,255,0.1); }
-    .stake-table th, .stake-table td { font-size:.72rem; padding:.38rem .45rem; text-align:right; }
+    .reason { color:var(--muted); max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .chart-box { height:240px; }
+    .chart-note { font-size:.7rem; color:var(--muted); margin-top:.2rem; }
+    .pos { color:var(--green); } .neg { color:var(--red); } .muted { color:var(--muted); }
+    .tier-current { background:rgba(96,165,250,.08); }
+    .stake-table th, .stake-table td { font-size:.7rem; padding:.35rem .42rem; text-align:right; }
     .stake-table th:first-child, .stake-table td:first-child { text-align:left; }
-    .sched-grid { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; font-size:.78rem; }
-    .sched-box { background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:.55rem .65rem; }
-    .sched-box .title { color:var(--muted); font-size:.68rem; text-transform:uppercase; margin-bottom:.25rem; }
-    @media (max-width:760px) {
+    .sched-grid { display:grid; grid-template-columns:1fr 1fr; gap:.55rem; font-size:.76rem; }
+    .sched-box { background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:.5rem .6rem; }
+    .sched-box .title { color:var(--muted); font-size:.65rem; text-transform:uppercase; margin-bottom:.2rem; }
+    details.config-block { border:1px solid var(--border); border-radius:12px; background:var(--panel); margin-bottom:.65rem; }
+    details.config-block summary {
+      cursor:pointer; padding:.65rem .85rem; font-weight:600; font-size:.82rem; list-style:none;
+    }
+    details.config-block summary::-webkit-details-marker { display:none; }
+    details.config-block .inner { padding:0 .85rem .85rem; }
+    .services { display:flex; flex-wrap:wrap; gap:.3rem; }
+    .board { margin: 0 0 1rem; }
+    .board-hero {
+      display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; align-items:flex-end;
+      padding:.95rem 1rem; border:1px solid rgba(96,165,250,.35); border-radius:14px;
+      background:linear-gradient(145deg, rgba(96,165,250,.12), var(--panel2));
+      margin-bottom:.7rem;
+    }
+    .board-kicker { color:var(--blue); font-size:.72rem; letter-spacing:.04em; text-transform:uppercase; }
+    .board-hero h2 { font-size:1.15rem; margin:.15rem 0 .2rem; }
+    .board-hero h2.live-warn { color:var(--orange); }
+    .board-hero-line { color:var(--muted); font-size:.8rem; }
+    .board-counts { display:flex; flex-wrap:wrap; gap:.5rem; }
+    .board-counts div {
+      background:var(--panel); border:1px solid var(--border); border-radius:12px;
+      padding:.4rem .7rem; min-width:6.5rem;
+    }
+    .board-counts b { display:block; font-size:1.2rem; line-height:1.2; }
+    .board-counts span { color:var(--muted); font-size:.68rem; }
+    .board-sec {
+      background:var(--panel); border:1px solid var(--border); border-radius:14px;
+      padding:.85rem .95rem .75rem; margin-bottom:.65rem;
+    }
+    .board-sec h3 { margin:0; font-size:.95rem; }
+    .sec-sub { color:var(--muted); font-size:.75rem; margin:.2rem 0 .65rem; }
+    .paper-banner {
+      color:var(--orange); font-size:.78rem; font-weight:600; margin:0 0 .55rem;
+    }
+    .dot {
+      width:.55rem; height:.55rem; border-radius:50%; display:inline-block;
+      margin-right:.35rem; vertical-align:middle;
+    }
+    .dot.on { background:var(--green); box-shadow:0 0 0 3px rgba(52,211,153,.15); }
+    .dot.off { background:var(--red); box-shadow:0 0 0 3px rgba(248,113,113,.12); }
+    table.board-table { min-width:0; font-size:.82rem; }
+    table.board-table td.name { font-weight:650; }
+    .exp-item { padding:.45rem 0; border-top:1px solid var(--border); }
+    .exp-item:first-child { border-top:0; padding-top:0; }
+    .exp-name { font-weight:650; }
+    .exp-note { color:var(--muted); font-size:.78rem; margin-top:.12rem; }
+    /* Live · Son U (15m) gold control box */
+    .sonu-gold-box {
+      border:1px solid rgba(251,191,36,0.45);
+      border-radius:16px;
+      padding:1rem 1.05rem;
+      margin-bottom:.75rem;
+      background:linear-gradient(145deg, rgba(251,191,36,0.14), rgba(18,24,32,0.92));
+      box-shadow:0 0 0 1px rgba(251,191,36,0.08);
+    }
+    .sonu-gold-kicker {
+      font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+      color:var(--orange); margin-bottom:.35rem;
+    }
+    /* ON-AIR must never inherit gold-box amber/orange pill styling */
+    .sonu-gold-box .on-air-row,
+    .sonu-gold-box #c15m-on-air {
+      --sonu-on-air-red: #ff0000;
+      --sonu-on-air-red-alt: #ef4444;
+    }
+    .sonu-gold-box .on-air-row.is-on,
+    .sonu-gold-box #c15m-on-air.is-on,
+    .sonu-gold-box .on-air-row.is-on.pill,
+    .sonu-gold-box #c15m-on-air.is-on.pill {
+      background: linear-gradient(180deg, #520000 0%, #140000 100%) !important;
+      border: 2px solid #ff0000 !important;
+      box-shadow: 0 0 14px rgba(255,0,0,.55), 0 0 28px rgba(255,0,0,.28) !important;
+      color: #ff0000 !important;
+      filter: none !important;
+      opacity: 1 !important;
+    }
+    .sonu-gold-box .on-air-row.is-on .on-air-sign,
+    .sonu-gold-box .on-air-row.is-on #c15m-on-air-text,
+    .sonu-gold-box #c15m-on-air.is-on .on-air-sign,
+    .sonu-gold-box #c15m-on-air.is-on #c15m-on-air-text,
+    .sonu-gold-box .on-air-row.is-on.pill .on-air-sign,
+    .sonu-gold-box #sonu-live-on-pill.is-on,
+    .sonu-gold-box .live-on-pill.is-on,
+    .sonu-gold-box [data-sonu-on-air="live"] {
+      color: #ff0000 !important;
+      -webkit-text-fill-color: #ff0000 !important;
+      background: transparent !important;
+      border-color: transparent !important;
+      text-shadow:
+        0 0 2px #ff0000,
+        0 0 8px #ff0000,
+        0 0 18px #ef4444 !important;
+    }
+    .sonu-gold-box .on-air-row.is-off,
+    .sonu-gold-box #c15m-on-air.is-off {
+      background: #020304 !important;
+      border-color: #050607 !important;
+      box-shadow: none !important;
+      filter: saturate(0) brightness(0.45) !important;
+      opacity: 0.28 !important;
+    }
+    .sonu-gold-box .on-air-row.is-off .on-air-sign,
+    .sonu-gold-box .on-air-row.is-off #c15m-on-air-text,
+    .sonu-gold-box #c15m-on-air.is-off .on-air-sign {
+      color: #0a0b0c !important;
+      -webkit-text-fill-color: #0a0b0c !important;
+      text-shadow: none !important;
+      background: transparent !important;
+    }
+    /* Radio-station ON-AIR: vivid #ff0000 when LIVE; near-black when Paper (no filter on .is-on) */
+    @keyframes sonu-on-air-glow {
+      0%, 100% {
+        background-color:#ff0000;
+        box-shadow:0 0 6px #ff0000, 0 0 14px #ff0000, 0 0 28px rgba(255,0,0,.85);
+      }
+      50% {
+        background-color:#ff1a1a;
+        box-shadow:0 0 10px #ff0000, 0 0 22px #ff0000, 0 0 40px rgba(255,0,0,1);
+      }
+    }
+    @keyframes sonu-on-air-panel {
+      0%, 100% { box-shadow:0 0 12px rgba(255,0,0,.55), 0 0 28px rgba(255,0,0,.25), inset 0 0 12px rgba(255,0,0,.15); }
+      50% { box-shadow:0 0 18px rgba(255,0,0,.75), 0 0 36px rgba(255,0,0,.35), inset 0 0 16px rgba(255,0,0,.22); }
+    }
+    .on-air-row {
+      display:inline-flex; align-items:center; gap:.7rem;
+      padding:.5rem 1.15rem; border-radius:12px; margin:.3rem 0 .5rem;
+      border:2px solid #080a0d; background:#030405;
+      transition:border-color .2s ease, box-shadow .2s ease, opacity .2s ease, filter .2s ease;
+    }
+    .on-air-row.is-on {
+      opacity:1;
+      filter:none;
+      border-color:#ff0000;
+      background:linear-gradient(180deg, #5c0000 0%, #1a0000 55%, #0d0000 100%);
+      animation:sonu-on-air-panel 1.8s ease-in-out infinite;
+    }
+    .on-air-row.is-off {
+      border-color:#050607;
+      background:#020304;
+      opacity:.28;
+      filter:saturate(0) brightness(0.45);
+    }
+    .on-air-bulb {
+      width:.95rem; height:.95rem; border-radius:50%; flex-shrink:0;
+      border:1px solid #1a1a1a;
+      background:#0a0606;
+      box-shadow:none;
+    }
+    .on-air-row.is-on .on-air-bulb {
+      border-color:#ff6666;
+      background:#ff0000;
+      animation:sonu-on-air-glow 1.4s ease-in-out infinite;
+    }
+    .on-air-row.is-off .on-air-bulb {
+      background:#080808;
+      border-color:#0a0a0a;
+      box-shadow:none;
+      animation:none;
+    }
+    .on-air-sign {
+      font-size:1.28rem; font-weight:900; letter-spacing:.18em;
+      color:#141618;
+      text-shadow:none;
+    }
+    .on-air-row.is-on .on-air-sign {
+      color:#ff0000;
+      -webkit-text-fill-color:#ff0000;
+      text-shadow:
+        0 0 2px #ff0000,
+        0 0 8px #ff0000,
+        0 0 16px #ff0000,
+        0 0 32px rgba(255,0,0,.9);
+    }
+    .on-air-row.is-off .on-air-sign {
+      color:#0a0b0c;
+      -webkit-text-fill-color:#0a0b0c;
+      text-shadow:none;
+      opacity:.35;
+    }
+    .sonu-paper-caption {
+      font-size:.72rem; font-weight:700; letter-spacing:.1em;
+      color:#3d4654; margin:-0.15rem 0 .35rem; text-transform:uppercase;
+    }
+    .sonu-paper-caption.hidden { display:none; }
+    .sonu-mode-toggles { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:.45rem; }
+    .mode-toggle-btn {
+      display:inline-flex; align-items:center; gap:.45rem;
+      padding:.45rem .85rem; border-radius:10px; font-weight:600; font-size:.78rem;
+      border:1px solid var(--border); background:var(--panel2); color:var(--text);
+    }
+    .mode-toggle-btn:hover { border-color:var(--orange); }
+    .mode-toggle-btn.is-active { border-color:rgba(52,211,153,.55); background:rgba(52,211,153,.08); }
+    .mode-lamp {
+      width:.55rem; height:.55rem; border-radius:50%; flex-shrink:0;
+    }
+    .mode-lamp.lamp-green { background:var(--green); box-shadow:0 0 0 3px rgba(52,211,153,.2); }
+    .mode-lamp.lamp-yellow { background:var(--orange); box-shadow:0 0 0 3px rgba(251,191,36,.18); }
+    /* Live/Paper toggles — ON green as loud as LIVE ON red (#sonu-gold-box only) */
+    .sonu-gold-box .mode-lamp.lamp-green {
+      background:#00ff00 !important;
+      border:1px solid #7fff7f !important;
+      box-shadow:
+        0 0 6px #00ff00,
+        0 0 14px rgba(0,255,0,.78),
+        0 0 28px rgba(0,255,0,.38) !important;
+      filter:none !important;
+      opacity:1 !important;
+    }
+    .sonu-gold-box .mode-lamp.lamp-yellow {
+      background:#5c4d28 !important;
+      border:1px solid rgba(251,191,36,.22) !important;
+      box-shadow:none !important;
+      opacity:.42 !important;
+      filter:saturate(.55) brightness(.82) !important;
+    }
+    .sonu-gold-box .mode-toggle-btn.is-active {
+      border-color:rgba(0,255,0,.58) !important;
+      background:rgba(0,255,0,.07) !important;
+      box-shadow:0 0 14px rgba(0,255,0,.22), inset 0 0 12px rgba(0,255,0,.06) !important;
+    }
+    .sonu-metrics {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(7rem,1fr));
+      gap:.55rem; margin-top:.65rem;
+    }
+    .sonu-metrics .metric-mini {
+      background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.06);
+      border-radius:10px; padding:.45rem .55rem;
+    }
+    .sonu-metrics .metric-mini .value { font-size:1.05rem; }
+    .sonu-gold-box .sonu-trades-line {
+      font-size:.9rem; font-weight:800; letter-spacing:.03em;
+      margin-top:.55rem; padding:.45rem .55rem;
+      border-radius:10px; border:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.2); color:var(--text);
+    }
+    .sonu-gold-box .sonu-trades-line .label-tag {
+      color:rgba(251,191,36,.92); font-weight:700; margin-right:.35rem;
+    }
+    .sonu-gold-box .sonu-trades-line .muted-part { color:var(--muted); font-weight:650; }
+    .sonu-gold-box .sonu-funnel-kicker {
+      font-size:.68rem; font-weight:700; letter-spacing:.06em;
+      color:rgba(251,191,36,.88); margin-top:.6rem;
+    }
+    .sonu-gold-box .sonu-window-funnel {
+      display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.45rem;
+      margin-top:.35rem; padding:.5rem .45rem .45rem;
+      border:1px solid rgba(251,191,36,.28); border-radius:10px;
+      background:rgba(0,0,0,.22);
+    }
+    .sonu-gold-box .sonu-window-funnel .label { font-size:.62rem; font-weight:700; }
+    .sonu-gold-box .sonu-window-funnel .value { font-size:1.25rem; font-weight:800; line-height:1.1; }
+    .sonu-gold-box .sonu-window-funnel .win-considered .value { color:var(--text); }
+    .sonu-gold-box .sonu-window-funnel .win-filtered .value { color:var(--orange); }
+    .sonu-gold-box .sonu-window-funnel .win-entered .value { color:var(--green); }
+    .sonu-gold-box .sonu-window-funnel-hint { font-size:.68rem; color:var(--muted); margin-top:.35rem; }
+    .high-live-rows { margin-top:.75rem; display:grid; gap:.55rem; }
+    .high-live-row {
+      border:1px solid rgba(224,181,103,.32); border-radius:12px; padding:.55rem .65rem;
+      background:rgba(0,0,0,.22); text-align:left;
+    }
+    .high-live-row .hl-row-title { font-size:.88rem; font-weight:750; display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; }
+    .high-live-row .hl-row-meta { font-size:.72rem; color:var(--muted); margin-top:.25rem; line-height:1.35; }
+    .high-live-row .chip.prep { color:var(--orange); border:1px solid rgba(251,191,36,.45); font-size:.68rem; padding:.12rem .4rem; border-radius:999px; }
+    .paper-run-fold {
+      border:1px solid rgba(255,255,255,.08); border-radius:14px;
+      background:var(--panel); margin:0 0 1rem;
+    }
+    .paper-run-fold > summary {
+      cursor:pointer; list-style:none; border-radius:14px;
+    }
+    .paper-run-fold summary::-webkit-details-marker { display:none; }
+    .paper-run-fold[open] > summary { border-bottom:1px solid var(--border); border-radius:14px 14px 0 0; }
+    .paper-run-title { color:var(--orange); letter-spacing:.02em; }
+    .paper-run-hint { color:var(--muted); font-weight:500; }
+    .paper-run-body { padding:.65rem .85rem .85rem; }
+    /*
+     * Family Desk Paper run fold headers — merge to droplet (/root/btc-5m-bot/…).
+     * Overrides legacy flex + space-between + flex-wrap (causes centered/zigzag titles).
+     */
+    #paper-run-fold > summary,
+    #paper-run-fold details.paper-run-fold > summary,
+    #paper-run-fold details.sfv-fold > summary,
+    #paper-run-fold details.nb-fold > summary,
+    #paper-run-fold details.fam-fold > summary,
+    #paper-run-fold details.paused-fold > summary,
+    #paper-run-fold details.other > summary,
+    .paper-run-inner > details.sfv-fold > summary,
+    .paper-run-inner > details.nb-fold > summary,
+    .paper-run-inner > details.fam-fold > summary,
+    .paper-run-inner > details.paused-fold > summary,
+    .paper-run-inner > details.other > summary,
+    #paper-run-extra details > summary,
+    summary.desk-fold-summary {
+      display:grid !important;
+      grid-template-columns:1rem minmax(0,1fr) minmax(5.75rem,36%) !important;
+      grid-template-rows:auto auto !important;
+      column-gap:.55rem !important; row-gap:.12rem !important;
+      align-items:start !important;
+      align-content:start !important;
+      justify-content:start !important;
+      justify-items:start !important;
+      flex-wrap:nowrap !important;
+      padding:.58rem .78rem !important;
+      text-align:left !important;
+      font-size:.82rem !important;
+      font-weight:700 !important;
+      list-style:none !important;
+      cursor:pointer;
+    }
+    #paper-run-fold > summary::before,
+    #paper-run-fold details.sfv-fold > summary::before,
+    #paper-run-fold details.nb-fold > summary::before,
+    #paper-run-fold details.fam-fold > summary::before,
+    #paper-run-fold details.paused-fold > summary::before,
+    #paper-run-fold details.other > summary::before,
+    .paper-run-inner > details > summary::before,
+    #paper-run-extra details > summary::before {
+      grid-column:1 !important;
+      grid-row:1 / span 2 !important;
+      align-self:center !important;
+      justify-self:start !important;
+      color:var(--muted) !important;
+      font-size:.72rem !important;
+      font-weight:400 !important;
+    }
+    #paper-run-fold details[open] > summary::before,
+    .paper-run-inner > details[open] > summary::before,
+    #paper-run-extra details[open] > summary::before { content:"▾ " !important; }
+    #paper-run-fold details:not([open]) > summary::before,
+    .paper-run-inner > details:not([open]) > summary::before,
+    #paper-run-extra details:not([open]) > summary::before { content:"▸ " !important; }
+    #paper-run-fold summary > .desk-fold-left,
+    #paper-run-fold summary > span:first-of-type,
+    .paper-run-inner details > summary > span:first-of-type,
+    #paper-run-extra details > summary > span:first-of-type {
+      grid-column:2 !important;
+      grid-row:1 / span 2 !important;
+      min-width:0 !important;
+      width:100% !important;
+      display:flex !important;
+      flex-direction:column !important;
+      align-items:flex-start !important;
+      justify-content:flex-start !important;
+      text-align:left !important;
+      gap:.12rem !important;
+    }
+    #paper-run-fold summary > .desk-fold-right,
+    #paper-run-fold summary > .desk-fold-meta,
+    #paper-run-fold summary > span:last-of-type,
+    .paper-run-inner details > summary > span:last-of-type,
+    #paper-run-extra details > summary > span:last-of-type {
+      grid-column:3 !important;
+      grid-row:1 / span 2 !important;
+      justify-self:end !important;
+      align-self:center !important;
+      text-align:right !important;
+      font-size:.68rem !important;
+      font-weight:500 !important;
+      color:var(--muted) !important;
+      line-height:1.35 !important;
+      max-width:11.5rem !important;
+    }
+    #paper-run-fold summary .desk-fold-title,
+    #paper-run-fold summary .paper-run-title,
+    #paper-run-fold summary .sfv-fold-title,
+    #paper-run-fold summary .fam-fold-title,
+    .paper-run-inner details > summary .sfv-fold-title,
+    .paper-run-inner details > summary .fam-fold-title {
+      display:block !important;
+      width:100% !important;
+      text-align:left !important;
+      font-size:.82rem !important;
+      font-weight:700 !important;
+      color:var(--text) !important;
+      line-height:1.25 !important;
+      margin:0 !important;
+    }
+    .paper-run-title { color:var(--orange); letter-spacing:.02em; }
+    #paper-run-fold summary .desk-fold-hint,
+    #paper-run-fold summary .paper-run-hint,
+    #paper-run-fold summary .sfv-fold-hint,
+    #paper-run-fold summary .fam-fold-hint,
+    .paper-run-inner details > summary .sfv-fold-hint,
+    .paper-run-inner details > summary .fam-fold-hint {
+      display:block !important;
+      width:100% !important;
+      text-align:left !important;
+      font-size:.68rem !important;
+      font-weight:500 !important;
+      color:var(--muted) !important;
+      margin:0 !important;
+      margin-left:0 !important;
+    }
+    .paper-run-hint { font-weight:500; }
+    .desk-fold-badges {
+      display:flex !important;
+      flex-wrap:wrap !important;
+      justify-content:flex-end !important;
+      gap:.25rem !important;
+      margin-bottom:.18rem !important;
+      width:100% !important;
+    }
+    .desk-fold-badges .pill { font-size:.62rem; padding:.12rem .38rem; }
+    .paper-run-body .board { margin-bottom:0; }
+    .paper-run-body .board-hero { margin-bottom:.65rem; }
+    .paper-run-extra:empty { display:none; }
+    .sonu-desk-panel { margin-bottom:.85rem; }
+    .paper-run-fold:not([open]) + .tabs { margin-top:.65rem; }
+    @media (max-width:900px) {
+      .hero { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .grid.two, .grid.three { grid-template-columns:1fr; }
       .sched-grid { grid-template-columns:1fr; }
-      header { display:block; }
-      .grid.three, .grid.two { grid-template-columns:1fr; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header>
+    <div class="topbar">
       <div>
-        <h1>V1 BTC / ETH</h1>
-        <div class="sub">Bot only · <span id="session-start">—</span> · 更新 <span id="updated">—</span></div>
-        <div class="controls">
-          <a href="/logs" style="text-decoration:none"><button type="button">Rules &amp; Log</button></a>
+        <h1>V1 Live Dashboard</h1>
+        <div class="sub">Session <span id="session-start">—</span> · 更新 <span id="updated">—</span></div>
+        <div class="controls" style="margin-top:.45rem">
+          <a href="/logs" style="text-decoration:none"><button type="button">Log → /logs</button></a>
         </div>
       </div>
-      <div class="status-line">
-        <span class="pill live" id="btc-mode">BTC —</span>
-        <span class="pill live" id="eth-mode">ETH —</span>
-        <span class="pill live" id="risk-pill">—</span>
+      <div>
+        <div class="status-line">
+          <span class="pill live" id="btc-mode">BTC —</span>
+          <span class="pill live" id="eth-mode">ETH —</span>
+          <span class="pill live" id="risk-pill">—</span>
+        </div>
+        <div class="services" id="services-line" style="margin-top:.4rem"></div>
       </div>
-    </header>
+    </div>
 
-    <section class="card">
-      <div class="wallet-bar">
+    <section class="sonu-gold-box" id="sonu-gold-box">
+      <div class="sonu-gold-kicker">Desk · Live</div>
+      <div class="section-head" style="margin-bottom:0">
+        <h2 style="font-size:1.05rem;margin:0">Live · Son U</h2>
+        <div class="status-line">
+          <span class="pill warn" id="c15m-mode-pill">—</span>
+          <span class="pill" id="c15m-backend-pill">後端 —</span>
+        </div>
+      </div>
+      <div class="on-air-row sonu-on-air-indicator is-off" id="c15m-on-air" data-sonu-on-air="paper" aria-live="polite">
+        <span class="on-air-bulb" id="c15m-on-air-lamp" aria-hidden="true"></span>
+        <span class="on-air-sign sonu-radio-live-text" id="c15m-on-air-text">LIVE ON</span>
+      </div>
+      <div class="sonu-paper-caption hidden" id="c15m-paper-caption">PAPER · ON-AIR 熄咗</div>
+      <div class="hint" id="c15m-mode-sub">讀緊後端模式…</div>
+      <div class="sonu-mode-toggles">
+        <button type="button" class="mode-toggle-btn" id="c15m-btn-live">
+          <span class="mode-lamp lamp-yellow" id="c15m-lamp-live"></span> Live 實盤
+        </button>
+        <button type="button" class="mode-toggle-btn" id="c15m-btn-paper">
+          <span class="mode-lamp lamp-green" id="c15m-lamp-paper"></span> Paper 模擬
+        </button>
+      </div>
+      <div class="hint" id="c15m-control-hint" style="margin-top:.45rem">—</div>
+      <div class="sonu-trades-line" id="c15m-trades-windows-line" aria-live="polite">
+        <span class="label-tag">Trades</span>— 單 · — 窗
+      </div>
+      <div class="sonu-metrics">
+        <div class="metric-mini">
+          <div class="label">Combined PnL</div>
+          <div class="value" id="c15m-combined">—</div>
+        </div>
+        <div class="metric-mini">
+          <div class="label">Win rate</div>
+          <div class="value" id="c15m-wr-combined">—</div>
+          <div class="hint" id="c15m-wr-detail">—</div>
+        </div>
+        <div class="metric-mini">
+          <div class="label">Stake ref</div>
+          <div class="value" style="font-size:.92rem" id="c15m-stake-ref">—</div>
+        </div>
+        <div class="metric-mini">
+          <div class="label">Session</div>
+          <div class="value" style="font-size:.85rem" id="c15m-session-inline">—</div>
+        </div>
+      </div>
+      <div class="sonu-funnel-kicker">窗口漏斗 · 本 session</div>
+      <div class="sonu-window-funnel" id="c15m-window-funnel" aria-label="窗口考慮／過濾／入場" aria-live="polite">
+        <div class="metric-mini win-considered">
+          <div class="label">考慮</div>
+          <div class="value" id="c15m-win-considered">—</div>
+          <div class="hint">窗</div>
+        </div>
+        <div class="metric-mini win-filtered">
+          <div class="label">過濾</div>
+          <div class="value" id="c15m-win-filtered">—</div>
+          <div class="hint">skip</div>
+        </div>
+        <div class="metric-mini win-entered">
+          <div class="label">入場</div>
+          <div class="value" id="c15m-win-entered">—</div>
+          <div class="hint">落單</div>
+        </div>
+      </div>
+      <div class="sonu-window-funnel-hint" id="c15m-window-funnel-hint">考慮 — · 過濾 — · 入場 —</div>
+      <div class="high-live-rows" id="high-live-rows" aria-label="Live prep · 其他高 Live"></div>
+    </section>
+
+    <div class="hero">
+      <div class="metric highlight">
+        <div class="label">Wallet</div>
+        <div class="value" id="wallet-cash">—</div>
+        <div class="hint" id="wallet-hint">—</div>
+      </div>
+      <div class="metric">
+        <div class="label">Today · US Session</div>
+        <div class="value" id="td-total">—</div>
+        <div class="hint" id="daily-stop-hint">—</div>
+      </div>
+      <div class="metric">
+        <div class="label">Overall · Session</div>
+        <div class="value" id="ov-total">—</div>
+        <div class="hint">BTC <span id="ov-btc-inline">—</span> · ETH <span id="ov-eth-inline">—</span></div>
+      </div>
+      <div class="metric m15" id="c15m-hero-metric">
+        <div class="label" id="c15m-hero-label">15m Bot</div>
+        <div class="value" id="c15m-combined-hero">—</div>
+        <div class="hint" id="c15m-hero-hint">—</div>
+      </div>
+    </div>
+
+    <div id="sonu-desk-panel" class="sonu-desk-panel">
+      <div class="grid two">
+        <div class="card bot-card m15" id="c15m-control-card">
+          <div class="section-head">
+            <h2>Trading control</h2>
+            <span class="pill" id="c15m-status-pill">—</span>
+          </div>
+          <div class="hint" id="c15m-rules">—</div>
+          <div class="controls" style="margin-top:.55rem">
+            <button class="good" id="c15m-toggle">—</button>
+            <button type="button" id="c15m-enable-live">Go Live</button>
+            <button type="button" class="danger" id="c15m-disable-live">Paper mode</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-head"><h2>Per asset</h2><span class="pill" id="c15m-session-pill">—</span></div>
+          <div class="grid three" style="margin-top:.45rem">
+            <div><div class="label">BTC 15m</div><div class="value" style="font-size:1.15rem" id="c15m-btc">—</div><div class="hint" id="c15m-btc-meta">—</div></div>
+            <div><div class="label">ETH 15m</div><div class="value" style="font-size:1.15rem" id="c15m-eth">—</div><div class="hint" id="c15m-eth-meta">—</div></div>
+            <div><div class="label">Quality</div><div class="hint" id="c15m-quality-hint" style="margin-top:.35rem;font-size:.78rem">—</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="hint" id="c15m-observer-hint" style="margin-top:.45rem">—</div>
+    </div>
+
+    <details class="paper-run-fold" id="paper-run-fold">
+      <summary class="desk-fold-summary paper-run-summary">
+        <span class="desk-fold-left">
+          <span class="desk-fold-title paper-run-title">Paper run</span>
+          <span class="desk-fold-hint paper-run-hint">Sports FV · Newborn · newnew / 5m A / V2 · 已停 · 其他 · 預設摺起</span>
+        </span>
+        <span class="desk-fold-right desk-fold-meta" id="paper-run-badge">摺起 · 撳開睇全部紙上</span>
+      </summary>
+      <div class="paper-run-body" id="paper-run-body">
+    <section class="board" id="all-paper-board">
+      <div class="board-hero">
         <div>
-          <div class="label">Wallet</div>
-          <div class="value" id="wallet-cash">—</div>
-          <div class="hint" id="wallet-hint">—</div>
+          <div class="board-kicker">全部 Paper</div>
+          <h2 id="board-hero-title">全部 Paper · 載入中</h2>
+          <div class="board-hero-line" id="board-hero-line">分開睇：邊啲程式跑緊、邊啲先係模擬落單、邊啲只係研究。</div>
+        </div>
+        <div class="board-counts">
+          <div><b id="board-n-bots">—</b><span>個 bot 跑緊</span></div>
+          <div><b id="board-n-paper">—</b><span>條 paper 策略</span></div>
+          <div><b id="board-n-exp">—</b><span>項實驗</span></div>
         </div>
       </div>
+
+      <div class="board-sec">
+        <h3>而家跑緊嘅 Bot</h3>
+        <p class="sec-sub">只列進程。綠點 = 跑緊，紅點 = 停咗。唔會夾實驗備註。</p>
+        <div class="table-wrap">
+          <table class="board-table">
+            <thead>
+              <tr><th>名稱</th><th>狀態</th><th>模式</th><th>做緊咩</th></tr>
+            </thead>
+            <tbody id="board-bots"><tr><td colspan="4" class="muted">載入中…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="board-sec">
+        <h3>Paper 交易</h3>
+        <p class="sec-sub">會模擬落單嘅策略。</p>
+        <p class="paper-banner">以下全部係模擬單，唔會用真錢。</p>
+        <div class="table-wrap">
+          <table class="board-table">
+            <thead>
+              <tr><th>策略</th><th>模式</th><th>單數</th><th>紙上盈虧</th><th>最近活動</th></tr>
+            </thead>
+            <tbody id="board-paper"><tr><td colspan="5" class="muted">載入中…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="board-sec">
+        <h3>實驗 / 研究</h3>
+        <p class="sec-sub">唔係下單 bot；只係研究或 scanner。</p>
+        <div id="board-experiments"><div class="exp-note">載入中…</div></div>
+      </div>
     </section>
 
-    <section class="card">
-      <div class="section-head">
-        <h2>Stake Plan</h2>
-        <span class="pill live" id="stake-mult-pill">—</span>
-      </div>
-      <div class="hint" id="stake-formula">—</div>
-      <div class="table-wrap" style="margin-top:.5rem">
-        <table class="stake-table">
-          <thead>
-            <tr>
-              <th>Wallet ≥</th><th>Tier</th>
-              <th>BTC fav US</th><th>BTC fav core</th>
-              <th>ETH fav US</th><th>ETH fav core</th>
-              <th>ETH dog US</th><th>ETH dog core</th>
-            </tr>
-          </thead>
-          <tbody id="stake-tiers-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
-        </table>
-      </div>
-      <div class="hint" id="stake-current-line" style="margin-top:.45rem">—</div>
-    </section>
+    <div class="profile-card">
+      <div class="profile-title">Running Now</div>
+      <div class="profile-main" id="live-profile-main">—</div>
+      <div class="profile-sub" id="live-profile-sub">—</div>
+    </div>
 
-    <section class="card">
-      <div class="section-head">
-        <h2>Trading Schedule</h2>
-        <span class="pill" id="sched-now-pill">—</span>
-      </div>
-      <div class="sched-grid" id="sched-grid">—</div>
-      <div class="hint" style="margin-top:.45rem" id="sched-stop-line">Daily stop: combined net PnL ≤ <span id="sched-stop">—</span> · wallet↓ → stake tier↓ auto</div>
-      <div class="table-wrap" style="margin-top:.5rem">
-        <table class="stake-table" id="stop-table">
-          <thead>
-            <tr><th>Wallet ≥</th><th>Daily stop</th><th></th></tr>
-          </thead>
-          <tbody id="stop-tiers-body"><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
-        </table>
-      </div>
-      <div class="hint" id="stop-current-line" style="margin-top:.35rem">—</div>
-    </section>
+    <div class="tabs" id="paper-run-tabs" data-tab-scope="paper">
+      <button class="tab active" data-tab="live">Live 5m</button>
+      <button class="tab" data-tab="dualeg">Dual-Leg Paper</button>
+    </div>
 
-    <section class="card pnl-panel">
-      <div class="section-head">
-        <h2>Overall PnL <span class="tag">Session · 累計</span></h2>
+    <div id="panel-live" class="panel active" data-tab-scope="paper">
+      <div class="grid two">
+        <div class="card bot-card">
+          <div class="section-head">
+            <h2>BTC V1</h2>
+            <span class="pill" id="btc-status">—</span>
+          </div>
+          <div class="status-line">
+            <span class="pill" id="btc-fav-risk">fav —</span>
+            <span class="pill" id="btc-dog-risk">dog —</span>
+          </div>
+          <div class="controls" style="margin-top:.5rem">
+            <button id="btc-toggle">—</button>
+            <button class="good" data-release="btc">解除停損</button>
+          </div>
+        </div>
+        <div class="card bot-card eth">
+          <div class="section-head">
+            <h2>ETH V1</h2>
+            <span class="pill" id="eth-status">—</span>
+          </div>
+          <div class="status-line">
+            <span class="pill" id="eth-fav-risk">fav —</span>
+            <span class="pill" id="eth-dog-risk">dog —</span>
+          </div>
+          <div class="controls" style="margin-top:.5rem">
+            <button id="eth-toggle">—</button>
+            <button class="good" data-release="eth">解除停損</button>
+          </div>
+        </div>
       </div>
-      <div class="grid three">
-        <div><div class="label">V1 Total</div><div class="value" id="ov-total">—</div></div>
-        <div><div class="label">BTC Bot</div><div class="value" id="ov-btc">—</div></div>
-        <div><div class="label">ETH Bot</div><div class="value" id="ov-eth">—</div></div>
-      </div>
-      <div class="hint">從 session 開始所有已平倉加總 · 對應 Overall 圖表</div>
-    </section>
 
-    <section class="card pnl-panel today">
-      <div class="section-head">
-        <h2>Session PnL <span class="tag">US session · 21:30 歸零</span></h2>
-      </div>
-      <div class="grid three">
-        <div><div class="label">V1 Total</div><div class="value" id="td-total">—</div></div>
-        <div><div class="label">BTC Bot</div><div class="value" id="td-btc">—</div></div>
-        <div><div class="label">ETH Bot</div><div class="value" id="td-eth">—</div></div>
-      </div>
-      <div class="hint" id="daily-stop-hint">—</div>
-    </section>
-
-    <section class="grid two">
-      <div class="card bot-card">
+      <div class="card">
         <div class="section-head">
-          <h2>BTC V1</h2>
-          <span class="pill" id="btc-status">—</span>
+          <h2>Live Trades <span class="tag">5m BTC + ETH</span></h2>
+          <div class="controls">
+            <button data-limit="10">10</button>
+            <button data-limit="25">25</button>
+            <button data-limit="50">50</button>
+          </div>
         </div>
-        <div class="status-line">
-          <span class="pill" id="btc-fav-risk">fav —</span>
-          <span class="pill" id="btc-dog-risk">dog —</span>
+        <div class="grid three" style="margin-bottom:.65rem">
+          <div><div class="label">Today BTC</div><div class="value" style="font-size:1.1rem" id="td-btc">—</div></div>
+          <div><div class="label">Today ETH</div><div class="value" style="font-size:1.1rem" id="td-eth">—</div></div>
+          <div><div class="label">Overall split</div><div class="hint" style="margin-top:.35rem"><span id="ov-btc">—</span> · <span id="ov-eth">—</span></div></div>
         </div>
-        <div class="controls">
-          <button id="btc-toggle">—</button>
-          <button class="good" data-release="btc">解除停損</button>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Bot</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th></tr>
+            </thead>
+            <tbody id="trades-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
+          </table>
         </div>
       </div>
-      <div class="card bot-card eth">
+    </div>
+
+    <div id="panel-dualeg" class="panel" data-tab-scope="paper">
+      <div class="card" style="border-left:3px solid var(--accent)">
         <div class="section-head">
-          <h2>ETH V1</h2>
-          <span class="pill" id="eth-status">—</span>
+          <h2>5m Dual-Leg Hedge <span class="tag">BTC + ETH · isolated paper</span></h2>
+          <span class="pill warn">PAPER ONLY</span>
         </div>
-        <div class="status-line">
-          <span class="pill" id="eth-fav-risk">fav —</span>
-          <span class="pill" id="eth-dog-risk">dog —</span>
-        </div>
-        <div class="controls">
-          <button id="eth-toggle">—</button>
-          <button class="good" data-release="eth">解除停損</button>
+        <div class="hint" id="dl-rules">—</div>
+        <div class="grid three" style="margin-top:.65rem">
+          <div>
+            <div class="label">Net PnL after estimated fees</div>
+            <div class="value" id="dl-pnl">—</div>
+            <div class="hint" id="dl-closed">—</div>
+          </div>
+          <div>
+            <div class="label">Hedge completion</div>
+            <div class="value" id="dl-hedge-rate">—</div>
+            <div class="hint" id="dl-stranded">—</div>
+          </div>
+          <div>
+            <div class="label">Open positions</div>
+            <div class="value" id="dl-open">—</div>
+            <div class="hint" id="dl-open-detail">—</div>
+          </div>
         </div>
       </div>
-    </section>
+      <div class="card">
+        <div class="section-head">
+          <h2>Dual-Leg Trades</h2>
+          <span class="hint">重點監察 stranded one-leg，而非只看勝率</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Asset</th><th>Binance regime</th><th>Legs</th><th>UP Ask</th><th>DOWN Ask</th><th>Stake</th><th>Outcome</th><th>Floor</th><th>Net PnL</th></tr>
+            </thead>
+            <tbody id="dl-trades-body"><tr><td colspan="10" class="muted">Loading…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="hint" id="dl-note" style="margin-top:.45rem">—</div>
+      </div>
+    </div>
 
-    <section class="card">
-      <div class="section-head">
-        <h2>Daily PnL</h2>
-        <span class="hint">每日單日盈虧（柱狀）</span>
+        <div class="paper-run-extra" id="paper-run-extra" aria-label="Family Desk paper groups"></div>
       </div>
-      <div class="chart-box"><canvas id="daily-chart"></canvas></div>
-      <div class="chart-note">每根柱 = 該日當天賺/虧 · 不是累計</div>
-    </section>
+    </details>
 
-    <section class="card">
-      <div class="section-head">
-        <h2>Overall PnL</h2>
-        <span class="hint">Session 累計曲線</span>
+    <div class="tabs" id="desk-main-tabs" data-tab-scope="main">
+      <button class="tab" data-tab="charts">Charts</button>
+      <button class="tab" data-tab="config">Config</button>
+    </div>
+
+    <div id="panel-charts" class="panel" data-tab-scope="main">
+      <div class="card">
+        <div class="section-head"><h2>Daily PnL</h2><span class="hint">單日盈虧</span></div>
+        <div class="chart-box"><canvas id="daily-chart"></canvas></div>
+        <div class="chart-note">每根柱 = 該日當天賺/虧</div>
       </div>
-      <div class="chart-box"><canvas id="cumul-chart"></canvas></div>
-      <div class="chart-note">曲線 = 從 session 起逐日累加 · 最後一點 ≈ Overall V1 Total</div>
-    </section>
+      <div class="card">
+        <div class="section-head"><h2>Overall Curve</h2><span class="hint">Session 累計</span></div>
+        <div class="chart-box"><canvas id="cumul-chart"></canvas></div>
+        <div class="chart-note">曲線 ≈ Overall V1 Total</div>
+      </div>
+    </div>
 
-    <section class="card">
-      <div class="section-head">
-        <h2>Recent Trades</h2>
-        <div class="controls">
-          <button data-limit="10">10</button>
-          <button data-limit="25">25</button>
-          <button data-limit="50">50</button>
+    <div id="panel-config" class="panel" data-tab-scope="main">
+      <details class="config-block" open>
+        <summary>Stake Plan · <span class="pill live" id="stake-mult-pill">—</span></summary>
+        <div class="inner">
+          <div class="hint" id="stake-formula">—</div>
+          <div class="table-wrap" style="margin-top:.5rem">
+            <table class="stake-table">
+              <thead>
+                <tr>
+                  <th>Wallet ≥</th><th>Tier</th>
+                  <th>BTC fav US</th><th>BTC fav core</th>
+                  <th>ETH fav US</th><th>ETH fav core</th>
+                  <th>ETH dog US</th><th>ETH dog core</th>
+                </tr>
+              </thead>
+              <tbody id="stake-tiers-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="hint" id="stake-current-line" style="margin-top:.45rem">—</div>
         </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Time</th><th>Bot</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th>
-            </tr>
-          </thead>
-          <tbody id="trades-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+      </details>
+
+      <details class="config-block">
+        <summary>Trading Schedule · <span class="pill" id="sched-now-pill">—</span></summary>
+        <div class="inner">
+          <div class="sched-grid" id="sched-grid">—</div>
+          <div class="hint" style="margin-top:.45rem" id="sched-stop-line">Daily stop: combined net PnL ≤ <span id="sched-stop">—</span></div>
+          <div class="table-wrap" style="margin-top:.5rem">
+            <table class="stake-table" id="stop-table">
+              <thead><tr><th>Wallet ≥</th><th>Daily stop</th><th></th></tr></thead>
+              <tbody id="stop-tiers-body"><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="hint" id="stop-current-line" style="margin-top:.35rem">—</div>
+        </div>
+      </details>
+    </div>
   </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
     let dailyChart, cumulChart;
     let tradeLimit = 25;
+
+    document.querySelectorAll('.tab').forEach((btn) => {
+      btn.onclick = () => {
+        const scope = btn.closest('.tabs')?.dataset.tabScope || 'paper';
+        document.querySelectorAll(`.tabs[data-tab-scope="${scope}"] .tab`).forEach((t) => t.classList.remove('active'));
+        document.querySelectorAll(`.panel[data-tab-scope="${scope}"]`).forEach((p) => p.classList.remove('active'));
+        btn.classList.add('active');
+        const panel = $('panel-' + btn.dataset.tab);
+        if (panel) panel.classList.add('active');
+      };
+    });
+
+    function tuckPaperRunGroups() {
+      const extra = $('paper-run-extra');
+      if (!extra) return;
+      document.querySelectorAll('[data-paper-run-group]').forEach((el) => {
+        if (el.closest('#sonu-gold-box, #sonu-desk-panel')) return;
+        if (!extra.contains(el)) extra.appendChild(el);
+      });
+    }
+
+    const DESK_FOLD_SUMMARY_SEL = [
+      '#paper-run-fold > summary',
+      '#paper-run-fold details.sfv-fold > summary',
+      '#paper-run-fold details.nb-fold > summary',
+      '#paper-run-fold details.fam-fold > summary',
+      '#paper-run-fold details.paused-fold > summary',
+      '#paper-run-fold details.other > summary',
+      '.paper-run-inner > details.sfv-fold > summary',
+      '.paper-run-inner > details.nb-fold > summary',
+      '.paper-run-inner > details.fam-fold > summary',
+      '.paper-run-inner > details.paused-fold > summary',
+      '.paper-run-inner > details.other > summary',
+      '#paper-run-extra details > summary',
+    ].join(',');
+
+    /** Paper run fold headers: force left grid; 曾live → right meta only (incl. renderFamilies). */
+    function normalizeDeskFoldSummaries(root) {
+      const scope = root || document.getElementById('paper-run-fold')
+        || document.querySelector('.paper-run-inner') || document.getElementById('paper-run-extra');
+      if (!scope) return;
+      scope.querySelectorAll(DESK_FOLD_SUMMARY_SEL).forEach((summary) => {
+        summary.classList.add('desk-fold-summary');
+        summary.style.setProperty('display', 'grid', 'important');
+        summary.style.setProperty('text-align', 'left', 'important');
+        summary.style.setProperty('justify-content', 'flex-start', 'important');
+        summary.style.setProperty('flex-wrap', 'nowrap', 'important');
+        summary.style.removeProperty('align-items');
+
+        const spans = [...summary.children].filter((el) => el.tagName === 'SPAN');
+        if (spans.length >= 2) {
+          const left = spans[0];
+          const meta = spans[spans.length - 1];
+          left.classList.add('desk-fold-left');
+          meta.classList.add('desk-fold-right', 'desk-fold-meta');
+          left.style.setProperty('text-align', 'left', 'important');
+          meta.style.setProperty('text-align', 'right', 'important');
+          meta.style.removeProperty('color');
+          meta.style.removeProperty('font-size');
+
+          left.querySelectorAll(
+            '.desk-fold-title, .paper-run-title, .sfv-fold-title, .fam-fold-title, .desk-fold-hint, .paper-run-hint, .sfv-fold-hint, .fam-fold-hint',
+          ).forEach((el) => {
+            el.style.setProperty('display', 'block', 'important');
+            el.style.setProperty('text-align', 'left', 'important');
+            el.style.setProperty('margin-left', '0', 'important');
+          });
+
+          let badges = meta.querySelector('.desk-fold-badges');
+          if (!badges) {
+            badges = document.createElement('span');
+            badges.className = 'desk-fold-badges';
+            meta.insertBefore(badges, meta.firstChild);
+          }
+          left.querySelectorAll('.pill.live, .pill.run').forEach((pill) => {
+            if (pill.closest('.desk-fold-badges')) return;
+            badges.appendChild(pill);
+          });
+        }
+      });
+    }
+
+    function watchDeskFoldSummaries() {
+      normalizeDeskFoldSummaries();
+      ['families', 'paper-run-extra', 'paper-run-fold'].forEach((id) => {
+        const node = $(id);
+        if (!node || node._deskFoldObs) return;
+        node._deskFoldObs = true;
+        new MutationObserver(() => {
+          normalizeDeskFoldSummaries(node);
+        }).observe(node, { childList: true, subtree: true });
+      });
+      if (typeof window.renderFamilies === 'function' && !window._deskFoldRenderFamiliesPatched) {
+        window._deskFoldRenderFamiliesPatched = true;
+        const orig = window.renderFamilies;
+        window.renderFamilies = function patchedRenderFamilies() {
+          const out = orig.apply(this, arguments);
+          normalizeDeskFoldSummaries(document.getElementById('families'));
+          return out;
+        };
+      }
+    }
+
+    tuckPaperRunGroups();
+    watchDeskFoldSummaries();
 
     function money(v) {
       const n = Number(v || 0);
@@ -243,8 +994,15 @@
     }
     function setPnl(id, value) {
       const el = $(id);
+      if (!el) return;
       el.textContent = money(value);
       cls(el, value);
+    }
+    function setPnlInline(id, value) {
+      const el = $(id);
+      if (!el) return;
+      el.textContent = money(value);
+      el.className = Number(value || 0) >= 0 ? 'pos' : 'neg';
     }
 
     function fmtBar(v) {
@@ -284,11 +1042,10 @@
             if (v == null) return;
             ctx.save();
             ctx.font = '600 10px system-ui,sans-serif';
-            ctx.fillStyle = Number(v) >= 0 ? '#3fb950' : '#f85149';
+            ctx.fillStyle = Number(v) >= 0 ? '#34d399' : '#f87171';
             ctx.textAlign = 'center';
             ctx.textBaseline = Number(v) >= 0 ? 'bottom' : 'top';
-            const pad = Number(v) >= 0 ? -4 : 4;
-            ctx.fillText(fmtBar(v), bar.x, bar.y + pad);
+            ctx.fillText(fmtBar(v), bar.x, bar.y + (Number(v) >= 0 ? -4 : 4));
             ctx.restore();
           });
         });
@@ -333,10 +1090,10 @@
 
     function baseScales() {
       return {
-        x: { grid: { display: false }, ticks: { color: '#8b949e', font: { size: 11 } }, border: { color: '#30363d' } },
+        x: { grid: { display: false }, ticks: { color: '#8b98a8', font: { size: 11 } }, border: { color: '#2a3340' } },
         y: {
-          grid: { color: 'rgba(48,54,61,0.5)', drawTicks: false },
-          ticks: { color: '#8b949e', font: { size: 10 }, callback: (v) => (v >= 0 ? '+$' : '-$') + Math.abs(v) },
+          grid: { color: 'rgba(42,51,64,0.5)', drawTicks: false },
+          ticks: { color: '#8b98a8', font: { size: 10 }, callback: (v) => (v >= 0 ? '+$' : '-$') + Math.abs(v) },
           border: { display: false },
         },
       };
@@ -352,16 +1109,16 @@
         interaction: { mode: 'index', intersect: false },
         layout: { padding: { top: 22 } },
         plugins: {
-          legend: { position: 'top', align: 'end', labels: { color: '#e6edf3', usePointStyle: true, font: { size: 10 } } },
-          tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', borderWidth: 1,
+          legend: { position: 'top', align: 'end', labels: { color: '#e8eef5', usePointStyle: true, font: { size: 10 } } },
+          tooltip: { backgroundColor: '#121820', borderColor: '#2a3340', borderWidth: 1,
             callbacks: { label: (c) => ' ' + c.dataset.label + ': ' + money(c.raw) } },
         },
         scales: baseScales(),
       };
       const datasets = [
-        { label: 'BTC', data: btc, backgroundColor: hexRgba('#d29922', 0.85), borderRadius: 4, barPercentage: 0.75 },
-        { label: 'ETH', data: eth, backgroundColor: hexRgba('#3fb950', 0.85), borderRadius: 4, barPercentage: 0.75 },
-        { label: 'V1 Total', data: total, backgroundColor: hexRgba('#58a6ff', 0.9), borderRadius: 4, barPercentage: 0.75 },
+        { label: 'BTC', data: btc, backgroundColor: hexRgba('#fbbf24', 0.85), borderRadius: 4, barPercentage: 0.75 },
+        { label: 'ETH', data: eth, backgroundColor: hexRgba('#34d399', 0.85), borderRadius: 4, barPercentage: 0.75 },
+        { label: 'V1 Total', data: total, backgroundColor: hexRgba('#60a5fa', 0.9), borderRadius: 4, barPercentage: 0.75 },
       ];
       if (!dailyChart) {
         dailyChart = new Chart($('daily-chart'), { type: 'bar', data: { labels, datasets }, options: opts, plugins: [chartZeroLine, barValueLabels] });
@@ -384,8 +1141,8 @@
         interaction: { mode: 'index', intersect: false },
         layout: { padding: { top: 26 } },
         plugins: {
-          legend: { position: 'top', align: 'end', labels: { color: '#e6edf3', usePointStyle: true, font: { size: 10 } } },
-          tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', borderWidth: 1,
+          legend: { position: 'top', align: 'end', labels: { color: '#e8eef5', usePointStyle: true, font: { size: 10 } } },
+          tooltip: { backgroundColor: '#121820', borderColor: '#2a3340', borderWidth: 1,
             callbacks: { label: (c) => ' ' + c.dataset.label + ': ' + money(c.raw) } },
         },
         scales: baseScales(),
@@ -396,13 +1153,13 @@
         backgroundColor: main ? hexRgba(color, 0.1) : 'transparent',
         fill: !!main, tension: 0.3,
         pointRadius: main ? 5 : 3, pointHoverRadius: 7,
-        pointBackgroundColor: color, pointBorderColor: '#0d1117', pointBorderWidth: 2,
+        pointBackgroundColor: color, pointBorderColor: '#080b10', pointBorderWidth: 2,
         borderWidth: main ? 2.5 : 1.5,
       });
       const datasets = [
-        mkLine('V1 Total', totC, '#58a6ff', true),
-        mkLine('BTC', btcC, '#d29922', false),
-        mkLine('ETH', ethC, '#3fb950', false),
+        mkLine('V1 Total', totC, '#60a5fa', true),
+        mkLine('BTC', btcC, '#fbbf24', false),
+        mkLine('ETH', ethC, '#34d399', false),
       ];
       if (!cumulChart) {
         cumulChart = new Chart($('cumul-chart'), { type: 'line', data: { labels, datasets }, options: opts, plugins: [chartZeroLine, lineValueLabels] });
@@ -415,14 +1172,93 @@
       }
     }
 
-    async function getJson(url) {
-      const res = await fetch(url, { cache: 'no-store' });
-      return res.json();
+    async function getJson(url, fallback = null) {
+      try {
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) return fallback;
+        return await res.json();
+      } catch (e) {
+        return fallback;
+      }
     }
     async function postControl(asset, action) {
       await fetch('/api/bot-control', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ asset, action }) });
       await refresh();
+    }
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[ch]));
+    }
+
+    function renderAllPaper(board) {
+      const title = $('board-hero-title');
+      const line = $('board-hero-line');
+      if (!board || !board.hero) {
+        if (title) {
+          title.textContent = '讀唔到策略面板';
+          title.classList.add('live-warn');
+        }
+        return;
+      }
+      const hero = board.hero;
+      title.textContent = hero.title || '全部 Paper';
+      title.classList.toggle('live-warn', !!hero.any_live);
+      line.textContent = hero.line || '';
+      $('board-n-bots').textContent = hero.bots_running ?? '—';
+      $('board-n-paper').textContent = hero.paper_count ?? '—';
+      $('board-n-exp').textContent = hero.experiment_count ?? '—';
+      const badge = $('paper-run-badge');
+      if (badge) {
+        const nPaper = hero.paper_count ?? 0;
+        const nBot = hero.bots_running ?? 0;
+        const nExp = hero.experiment_count ?? 0;
+        badge.textContent = `${nPaper} paper · ${nBot} bot · ${nExp} 研究 · 撳開`;
+      }
+
+      const bots = Array.isArray(board.bots) ? board.bots : [];
+      $('board-bots').innerHTML = bots.length ? bots.map((row) => {
+        const on = row.status === 'running';
+        const modeClass = row.mode === 'LIVE' ? 'down' : (row.mode === 'PAPER' ? 'warn' : '');
+        return `<tr>
+          <td class="name">${esc(row.name)}</td>
+          <td><span class="dot ${on ? 'on' : 'off'}"></span>${esc(row.status_label || (on ? 'RUNNING' : 'STOPPED'))}</td>
+          <td><span class="pill ${modeClass}">${esc(row.mode || '—')}</span></td>
+          <td>${esc(row.description || '')}</td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="4" class="muted">未有 bot 資料</td></tr>';
+
+      const paper = Array.isArray(board.paper) ? board.paper : [];
+      $('board-paper').innerHTML = paper.length ? paper.map((row) => {
+        const pnl = Number(row.pnl);
+        const pnlClass = row.pnl == null || Number.isNaN(pnl) ? '' : (pnl >= 0 ? 'pos' : 'neg');
+        const pnlText = row.pnl_label || (row.pnl == null ? '—' : money(row.pnl));
+        return `<tr>
+          <td class="name">${esc(row.name)}<div class="hint">${esc(row.note || '模擬單，唔係真錢')}</div></td>
+          <td><span class="pill warn">${esc(row.mode || 'PAPER')}</span></td>
+          <td>${esc(row.count_label || ((row.trade_count ?? 0) + ' 單'))}</td>
+          <td class="${pnlClass}">${esc(pnlText)}</td>
+          <td>${esc(row.last_activity || '—')}</td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="5" class="muted">未有 paper 策略</td></tr>';
+
+      const experiments = Array.isArray(board.experiments) ? board.experiments : [];
+      $('board-experiments').innerHTML = experiments.length ? experiments.map((row) => `
+        <div class="exp-item">
+          <div class="exp-name">${esc(row.name)}</div>
+          <div class="exp-note">${esc(row.summary || '')}</div>
+          ${row.detail ? `<div class="exp-note">${esc(row.detail)}</div>` : ''}
+        </div>`).join('') : '<div class="exp-note">未有實驗</div>';
+    }
+
+    function renderServices(services) {
+      const el = $('services-line');
+      if (!services || !el) return;
+      el.innerHTML = Object.values(services).map((s) =>
+        `<span class="pill ${s.active ? 'live' : 'down'}">${s.label} ${s.state}</span>`
+      ).join('');
     }
 
     function renderWallet(account) {
@@ -431,26 +1267,30 @@
       const target = Number(account.bot_target_wallet_usd || start + botSum);
       const gap = Number(account.wallet_gap_vs_bot_usd ?? 0);
       const started = (account.started_at_hkt || '').replace(' HKT', '').slice(0, 16);
-      $('session-start').textContent = started ? 'from ' + usd(start) + ' · ' + started : usd(start);
+      $('session-start').textContent = started ? usd(start) + ' · ' + started : usd(start);
       $('wallet-hint').textContent = Math.abs(gap) < 5
         ? 'aligned · target ' + usd(target)
         : 'target ' + usd(target) + ' · gap ' + money(gap);
     }
 
     function fmtStake(v) {
-      if (v == null || v === undefined) return '—';
+      if (v == null || v === undefined) return 'off';
       return '$' + Number(v).toFixed(2);
     }
 
     function renderStakePlan(plan, walletCash) {
       const wallet = walletCash != null ? Number(walletCash) : Number(plan.wallet_usd || 0);
       const coreM = (plan.schedule && plan.schedule.core_stake_mult) || 1.5;
-      $('stake-mult-pill').textContent = '×' + plan.current_multiplier + ' · wallet ' + usd(wallet);
-      $('stake-formula').textContent =
-        'Stake = base × wallet tier × (' + coreM + ' if core window) · BTC dog off · daily stop −$' + (plan.daily_stop_usd || 500);
       const cs = plan.current_stakes || {};
-      let line = 'Core now: BTC fav ' + fmtStake(cs.btc_fav_core) + ' · ETH fav ' + fmtStake(cs.eth_fav_core) + ' · ETH dog ' + fmtStake(cs.eth_dog_core);
-      line += ' · US (non-core): BTC ' + fmtStake(cs.btc_fav) + ' · ETH ' + fmtStake(cs.eth_fav) + ' · dog ' + fmtStake(cs.eth_dog);
+      const dogOff = !!plan.underdog_stopped || cs.eth_dog == null;
+      const mode = plan.paper_mode ? 'PAPER' : 'LIVE';
+      $('stake-mult-pill').textContent = mode + ' · ×' + plan.current_multiplier + ' · ' + usd(wallet);
+      $('stake-formula').textContent =
+        'Stake = base × wallet tier × (' + coreM + ' if core) · BTC dog off · ETH dog '
+        + (dogOff ? 'off' : 'on') + ' · daily stop −$' + (plan.daily_stop_usd || 500);
+      let line = 'Core: BTC fav ' + fmtStake(cs.btc_fav_core) + ' · ETH fav ' + fmtStake(cs.eth_fav_core);
+      if (!dogOff) line += ' · ETH dog ' + fmtStake(cs.eth_dog_core);
+      line += ' · US: BTC ' + fmtStake(cs.btc_fav) + ' · ETH ' + fmtStake(cs.eth_fav);
       if (plan.next_threshold) {
         line += ' · next $' + plan.next_threshold.wallet_usd + ' (+' + usd(plan.next_threshold.need_usd) + ') → ×' + plan.next_threshold.multiplier;
       }
@@ -464,12 +1304,10 @@
       body.innerHTML = tiers.map((t) => `<tr class="${t.current ? 'tier-current' : ''}">
         <td>$${Number(t.wallet_usd).toLocaleString()}${t.current ? ' ← now' : ''}</td>
         <td>${t.multiplier}×</td>
-        <td>${fmtStake(t.btc_fav)}</td>
-        <td>${fmtStake(t.btc_fav_core)}</td>
-        <td>${fmtStake(t.eth_fav)}</td>
-        <td>${fmtStake(t.eth_fav_core)}</td>
-        <td>${fmtStake(t.eth_dog)}</td>
-        <td>${fmtStake(t.eth_dog_core)}</td>
+        <td>${fmtStake(t.btc_fav)}</td><td>${fmtStake(t.btc_fav_core)}</td>
+        <td>${fmtStake(t.eth_fav)}</td><td>${fmtStake(t.eth_fav_core)}</td>
+        <td>${dogOff ? 'off' : fmtStake(t.eth_dog)}</td>
+        <td>${dogOff ? 'off' : fmtStake(t.eth_dog_core)}</td>
       </tr>`).join('');
     }
 
@@ -477,15 +1315,11 @@
       const ds = plan.daily_stop || {};
       const limit = ds.current_limit_usd ?? plan.daily_stop_usd ?? 500;
       $('sched-stop').textContent = '−' + usd(limit).slice(1);
-      const combinedOnly = ds.combined_only !== false;
-      $('sched-stop-line').textContent = (combinedOnly
-        ? 'Daily stop: BTC+ETH combined only (per-asset off) · limit '
-        : 'Daily stop: combined net PnL ≤ ')
-        + '−' + usd(limit).slice(1) + ' · wallet↓ → stake & stop tier↓';
+      $('sched-stop-line').textContent = 'Daily stop combined −' + usd(limit).slice(1) + ' · wallet↓ → tier↓';
       const body = $('stop-tiers-body');
       const tiers = ds.tiers || [];
       if (!ds.scaling_enabled || !tiers.length) {
-        body.innerHTML = '<tr><td colspan="3" class="muted">Fixed −' + usd(limit).slice(1) + ' combined</td></tr>';
+        body.innerHTML = '<tr><td colspan="3" class="muted">Fixed −' + usd(limit).slice(1) + '</td></tr>';
       } else {
         body.innerHTML = tiers.map((t) => `<tr class="${t.current ? 'tier-current' : ''}">
           <td>$${Number(t.wallet_usd).toLocaleString()}${t.current ? ' ← now' : ''}</td>
@@ -493,42 +1327,63 @@
           <td class="muted">${t.current ? 'active' : ''}</td>
         </tr>`).join('');
       }
-      let line = 'Now: combined stop −$' + Number(limit).toFixed(0);
-      if (ds.next_threshold) {
-        line += ' · next $' + ds.next_threshold.wallet_usd + ' (+' + usd(ds.next_threshold.need_usd) + ') → −$' + ds.next_threshold.limit_usd;
-      }
+      let line = 'Now: −$' + Number(limit).toFixed(0);
+      if (ds.next_threshold) line += ' · next $' + ds.next_threshold.wallet_usd + ' → −$' + ds.next_threshold.limit_usd;
       $('stop-current-line').textContent = line;
     }
 
     function renderSchedule(plan, tt) {
       const s = plan.schedule || {};
-      $('sched-stop').textContent = usd(plan.daily_stop_usd || 500);
       renderDailyStop(plan);
       const now = tt?.now || {};
       $('sched-now-pill').textContent = (now.label || tt?.state || '—') + (now.hkt ? ' · ' + now.hkt : '');
       $('sched-grid').innerHTML = `
         <div class="sched-box"><div class="title">US Session</div>${s.us_hours_et || '—'}<br><span class="muted">HKT ~21:30–04:00</span></div>
-        <div class="sched-box"><div class="title">Core Window</div>${s.core_et || '—'}<br><span class="muted">HKT ~23:00–03:00 · stake ×${s.core_stake_mult || 1.5} on top of wallet tier</span></div>
+        <div class="sched-box"><div class="title">Core</div>${s.core_et || '—'}<br><span class="muted">×${s.core_stake_mult || 1.5} stake</span></div>
         <div class="sched-box"><div class="title">BTC</div>${s.btc || '—'}</div>
         <div class="sched-box"><div class="title">ETH</div>${s.eth || '—'}</div>`;
     }
 
-    function renderControls(control, plan) {
+    function renderProfile(wallet, control) {
+      const btcLive = (wallet.trading_mode || '').toLowerCase() === 'live';
+      const ethLive = (wallet.eth_trading_mode || '').toLowerCase() === 'live';
+      const btcPaused = !!(control.btc || {}).paused;
+      const ethPaused = !!(control.eth || {}).paused;
+      $('live-profile-main').textContent =
+        btcLive && !btcPaused
+          ? 'BTC LIVE only · core favorite-only'
+          : 'No active BTC live profile';
+      $('live-profile-sub').textContent =
+        'Logic: Mon-Fri 11:00–15:00 ET · no mid · no dog · ETH '
+        + (ethLive ? (ethPaused ? 'live paused' : 'live on') : (ethPaused ? 'paper / paused' : 'paper only'))
+        + ' · wallet tier capped at ×1.5';
+    }
+
+    function renderControls(control, plan, wallet) {
       for (const asset of ['btc', 'eth']) {
         const b = control[asset] || {};
         const paused = !!b.paused;
-        $(asset + '-status').textContent = paused ? 'Paused' : 'Running';
-        $(asset + '-status').className = 'pill ' + (paused ? 'warn' : 'live');
         const btn = $(asset + '-toggle');
-        btn.textContent = paused ? 'Resume' : 'Pause';
-        btn.className = paused ? 'good' : 'danger';
-        btn.onclick = () => postControl(asset, paused ? 'resume' : 'pause');
+        const mode = asset === 'eth' ? ((wallet?.eth_trading_mode || 'paper').toLowerCase()) : ((wallet?.trading_mode || 'paper').toLowerCase());
+        if (asset === 'eth' && mode !== 'live') {
+          $(asset + '-status').textContent = paused ? 'Paper / Off Live' : 'Paper';
+          $(asset + '-status').className = 'pill warn';
+          btn.textContent = 'Paper only';
+          btn.className = '';
+          btn.disabled = true;
+          btn.onclick = null;
+        } else {
+          $(asset + '-status').textContent = paused ? 'Paused' : 'Running';
+          $(asset + '-status').className = 'pill ' + (paused ? 'warn' : 'live');
+          btn.disabled = false;
+          btn.textContent = paused ? 'Resume' : 'Pause';
+          btn.className = paused ? 'good' : 'danger';
+          btn.onclick = () => postControl(asset, paused ? 'resume' : 'pause');
+        }
       }
       const ds = control.btc?.daily_stop || control.eth?.daily_stop || {};
-      $('daily-stop-hint').textContent = (ds.effective ? 'session stop −$' + Math.abs(Number(ds.limit || 500)).toFixed(0) + ' hit · ' : 'limit −$' + Math.abs(Number(ds.limit || 500)).toFixed(0) + ' combined · ')
-        + ((plan && plan.schedule && plan.schedule.pnl_reset && plan.schedule.pnl_reset.next_reset_hkt)
-          ? 'resets ' + plan.schedule.pnl_reset.next_reset_hkt + ' · ' : '')
-        + 'Session ≠ Overall';
+      $('daily-stop-hint').textContent = (ds.effective ? 'stop hit · ' : 'limit −$' + Math.abs(Number(ds.limit || 500)).toFixed(0) + ' · ')
+        + ((plan?.schedule?.pnl_reset?.next_reset_hkt) ? 'reset ' + plan.schedule.pnl_reset.next_reset_hkt : '');
       $('risk-pill').textContent = ds.effective ? 'daily stop' : 'risk ok';
       $('risk-pill').className = 'pill ' + (ds.effective ? 'warn' : 'live');
     }
@@ -562,13 +1417,388 @@
       </tr>`).join('');
     }
 
+    async function postCrypto15m(action) {
+      const res = await fetch('/api/crypto15m/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok && (data.error_tc || data.error)) {
+        $('c15m-control-hint').textContent = data.error_tc || data.error;
+      }
+      await refresh();
+    }
+
+    async function postSonULive(action) {
+      const res = await fetch('/api/son-u/live-control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json().catch(() => ({}));
+      const hint = $('c15m-control-hint');
+      if (hint) hint.textContent = data.message_tc || data.error_tc || data.error || (data.ok ? '已更新' : '—');
+      await refresh();
+    }
+
+    function renderHighLiveRows(hl, sonULive) {
+      const el = $('high-live-rows');
+      if (!el) return;
+      const rows = (hl && Array.isArray(hl.rows)) ? hl.rows : [];
+      const extra = rows.filter((r) => r && r.id !== 'son-btc-5m-ultimate-live');
+      if (!extra.length) {
+        el.innerHTML = '';
+        return;
+      }
+      el.innerHTML = extra.map((r) => {
+        const pill = r.live_enabled
+          ? '<span class="pill live">LIVE</span>'
+          : (r.had_live || r.live_tag === '曾live'
+            ? '<span class="chip prep">曾live · PREP</span>'
+            : '<span class="chip prep">PAPER PREP</span>');
+        return `<article class="high-live-row" data-high-live-id="${esc(r.id || '')}">
+          <div class="hl-row-title"><strong>${esc(r.display_name || r.id || '—')}</strong>${pill}</div>
+          <div class="hl-row-meta">${esc(r.status_label || r.status || '')} · ${esc(r.pnl_label || '')} · 真倉 OFF</div>
+        </article>`;
+      }).join('');
+      if (sonULive && sonULive.label_tc && hl && !hl.any_live) {
+        const note = document.createElement('div');
+        note.className = 'hint';
+        note.style.marginTop = '.35rem';
+        note.textContent = sonULive.label_tc;
+        if (!el.querySelector('[data-wallet-note]')) {
+          note.dataset.walletNote = '1';
+          el.appendChild(note);
+        }
+      }
+    }
+
+    function renderCrypto15m(summary, c15mControl, sonULive, highLive) {
+      summary = summary || {};
+      c15mControl = c15mControl || {};
+      sonULive = sonULive || {};
+
+      const liveActive = sonULive.live_active === true || c15mControl.live === true;
+      const execReal = sonULive.exec_is_real_live === true;
+      const armedPrep = sonULive.live_armed_prep === true || c15mControl.live_armed_prep === true;
+      const isLive = liveActive && execReal;
+      const mode = isLive ? 'live' : 'paper';
+      const paused = !!(c15mControl.paused ?? summary.paused);
+      const armed = isLive || armedPrep;
+      const gate = c15mControl.wallet_gate || {};
+      const dc = summary.data_collection !== false && !isLive;
+      const rules = summary.rules || {};
+
+      const fillNote = isLive ? ' · CLOB FOK · max ask 0.85' : (summary.paper_fill_model === 'live_style_fok' ? ' · FOK sim' : '');
+      const dcNote = dc
+        ? ' · 資料收集（US/core 放寬 · max ask ' + (summary.paper_max_ask_favorite || '0.92') + '）'
+        : (isLive ? ' · US session · fav stop ON · 獨立 session' : '');
+      $('c15m-rules').textContent =
+        `Entry ${rules.entry_window || '—'} · BTC ≥ $${rules.min_btc_move_usd ?? '—'} · ETH ≥ $${rules.min_eth_move_usd ?? '—'} · depth ≥ $${rules.min_depth_usd ?? '—'}${fillNote}${dcNote}`;
+
+      const sess = summary.session || c15mControl.session || {};
+      const sessLabel = (sess.session_id || '15m').replace('crypto15m-', '');
+      $('c15m-session-pill').textContent = sessLabel;
+      $('c15m-session-inline').textContent = sessLabel;
+
+      const heroLabel = $('c15m-hero-label');
+      if (heroLabel) heroLabel.textContent = isLive ? 'Son U Live PnL' : 'Son U Paper PnL';
+      $('c15m-hero-metric').className = 'metric m15' + (isLive && !paused ? ' live-on' : '');
+      $('c15m-control-card').className = 'card bot-card m15' + (isLive && !paused ? ' live-on' : '');
+
+      const onAir = $('c15m-on-air');
+      const onAirText = $('c15m-on-air-text');
+      const onAirLamp = $('c15m-on-air-lamp');
+      onAir.className = 'on-air-row sonu-on-air-indicator ' + (isLive ? 'is-on' : 'is-off');
+      onAir.dataset.sonuOnAir = isLive ? 'live' : (armedPrep ? 'prep' : 'paper');
+      $('c15m-on-air-text').textContent = isLive ? 'LIVE ON' : (armedPrep ? 'PREP · PAPER' : 'LIVE OFF');
+      if (isLive) {
+        onAir.style.cssText =
+          'opacity:1;filter:none;border-color:#ff0000;background:linear-gradient(180deg,#520000,#140000);box-shadow:0 0 14px rgba(255,0,0,.55);';
+        if (onAirText) {
+          onAirText.style.color = '#ff0000';
+          onAirText.style.webkitTextFillColor = '#ff0000';
+          onAirText.style.background = 'transparent';
+          onAirText.style.textShadow = '0 0 8px #ff0000, 0 0 18px #ef4444';
+        }
+        if (onAirLamp) {
+          onAirLamp.style.background = '#ff0000';
+          onAirLamp.style.boxShadow = '0 0 8px #ff0000, 0 0 20px #ff0000';
+          onAirLamp.style.borderColor = '#ff6666';
+        }
+      } else {
+        onAir.style.cssText =
+          'opacity:0.28;filter:saturate(0) brightness(0.45);border-color:#050607;background:#020304;box-shadow:none;';
+        if (onAirText) {
+          onAirText.style.color = '#0a0b0c';
+          onAirText.style.webkitTextFillColor = '#0a0b0c';
+          onAirText.style.textShadow = 'none';
+          onAirText.style.background = 'transparent';
+        }
+        if (onAirLamp) {
+          onAirLamp.style.background = '#080808';
+          onAirLamp.style.boxShadow = 'none';
+          onAirLamp.style.borderColor = '#0a0a0a';
+        }
+      }
+      const paperCap = $('c15m-paper-caption');
+      if (paperCap) paperCap.classList.toggle('hidden', isLive);
+      document.querySelectorAll('#sonu-live-on-pill, .live-on-pill, .sonu-live-on').forEach((el) => {
+        el.classList.toggle('is-on', isLive);
+        el.classList.toggle('is-off', !isLive);
+        el.dataset.sonuOnAir = isLive ? 'live' : 'paper';
+        if (isLive) {
+          el.style.background = 'linear-gradient(180deg,#520000,#140000)';
+          el.style.borderColor = '#ff0000';
+          el.style.color = '#ff0000';
+          el.style.boxShadow = '0 0 14px rgba(255,0,0,.55)';
+          el.style.opacity = '1';
+          el.style.filter = 'none';
+        } else {
+          el.style.background = '#020304';
+          el.style.borderColor = '#050607';
+          el.style.color = '#0a0b0c';
+          el.style.boxShadow = 'none';
+          el.style.opacity = '0.28';
+          el.style.filter = 'saturate(0) brightness(0.45)';
+        }
+      });
+
+      $('c15m-backend-pill').textContent = isLive
+        ? (paused ? '後端 LIVE · 暫停' : '後端 LIVE · 真倉')
+        : (armedPrep ? 'PREP · 紙上 armed' : '後端 PAPER');
+      $('c15m-backend-pill').className = 'pill ' + (isLive ? (paused ? 'warn' : 'live') : (armedPrep ? 'warn' : ''));
+
+      $('c15m-mode-sub').textContent = isLive
+        ? (paused ? '真實模式已上線 · 交易暫停中' : '真實 CLOB · 真倉 ON')
+        : (armedPrep
+          ? '紙上 armed · 真倉路徑未開（DRY_RUN placeholder）'
+          : (sonULive.label_tc || '模擬落單 · 唔會用真錢'));
+
+      const lampLive = $('c15m-lamp-live');
+      const lampPaper = $('c15m-lamp-paper');
+      lampLive.className = 'mode-lamp ' + (isLive ? 'lamp-green' : 'lamp-yellow');
+      lampPaper.className = 'mode-lamp ' + (isLive ? 'lamp-yellow' : 'lamp-green');
+      $('c15m-btn-live').classList.toggle('is-active', isLive);
+      $('c15m-btn-paper').classList.toggle('is-active', !isLive);
+      [lampLive, lampPaper].forEach((lamp) => {
+        if (!lamp) return;
+        const on = lamp.classList.contains('lamp-green');
+        if (on) {
+          lamp.style.background = '#00ff00';
+          lamp.style.border = '1px solid #7fff7f';
+          lamp.style.boxShadow = '0 0 6px #00ff00, 0 0 14px rgba(0,255,0,.78), 0 0 28px rgba(0,255,0,.38)';
+          lamp.style.opacity = '1';
+          lamp.style.filter = 'none';
+        } else {
+          lamp.style.background = '';
+          lamp.style.border = '';
+          lamp.style.boxShadow = '';
+          lamp.style.opacity = '';
+          lamp.style.filter = '';
+        }
+      });
+
+      const modePill = $('c15m-mode-pill');
+      if (modePill) {
+        modePill.textContent = isLive ? 'LIVE' : (armedPrep ? 'PREP' : 'PAPER');
+        modePill.className = 'pill ' + (isLive ? 'live' : 'warn');
+      }
+
+      const gateHint = gate.ok === false && gate.message ? ` · ${gate.message}` : '';
+      $('c15m-control-hint').textContent = isLive
+        ? (paused ? 'Live 已開 · 交易暫停（observer 仍跑）' : 'Live 模式 · 真實下單 · 獨立於 5m session')
+        : (armedPrep
+          ? 'PREP · 紙上 armed · 真倉未開 · 可切返 Paper'
+          : ('Paper · 撳 Live 實盤 → armed prep（placeholder 唔會假 真倉）' + gateHint));
+
+      function c15mRequestLive() {
+        if (isLive) return;
+        const msg = execReal
+          ? '確認切換 → Live（真倉）？需要銀包 ≥ $100。'
+          : '確認切換 → Live prep？\n真倉路徑未接好時只會 armed prep，唔會 LIVE ON／唔會動真錢。';
+        if (!window.confirm(msg)) return;
+        postSonULive('to_live');
+      }
+      function c15mRequestPaper() {
+        if (!isLive && !armedPrep) return;
+        if (!window.confirm('確認切換 → Paper？清除 armed prep · 真倉 OFF。')) return;
+        postSonULive('to_paper');
+      }
+      $('c15m-btn-live').onclick = c15mRequestLive;
+      $('c15m-btn-paper').onclick = c15mRequestPaper;
+      const enableBtn = $('c15m-enable-live');
+      const disableBtn = $('c15m-disable-live');
+      if (enableBtn) {
+        enableBtn.style.display = isLive ? 'none' : '';
+        enableBtn.onclick = c15mRequestLive;
+      }
+      if (disableBtn) {
+        disableBtn.style.display = isLive ? '' : 'none';
+        disableBtn.onclick = c15mRequestPaper;
+      }
+
+      $('c15m-status-pill').textContent = paused ? 'Paused' : (isLive ? 'Running' : 'Paper');
+      $('c15m-status-pill').className = 'pill ' + (paused ? 'warn' : (isLive ? 'live' : ''));
+
+      const toggle = $('c15m-toggle');
+      if (!isLive) {
+        toggle.textContent = 'Pause（需先 Live）';
+        toggle.className = '';
+        toggle.disabled = true;
+        toggle.onclick = null;
+      } else {
+        toggle.disabled = false;
+        toggle.textContent = paused ? 'Resume trading' : 'Pause trading';
+        toggle.className = paused ? 'good' : 'danger';
+        toggle.onclick = () => postCrypto15m(paused ? 'resume' : 'pause');
+      }
+
+      const metricsPnl = isLive ? (summary.combined_live_pnl ?? summary.combined_overall_pnl) : (summary.combined_paper_pnl ?? summary.combined_overall_pnl);
+      setPnl('c15m-combined', metricsPnl ?? 0);
+      setPnl('c15m-combined-hero', metricsPnl ?? 0);
+      setPnl('c15m-btc', summary.btc?.overall_pnl ?? 0);
+      setPnl('c15m-eth', summary.eth?.overall_pnl ?? 0);
+      const b = summary.btc || {};
+      const e = summary.eth || {};
+      const closed = (b.trades_closed ?? 0) + (e.trades_closed ?? 0);
+      const wins = closed && b.win_rate_pct != null && e.win_rate_pct != null
+        ? Math.round(((b.win_rate_pct * (b.trades_closed || 0)) + (e.win_rate_pct * (e.trades_closed || 0))) / Math.max(1, closed) * 10) / 10
+        : (b.win_rate_pct ?? e.win_rate_pct);
+      $('c15m-wr-combined').textContent = wins != null ? `${wins}%` : '—';
+      $('c15m-wr-detail').textContent = `${b.trades_closed ?? 0}+${e.trades_closed ?? 0} closed · BTC/ETH`;
+      $('c15m-stake-ref').textContent = `entered ${(b.trades_entered ?? 0) + (e.trades_entered ?? 0)} · stake log`;
+
+      const funnel = summary.window_funnel || {};
+      const qComb = summary.quality?.combined || {};
+      const fmtWin = (n) => (n == null || n === '' ? '—' : String(n));
+      let considered = funnel.considered ?? qComb.windows ?? qComb.windows_considered ?? qComb.strategy_signals;
+      let enteredWin = funnel.entered ?? ((b.trades_entered ?? 0) + (e.trades_entered ?? 0));
+      let filtered = funnel.filtered ?? qComb.filtered ?? qComb.skipped;
+      if (filtered == null && considered != null && enteredWin != null) {
+        filtered = Math.max(0, Number(considered) - Number(enteredWin));
+      }
+      const tradesCount =
+        funnel.trades ?? ((b.trades_entered ?? 0) + (e.trades_entered ?? 0));
+      const tradesLine = $('c15m-trades-windows-line');
+      if (tradesLine) {
+        let tw = `<span class="label-tag">Trades</span>${fmtWin(tradesCount)} 單 · ${fmtWin(considered)} 窗`;
+        if (filtered != null && filtered !== '') {
+          tw += ` <span class="muted-part">· 過濾 ${fmtWin(filtered)}</span>`;
+        }
+        tradesLine.innerHTML = tw;
+      }
+      $('c15m-win-considered').textContent = fmtWin(considered);
+      $('c15m-win-filtered').textContent = fmtWin(filtered);
+      $('c15m-win-entered').textContent = fmtWin(enteredWin);
+      const ledger = funnel.ledger || (isLive ? 'live' : 'paper');
+      const src = funnel.source || (Object.keys(qComb).length ? 'quality' : 'log');
+      const srcLabel = src === 'quality+log' ? 'quality + log' : src;
+      const hintEl = $('c15m-window-funnel-hint');
+      if (hintEl) {
+        hintEl.textContent =
+          considered != null && filtered != null && enteredWin != null
+            ? `考慮 ${fmtWin(considered)} 窗 · 過濾 ${fmtWin(filtered)} · 入場 ${fmtWin(enteredWin)} · ${ledger.toUpperCase()} · ${srcLabel}`
+            : `本 session · ${ledger.toUpperCase()} ledger · ${srcLabel}`;
+      }
+
+      $('c15m-btc-meta').textContent = `${b.trades_entered ?? 0} entered · ${b.trades_closed ?? 0} closed · WR ${b.win_rate_pct ?? '—'}%`;
+      $('c15m-eth-meta').textContent = `${e.trades_entered ?? 0} entered · ${e.trades_closed ?? 0} closed · WR ${e.win_rate_pct ?? '—'}%`;
+      $('c15m-hero-hint').textContent = `${mode.toUpperCase()} · ${(b.trades_entered ?? 0) + (e.trades_entered ?? 0)} trades · Son U session`;
+
+      const q = summary.quality?.combined || {};
+      const ethQ = summary.quality?.eth || {};
+      $('c15m-quality-hint').textContent = (() => {
+        const wr = q.win_rate_pct != null ? `WR ${q.win_rate_pct}%` : 'WR —';
+        const frVal = q.fill_rate_pct != null ? q.fill_rate_pct : null;
+        const ethPass = ethQ.obs_timing_pass_pct != null ? `ETH pass ${ethQ.obs_timing_pass_pct}%` : '';
+        return `${wr} · fill ${frVal ?? '—'}% · closed ${q.closed ?? 0}${ethPass ? ' · ' + ethPass : ''}`;
+      })();
+
+      const obs = $('c15m-observer-hint');
+      if (obs) {
+        const sig = q.strategy_signals ?? 0;
+        obs.textContent =
+          `Observer · signals ${sig} · ${isLive ? 'CLOB live fills' : 'paper FOK sim'} · 日誌 → /logs`;
+      }
+      renderHighLiveRows(highLive, sonULive);
+    }
+
+    function renderDualLeg(summary, trades) {
+      summary = summary || {};
+      trades = Array.isArray(trades) ? trades : [];
+      const r = summary.rules || {};
+      $('dl-rules').textContent =
+        `每腿 $${Number(r.unit_usd || 3).toFixed(2)} · ask ≤ ${r.max_ask_each_leg ?? '—'}`
+        + ` · 首腿 T≥${r.first_leg_t_min ?? '—'}s · 次腿 T≥${r.second_leg_t_min ?? '—'}s`
+        + ` · opposite ask ≤ ${r.max_opposite_ask ?? '—'}`
+        + ` · Binance gate: ${(r.allowed_binance_regimes || []).join('/') || 'off'} · fee 已估算`;
+      setPnl('dl-pnl', summary.pnl ?? 0);
+      $('dl-closed').textContent =
+        `${summary.closed ?? 0} closed · WR ${summary.win_rate_pct ?? '—'}% · ${summary.bonus_candidates ?? 0} extreme-price signals`;
+      $('dl-hedge-rate').textContent =
+        summary.hedge_rate_pct == null ? '—' : Number(summary.hedge_rate_pct).toFixed(1) + '%';
+      $('dl-stranded').textContent =
+        `${summary.hedged ?? 0} hedged · ${summary.stranded ?? 0} stranded one-leg`;
+      $('dl-open').textContent = summary.open_positions ?? 0;
+      $('dl-open-detail').textContent =
+        `${summary.open_one_leg ?? 0} waiting second leg · ${summary.open_hedged ?? 0} fully hedged`;
+      const dc = summary.data_collection || {};
+      const topReason = Object.entries(dc.gate_reason_counts || {})[0];
+      $('dl-note').textContent =
+        `${summary.note_zh || ''} · samples ${dc.checkpoints ?? 0} checkpoints / ${dc.windows ?? 0} windows`
+        + ` · eligible ${dc.eligible_rate_pct ?? '—'}%`
+        + (topReason ? ` · top blocker ${topReason[0]} (${topReason[1]})` : '');
+
+      const body = $('dl-trades-body');
+      if (!trades.length) {
+        body.innerHTML = '<tr><td colspan="10" class="muted">等待 Binance volatile-chop + 盤口 gate 同時符合</td></tr>';
+        return;
+      }
+      body.innerHTML = trades.map((row) => {
+        const legs = [row.first_leg, row.second_leg].filter(Boolean);
+        const up = legs.find((leg) => leg.side === 'up');
+        const down = legs.find((leg) => leg.side === 'down');
+        const pnl = Number(row.pnl || 0);
+        const floor = row.guaranteed_floor_at_fill;
+        return `<tr>
+          <td>${(row.opened_at_hkt || '').slice(0, 16)}</td>
+          <td>${row.asset || '—'}</td>
+          <td>${row.entry_regime?.regime || '—'}<br><span class="muted">${row.entry_regime?.forecast || ''}</span></td>
+          <td>${row.legs_filled ?? legs.length}</td>
+          <td>${up?.ask ?? '—'}</td>
+          <td>${down?.ask ?? '—'}</td>
+          <td>$${Number(row.total_stake || 0).toFixed(2)}</td>
+          <td>${row.outcome || '—'} · ${row.trade_result || row.status || '—'}</td>
+          <td class="${Number(floor || 0) >= 0 ? 'pos' : 'neg'}">${floor == null ? '—' : money(floor)}</td>
+          <td class="${pnl >= 0 ? 'pos' : 'neg'}">${money(pnl)}</td>
+        </tr>`;
+      }).join('');
+    }
+
     async function refresh() {
-      const [wallet, account, btc, eth, control, tier, trades, daily, stakePlan, timetable] = await Promise.all([
-        getJson('/api/wallet'), getJson('/api/account-pnl'), getJson('/api/summary'),
-        getJson('/api/eth-summary'), getJson('/api/bot-control'), getJson('/api/tier-pause'),
-        getJson('/api/overview-trades?limit=' + tradeLimit), getJson('/api/daily-pnl'),
-        getJson('/api/stake-plan'), getJson('/api/timetable'),
+      let [wallet, account, btc, eth, control, tier, trades, daily, stakePlan, timetable, c15m, c15mControl, sonULive, dualLeg, dualLegTrades, services, allPaper] = await Promise.all([
+        getJson('/api/wallet', {}), getJson('/api/account-pnl', {}), getJson('/api/summary', {}),
+        getJson('/api/eth-summary', {}), getJson('/api/bot-control', {}), getJson('/api/tier-pause', {}),
+        getJson('/api/overview-trades?limit=' + tradeLimit, []), getJson('/api/daily-pnl', { btc: [], eth: [], total: [] }),
+        getJson('/api/stake-plan', {}), getJson('/api/timetable', {}),
+        getJson('/api/crypto15m/summary', {}),
+        getJson('/api/crypto15m/control', {}),
+        getJson('/api/son-u/live-control', {}),
+        getJson('/api/dual-leg/summary', {}), getJson('/api/dual-leg/trades?limit=50', []),
+        getJson('/api/services-status', {}),
+        getJson('/api/all-paper-strategies', null),
       ]);
+      account = account || {};
+      wallet = wallet || {};
+      btc = btc || {};
+      eth = eth || {};
+      control = control || {};
+      tier = tier || {};
+      trades = Array.isArray(trades) ? trades : (trades?.rows || []);
+      daily = daily || { btc: [], eth: [], total: [] };
+      stakePlan = stakePlan || {};
       account.wallet_cash = wallet.cash_usdc || wallet.available_usdc || account.wallet_cash;
       $('updated').textContent = new Date().toLocaleTimeString('zh-HK');
       $('btc-mode').textContent = 'BTC ' + (wallet.trading_mode || '—').toUpperCase();
@@ -577,11 +1807,16 @@
       renderWallet(account);
       renderStakePlan(stakePlan, account.wallet_cash);
       renderSchedule(stakePlan, timetable);
+      renderServices(services);
+      renderAllPaper(allPaper);
+      renderProfile(wallet, control);
 
       const ovBtc = btc.package2?.overall_pnl ?? btc.overall_pnl ?? account.btc_log_pnl ?? 0;
       const ovEth = eth.package2?.overall_pnl ?? eth.overall_pnl ?? account.eth_log_pnl ?? 0;
       const ovTot = account.bots_log_sum ?? (Number(ovBtc) + Number(ovEth));
       setPnl('ov-total', ovTot);
+      setPnlInline('ov-btc-inline', ovBtc);
+      setPnlInline('ov-eth-inline', ovEth);
       setPnl('ov-btc', ovBtc);
       setPnl('ov-eth', ovEth);
 
@@ -591,11 +1826,13 @@
       setPnl('td-btc', tdBtc);
       setPnl('td-eth', tdEth);
 
-      renderControls(control, stakePlan);
+      renderControls(control, stakePlan, wallet);
       renderTierRisk(tier);
       renderTrades(trades);
       renderDailyChart(daily);
       renderCumulChart(daily);
+      renderCrypto15m(c15m, c15mControl, sonULive, allPaper && allPaper.high_live_board);
+      renderDualLeg(dualLeg, dualLegTrades);
     }
 
     document.querySelectorAll('[data-release]').forEach((btn) => {

@@ -17,8 +17,12 @@ from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from flask import Flask, jsonify, redirect, render_template, request
 
-ROOT = Path("/root/btc-5m-bot")
-sys.path.insert(0, str(ROOT))
+DASHBOARD_DIR = Path(__file__).resolve().parent
+if str(DASHBOARD_DIR) not in sys.path:
+    sys.path.insert(0, str(DASHBOARD_DIR))
+ROOT = Path(os.getenv("BTC_5M_ROOT", "/root/btc-5m-bot"))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 load_dotenv(ROOT / ".env")
 
 from bot_common import (  # noqa: E402
@@ -358,6 +362,51 @@ def health():
     return jsonify({"ok": True, "bot": "btc-5m-package2plus"})
 
 
+@app.route("/api/services-status")
+def api_services_status():
+    import subprocess
+
+    units = {
+        "btc-5m-observer": "BTC 5m",
+        "eth-5m-observer": "ETH 5m",
+        "crypto-15m-observer": "15m " + os.getenv("CRYPTO_15M_TRADING_MODE", "paper").upper(),
+        "btc-5m-dashboard": "Dashboard",
+    }
+    out: dict[str, Any] = {}
+    for unit, label in units.items():
+        try:
+            r = subprocess.run(
+                ["systemctl", "is-active", unit],
+                capture_output=True,
+                text=True,
+                timeout=2,
+            )
+            state = (r.stdout or "").strip() or "unknown"
+        except Exception:
+            state = "unknown"
+        out[unit] = {"label": label, "state": state, "active": state == "active"}
+    try:
+        from paper_board import funding_carry_service_row
+
+        out["funding-carry-loop"] = funding_carry_service_row()
+    except Exception:
+        out["funding-carry-loop"] = {
+            "label": "Funding PAPER",
+            "state": "unknown",
+            "active": False,
+            "via": "error",
+        }
+    return jsonify(out)
+
+
+@app.route("/api/all-paper-strategies")
+def api_all_paper_strategies():
+    """Bots running now, paper ledgers, and research — display only."""
+    from paper_board import build_all_paper_strategies
+
+    return jsonify(build_all_paper_strategies(bot_root_path=ROOT))
+
+
 @app.route("/api/strategy-overview")
 def api_strategy_overview():
     return jsonify(build_strategy_overview())
@@ -468,6 +517,26 @@ def api_tiers():
 @app.route("/api/wallet")
 def api_wallet():
     try:
+        btc_paper = os.getenv("TRADING_MODE", "paper").lower() == "paper"
+        eth_paper = os.getenv("ETH_TRADING_MODE", "paper").lower() == "paper"
+        if btc_paper and eth_paper:
+            from package2_strategy import v1_bankroll_snapshot, v1_paper_session
+
+            snap = v1_bankroll_snapshot()
+            sess = v1_paper_session()
+            return jsonify(
+                {
+                    "cash_usdc": snap["wallet_cash"],
+                    "available_usdc": snap["bankroll"],
+                    "api_ready": True,
+                    "paper": True,
+                    "stale": False,
+                    "trading_mode": "paper",
+                    "eth_trading_mode": "paper",
+                    "paper_session_id": sess.get("session_id"),
+                    "paper_started_at_hkt": sess.get("started_at_hkt"),
+                }
+            )
         w = fetch_wallet_status()
         w["trading_mode"] = os.getenv("TRADING_MODE", "paper").lower()
         w["eth_trading_mode"] = os.getenv("ETH_TRADING_MODE", "paper").lower()
@@ -790,6 +859,371 @@ def api_eth_summary():
     return jsonify(eth_summary())
 
 
+def _window_funnel_from_trade_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Per-window funnel from ledger rows (droplet-safe when engine lacks enrich)."""
+    try:
+        from paper_15m_engine import is_sonu_trade_row
+
+        rows = [r for r in rows if is_sonu_trade_row(r)]
+    except ImportError:
+        pass
+    by_key: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        key: str | None = None
+        for field in ("slug", "market_id", "window_id", "condition_id", "market"):
+            val = row.get(field)
+            if val:
+                key = str(val)
+                break
+        if key is None:
+            bot = str(row.get("bot") or row.get("asset") or "")
+            ts = str(row.get("timestamp_hkt") or row.get("timestamp_utc") or "")
+            key = f"{bot}:{ts}"
+        prev = by_key.get(key)
+        if prev is None or row.get("entered"):
+            by_key[key] = row
+    considered = len(by_key)
+    entered = sum(1 for r in by_key.values() if r.get("entered"))
+    filtered = max(0, considered - entered)
+    return {
+        "considered": considered,
+        "filtered": filtered,
+        "entered": entered,
+        "source": "session_log",
+    }
+
+
+def _enrich_crypto15m_window_funnel(summary: dict[str, Any]) -> dict[str, Any]:
+    """Ensure summary.window_funnel for gold-box 考慮／過濾／入場 (engine or app fallback)."""
+    try:
+        from paper_15m_engine import enrich_summary_window_funnel
+
+        return enrich_summary_window_funnel(summary)
+    except (ImportError, AttributeError):
+        pass
+    out = dict(summary)
+    wf = out.get("window_funnel")
+    if isinstance(wf, dict) and wf.get("considered") is not None:
+        return out
+    mode = str(out.get("mode") or "paper").lower()
+    ledger = "live" if mode == "live" else "paper"
+    rows = _crypto15m_recent_trades(500, ledger, False)
+    funnel = _window_funnel_from_trade_rows(rows)
+    quality = out.get("quality") if isinstance(out.get("quality"), dict) else {}
+    combined = quality.get("combined") if isinstance(quality.get("combined"), dict) else {}
+    considered = (
+        combined.get("windows_considered")
+        or combined.get("windows")
+        or combined.get("strategy_signals")
+    )
+    if considered is not None:
+        btc = out.get("btc") if isinstance(out.get("btc"), dict) else {}
+        eth = out.get("eth") if isinstance(out.get("eth"), dict) else {}
+        entered_fb = int(btc.get("trades_entered") or 0) + int(eth.get("trades_entered") or 0)
+        entered_val = funnel.get("entered")
+        if entered_val is None:
+            entered_val = entered_fb
+        funnel = {
+            "considered": int(considered),
+            "entered": int(entered_val),
+            "filtered": None,
+            "source": "quality+log",
+        }
+        funnel["filtered"] = max(0, int(funnel["considered"]) - int(funnel["entered"]))
+    btc = out.get("btc") if isinstance(out.get("btc"), dict) else {}
+    eth = out.get("eth") if isinstance(out.get("eth"), dict) else {}
+    trades = int(btc.get("trades_entered") or 0) + int(eth.get("trades_entered") or 0)
+    funnel["trades"] = trades
+    funnel["ledger"] = ledger
+    out["window_funnel"] = funnel
+    return out
+
+
+@app.route("/api/crypto15m/summary")
+def api_crypto15m_summary():
+    from paper_15m_engine import crypto_15m_summary
+
+    return jsonify(_enrich_crypto15m_window_funnel(crypto_15m_summary()))
+
+
+@app.route("/api/crypto15m/quality")
+def api_crypto15m_quality():
+    from paper_15m_engine import crypto_15m_quality_report
+
+    return jsonify(crypto_15m_quality_report())
+
+
+@app.route("/api/dual-leg/summary")
+def api_dual_leg_summary():
+    from dual_leg_paper import summary
+
+    return jsonify(summary())
+
+
+@app.route("/api/dual-leg/trades")
+def api_dual_leg_trades():
+    from dual_leg_paper import recent_trades
+
+    limit = min(int(request.args.get("limit", 30)), 200)
+    return jsonify(recent_trades(limit=limit))
+
+
+def _crypto15m_recent_trades(
+    limit: int,
+    ledger: str | None,
+    entered_only: bool,
+    sonu_only: bool = True,
+) -> list[dict[str, Any]]:
+    """Call droplet engine when present; tolerate older signatures (limit-only)."""
+    from paper_15m_engine import is_sonu_trade_row, recent_trades
+
+    try:
+        return recent_trades(
+            limit=limit,
+            ledger=ledger,
+            entered_only=entered_only,
+            sonu_only=sonu_only,
+        )
+    except TypeError:
+        pass
+    try:
+        rows = recent_trades(limit=limit, ledger=ledger, entered_only=entered_only)
+    except TypeError:
+        rows = recent_trades(limit=limit)
+        if ledger:
+            want = ledger.lower()
+            rows = [
+                r
+                for r in rows
+                if str(r.get("mode") or r.get("ledger") or "").lower() == want
+            ]
+        if entered_only:
+            rows = [r for r in rows if r.get("entered")]
+    if sonu_only:
+        rows = [r for r in rows if is_sonu_trade_row(r)]
+    rows = sorted(
+        rows,
+        key=lambda r: str(r.get("timestamp_hkt") or r.get("timestamp_utc") or ""),
+        reverse=True,
+    )
+    return rows[:limit]
+
+
+def _crypto15m_wallet_gate() -> dict[str, Any]:
+    try:
+        from paper_15m_engine import go_live_wallet_gate
+
+        return go_live_wallet_gate()
+    except (ImportError, AttributeError):
+        return {"ok": True, "message": "", "min_wallet_usd": None, "wallet_usd": None}
+
+
+@app.route("/api/bot-log-tail")
+def api_bot_log_tail():
+    bot = (
+        request.args.get("bot")
+        or request.args.get("id")
+        or request.args.get("key")
+        or "son-btc-5m-ultimate-live"
+    )
+    mode = request.args.get("mode", "trades")
+    limit_raw = request.args.get("n") or request.args.get("limit") or "40"
+    limit = min(int(limit_raw), 200)
+    try:
+        from bot_log_tail import tail_bot_log
+
+        return jsonify(tail_bot_log(bot, mode=mode, limit=limit))
+    except ImportError:
+        return jsonify(
+            {
+                "bot": bot,
+                "mode": mode,
+                "lines": [],
+                "stats": {"fills": 0, "skips": 0, "total": 0},
+                "source_file": None,
+                "elapsed_ms": 0,
+                "seat_label": "Live 席 · —",
+            }
+        )
+
+
+@app.route("/api/crypto15m/trades")
+def api_crypto15m_trades():
+    limit = min(int(request.args.get("limit", 30)), 200)
+    ledger = request.args.get("ledger")
+    entered_only = request.args.get("entered_only", "0") in ("1", "true", "yes")
+    sonu_only = request.args.get("sonu_only", "1") not in ("0", "false", "no")
+    return jsonify(_crypto15m_recent_trades(limit, ledger, entered_only, sonu_only))
+
+
+def _wallet_cash_usdc() -> float | None:
+    try:
+        from wallet import wallet_snapshot  # type: ignore
+
+        snap = wallet_snapshot() or {}
+        val = snap.get("cash_usdc") or snap.get("available_usdc")
+        return float(val) if val is not None else None
+    except Exception:
+        return None
+
+
+def _crypto15m_control_payload() -> dict[str, Any]:
+    from paper_15m_engine import (
+        crypto_15m_paused,
+        crypto_15m_summary,
+        crypto_15m_trading_mode,
+        load_session,
+    )
+
+    summary = crypto_15m_summary()
+    sess = load_session()
+    mode = crypto_15m_trading_mode()
+    gate = _crypto15m_wallet_gate()
+    from sonu_live_truth import live_control_payload
+
+    sonu = live_control_payload(ROOT, wallet_cash_usdc=_wallet_cash_usdc())
+    live_active = bool(sonu.get("live_active"))
+    armed_prep = bool(sonu.get("live_armed_prep"))
+    return {
+        "mode": "live" if live_active else "paper",
+        "live": live_active,
+        "paused": crypto_15m_paused(),
+        "running": live_active and not crypto_15m_paused(),
+        "session": sess,
+        "summary": summary,
+        "wallet_gate": gate,
+        "armed": live_active or armed_prep,
+        "live_armed_prep": armed_prep,
+        "exec_is_real_live": sonu.get("exec_is_real_live"),
+        "exec_dry_run_placeholder": sonu.get("exec_dry_run_placeholder"),
+        "label_tc": sonu.get("label_tc"),
+    }
+
+
+def _family_bots_payload() -> dict[str, Any]:
+    """Droplet-shaped roster for /logs: { ok, n, bots:[{ id, display_name, status, … }] }."""
+    ctrl = _crypto15m_control_payload()
+    mode = str(ctrl.get("mode") or "paper").lower()
+    paused = bool(ctrl.get("paused"))
+    seat_short = "真倉 ON" if mode == "live" else "紙上預備"
+    run_short = "暫停" if paused else "跑緊"
+    status_line = f"{seat_short} · {run_short}"
+    bots: list[dict[str, Any]] = [
+        {
+            "id": "son-btc-5m-ultimate-live",
+            "display_name": "終極5m · Live",
+            "status": status_line,
+            "mode": mode,
+            "paused": paused,
+            "running": not paused,
+        }
+    ]
+    try:
+        rows = _crypto15m_recent_trades(80, None, False, sonu_only=False)
+        seen: set[str] = set()
+        for r in rows:
+            name = str(r.get("bot") or r.get("asset") or "").strip()
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            slug = name.lower().replace(" ", "-")
+            bots.append({"id": slug, "display_name": name, "status": "paper"})
+    except Exception:
+        pass
+    return {"ok": True, "n": len(bots), "bots": bots}
+
+
+@app.route("/api/family-bots")
+def api_family_bots():
+    return jsonify(_family_bots_payload())
+
+
+@app.route("/api/son-u/live-control", methods=["GET", "POST"])
+def api_son_u_live_control():
+    from sonu_live_truth import apply_live_control_action, live_control_payload
+
+    wallet = _wallet_cash_usdc()
+    if request.method == "GET":
+        return jsonify(live_control_payload(ROOT, wallet_cash_usdc=wallet))
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action") or "").lower()
+    out = apply_live_control_action(ROOT, action, wallet_cash_usdc=wallet)
+    status = 200 if out.get("ok") else 400
+    return jsonify(out), status
+
+
+@app.route("/api/crypto15m/control", methods=["GET", "POST"])
+def api_crypto15m_control():
+    import subprocess
+
+    if request.method == "GET":
+        return jsonify(_crypto15m_control_payload())
+
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action", "")).lower()
+    env_file = ROOT / ".env"
+
+    def _set_env_key(key: str, value: str) -> None:
+        lines = env_file.read_text().splitlines() if env_file.exists() else []
+        out: list[str] = []
+        found = False
+        prefix = f"{key}="
+        for line in lines:
+            if line.startswith(prefix):
+                out.append(f"{key}={value}")
+                found = True
+            else:
+                out.append(line)
+        if not found:
+            out.append(f"{key}={value}")
+        env_file.write_text("\n".join(out) + "\n")
+
+    if action in ("pause", "resume", "start"):
+        from bot_control import set_bot_paused
+
+        paused = action == "pause"
+        set_bot_paused("crypto_15m", paused)
+        return jsonify({"ok": True, "action": action, **_crypto15m_control_payload()})
+
+    if action == "enable_live":
+        from sonu_live_truth import apply_live_control_action
+
+        wallet = _wallet_cash_usdc()
+        out = apply_live_control_action(ROOT, "to_live", wallet_cash_usdc=wallet)
+        if not out.get("ok"):
+            return jsonify({**out, "action": action, **_crypto15m_control_payload()}), 400
+        gate = _crypto15m_wallet_gate()
+        if out.get("exec_is_real_live") and gate.get("min_wallet_usd") is not None and not gate.get("ok"):
+            return jsonify(
+                {
+                    "ok": False,
+                    "action": action,
+                    "error": gate.get("message") or "Wallet gate blocked go-live",
+                    "wallet_gate": gate,
+                    **_crypto15m_control_payload(),
+                }
+            ), 400
+        if out.get("exec_is_real_live"):
+            py = ROOT / "venv/bin/python3"
+            if not py.exists():
+                py = Path(sys.executable)
+            script = ROOT / "scripts/start_crypto_15m_live_session.py"
+            if script.exists():
+                subprocess.run([str(py), str(script)], check=False, cwd=str(ROOT))
+        return jsonify({"ok": True, "action": action, **out, **_crypto15m_control_payload()})
+
+    if action == "disable_live":
+        from sonu_live_truth import apply_live_control_action
+
+        out = apply_live_control_action(ROOT, "to_paper", wallet_cash_usdc=_wallet_cash_usdc())
+        _set_env_key("CRYPTO_15M_TRADING_MODE", "paper")
+        _set_env_key("CRYPTO_15M_DATA_COLLECTION", "1")
+        subprocess.run(["systemctl", "restart", "crypto-15m-observer"], check=False)
+        return jsonify({"ok": True, "action": action, **out, **_crypto15m_control_payload()})
+
+    return jsonify({"error": "action must be pause, resume, enable_live, or disable_live"}), 400
+
+
 @app.route("/api/eth-trade-log")
 def api_eth_trade_log():
     limit = min(int(request.args.get("limit", 150)), 500)
@@ -1063,13 +1497,15 @@ def v1_logs():
     )
     from package2_strategy import v1_stake_plan_snapshot
 
-    return render_template(
-        "v1_detail.html",
-        strategy_display=strategy_display,
-        v1_risk=config.get("v1_risk") or {},
-        v1_scaling=config.get("v1_stake_scaling") or {},
-        stake_plan=v1_stake_plan_snapshot(),
-    )
+    ctx = {
+        "strategy_display": strategy_display,
+        "v1_risk": config.get("v1_risk") or {},
+        "v1_scaling": config.get("v1_stake_scaling") or {},
+        "stake_plan": v1_stake_plan_snapshot(),
+    }
+    family_tpl = DASHBOARD_DIR / "templates" / "family_logs.html"
+    template = "family_logs.html" if family_tpl.is_file() else "v1_detail.html"
+    return render_template(template, **ctx)
 
 
 @app.route("/simple")

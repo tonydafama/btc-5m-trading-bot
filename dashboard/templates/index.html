@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="dashboard-layout" content="live-window-v3">
-  <title>Trading Hub · BTC / ETH</title>
+  <meta name="dashboard-layout" content="live-window-v4-simple">
+  <title>V1 DRY RUN · BTC/ETH Paper $1000</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     :root {
@@ -63,7 +63,32 @@
     table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
     th, td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
     th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--card); }
-    .table-wrap { overflow-x: auto; max-height: 480px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+    .table-wrap {
+      overflow-x: auto; max-height: 480px; overflow-y: auto;
+      border: 1px solid var(--border); border-radius: 8px;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      touch-action: pan-x pan-y;
+    }
+    .strategy-simple-list, .tt-simple-list {
+      margin: 0 0 0.75rem 1.1rem; padding: 0; line-height: 1.55; font-size: 0.88rem; color: var(--text);
+    }
+    .strategy-simple-list li, .tt-simple-list li { margin-bottom: 0.35rem; }
+    .strategy-mode-tag {
+      font-size: 0.65rem; font-weight: 700; padding: 0.12rem 0.45rem; border-radius: 999px;
+      border: 1px solid var(--border); color: var(--orange); background: rgba(240,180,41,0.1);
+    }
+    .strategy-details, .tt-more-details {
+      margin-top: 0.65rem; font-size: 0.82rem; color: var(--muted);
+    }
+    .strategy-details summary, .tt-more-details summary {
+      cursor: pointer; color: var(--blue); font-weight: 600; user-select: none;
+    }
+    .tt-simple-box {
+      background: var(--card); border: 1px solid rgba(110,182,255,0.25); border-radius: 12px;
+      padding: 1rem 1.1rem; margin-bottom: 1rem;
+    }
+    .tt-simple-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--text); }
     .rules { font-size: 0.82rem; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; }
     .strategy-card {
       font-size: 0.8rem; color: var(--muted);
@@ -1977,7 +2002,7 @@
     </div>
   </div><!-- /panel-sports -->
 
-  <script src="/static/dashboard-hub.js?v=20260701-premium"></script>
+  <script src="/static/dashboard-hub.js?v=20260729-simple"></script>
   <script>
     const initSummary = {{ summary | tojson }};
     const initEth = {{ eth_summary | tojson }};
@@ -3722,6 +3747,22 @@
       return list.sort(cmp);
     }
 
+    function fmtSimpleReason(raw) {
+      if (!raw) return '—';
+      let s = String(raw);
+      if (/underdog only outside US|extended dog-only outside/i.test(s)) return '非美股 · 只做 Dog';
+      if (/underdog_offhours|Night Dog/i.test(s)) return '日間 · 不做 Dog';
+      if (/favorite core-only|outside_core_window/i.test(s)) return '非 Core · 不做 Fav';
+      if (/favorite-only mode/i.test(s)) return '只做 Fav';
+      if (/outside strategy trading period|outside_trading_period/i.test(s)) return '非交易時段';
+      if (/mid tier disabled|skip_mid/i.test(s)) return 'Mid 關閉';
+      if (/Package 2\+: favorite/i.test(s)) return s.replace(/Package 2\+: favorite ask ([\d.]+).*/, 'Fav · ask $1');
+      if (/Package 2\+: underdog/i.test(s)) return s.replace(/Package 2\+: underdog ask ([\d.]+).*/, 'Dog · ask $1');
+      s = s.replace(/^Skipped:\s*/i, '');
+      if (s.length > 80) return s.slice(0, 78) + '…';
+      return s;
+    }
+
     function renderLogRow(t, ethTable) {
       const result = t.trade_result || '—';
       const pnl = result === 'WIN' || result === 'LOSS'
@@ -3732,7 +3773,7 @@
       const dateStr = ts.slice(0, 10);
       const timeStr = ts.length >= 19 ? ts.slice(11, 19) : '—';
       const tierCell = t.multiplier || t.tier || '—';
-      const reason = ethTable ? fmtEthReason(t.strategy_reason) : (t.strategy_reason || '');
+      const reason = fmtSimpleReason(ethTable ? fmtEthReason(t.strategy_reason) : t.strategy_reason);
       return `<tr class="${t.entered ? '' : 'row-skipped'}">
         <td class="col-date">${formatDateCell(dateStr)}</td>
         <td class="col-time">${timeStr}</td>
@@ -4671,7 +4712,7 @@
             <div class="tt-live-head">
               <div>
                 <div class="tt-live-asset">${row.asset}</div>
-                <div class="tt-live-tier">${row.tier}</div>
+                <div class="tt-live-tier">${row.tier === 'Favorite' ? '順勢 Fav' : '逆勢 Dog'}</div>
               </div>
               <span class="tt-state-pill tt-pill-${row.state}">${row.label}</span>
             </div>
@@ -4847,7 +4888,19 @@
       } catch (e) { console.warn('panel stat boot', e); }
 
       refresh().catch((e) => console.error('refresh failed', e));
-      setInterval(() => refresh().catch((e) => console.warn(e)), window.DashboardHub?.POLL_MS || 15000);
+      let pollTimer = null;
+      const POLL_MS = window.DashboardHub?.POLL_MS || 15000;
+      function startPoll() {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(() => {
+          if (document.hidden) return;
+          refresh().catch((e) => console.warn(e));
+        }, POLL_MS);
+      }
+      startPoll();
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refresh().catch((e) => console.warn(e));
+      });
       // Stagger wallet refresh for Strategy Monitor (background thread also refreshes every 90s).
       setTimeout(() => refreshCompetition(true).catch((e) => console.warn('competition wallet refresh', e)), 2500);
     }
