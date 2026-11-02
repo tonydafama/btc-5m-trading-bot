@@ -14,7 +14,7 @@ If the droplet already works, **do not** blind `git pull` a large unrelated bran
    test -f paper_15m_engine.py && cp -a paper_15m_engine.py paper_15m_engine.py.bak
    ```
 3. Merge or cherry-pick **only** Son U UI + small API helpers:
-   - `dashboard/templates/v1_only.html` (gold box, ON-AIR, lamps, log tabs only)
+   - `dashboard/templates/v1_only.html` (gold box, ON-AIR, lamps, log tabs, **Paper run** fold — see [DROPLET_SONU_ONAIR_PATCH.md §8](./DROPLET_SONU_ONAIR_PATCH.md))
    - `dashboard/app.py` hunks for `_crypto15m_recent_trades`, optional `ledger=` query, `armed` / `wallet_gate` on control GET
 4. Restore droplet engine if pull overwrote it: `mv paper_15m_engine.py.bak paper_15m_engine.py`
 5. Restart dashboard proxy only: `sudo systemctl restart btc-5m-dashboard`
