@@ -313,6 +313,11 @@
       background:rgba(0,255,0,.07) !important;
       box-shadow:0 0 14px rgba(0,255,0,.22), inset 0 0 12px rgba(0,255,0,.06) !important;
     }
+    .sonu-gold-box .mode-toggle-btn.is-active.is-prep {
+      border-color:rgba(251,191,36,.8) !important;
+      background:rgba(251,191,36,.12) !important;
+      box-shadow:0 0 14px rgba(251,191,36,.28), inset 0 0 12px rgba(251,191,36,.08) !important;
+    }
     .sonu-metrics {
       display:grid; grid-template-columns:repeat(auto-fit,minmax(7rem,1fr));
       gap:.55rem; margin-top:.65rem;
@@ -348,14 +353,79 @@
     .sonu-gold-box .sonu-window-funnel .win-filtered .value { color:var(--orange); }
     .sonu-gold-box .sonu-window-funnel .win-entered .value { color:var(--green); }
     .sonu-gold-box .sonu-window-funnel-hint { font-size:.68rem; color:var(--muted); margin-top:.35rem; }
-    .high-live-rows { margin-top:.75rem; display:grid; gap:.55rem; }
+    .high-live-rows, .desk-bot-grid {
+      margin-top:.7rem; display:grid; gap:.75rem;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .desk-split-note { font-size:.75rem; color:var(--muted); margin-top:.35rem; }
+    .desk-bot {
+      border-radius:16px; padding:.8rem .8rem .7rem; text-align:left;
+      background:#0c1016; border:1px solid rgba(255,255,255,.08);
+      box-shadow:0 10px 28px rgba(0,0,0,.28);
+      min-width:0;
+    }
+    .desk-bot-5m { border-color:rgba(251,191,36,.55); background:linear-gradient(180deg, rgba(251,191,36,.12), #0c1016 42%); }
+    .desk-bot-v2 { border-color:rgba(96,165,250,.5); background:linear-gradient(180deg, rgba(96,165,250,.14), #0c1016 42%); }
+    .desk-bot-head { display:flex; justify-content:space-between; gap:.5rem; align-items:flex-start; }
+    .desk-bot-kicker { font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; color:var(--muted); }
+    .desk-bot-5m .desk-bot-kicker { color:#fbbf24; }
+    .desk-bot-v2 .desk-bot-kicker { color:#93c5fd; }
+    .desk-bot h3 { margin:.1rem 0 0; font-size:1.02rem; letter-spacing:-.02em; }
+    .desk-bot-status { margin:.45rem 0 0; font-size:.75rem; color:var(--muted); line-height:1.4; }
+    .desk-bot-actions { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; margin-top:.65rem; }
+    .desk-bot-actions .mode-toggle-btn { justify-content:center; width:100%; min-height:2.55rem; }
+    .desk-bot-actions .mode-toggle-btn.is-prep {
+      border-color:rgba(251,191,36,.7); background:rgba(251,191,36,.1);
+    }
+    .desk-bot .mode-lamp.lamp-prep {
+      background:#fbbf24; box-shadow:0 0 8px #fbbf24, 0 0 16px rgba(251,191,36,.55);
+    }
+    .bet-size-box {
+      margin-top:.65rem; padding:.55rem .6rem .5rem; border-radius:12px;
+      background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.06);
+    }
+    .bet-size-box label { display:block; font-size:.68rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+    .bet-size-row { display:flex; gap:.35rem; align-items:center; margin-top:.35rem; }
+    .bet-size-row input {
+      flex:1; min-width:0; height:2.4rem; border-radius:10px; border:1px solid var(--border);
+      background:#080b10; color:var(--text); font-size:1.05rem; font-weight:750; text-align:center;
+      padding:0 .4rem;
+    }
+    .bet-size-row button {
+      height:2.4rem; min-width:2.4rem; border-radius:10px; font-weight:750;
+    }
+    .bet-size-row button[data-bet-apply] { padding:0 .7rem; color:#04120c; background:#34d399; border-color:#34d399; }
+    .bet-size-readout { margin:.4rem 0 0; font-size:.75rem; color:var(--text); }
+    .bet-size-readout strong { color:#34d399; }
+    .desk-bot-hint { min-height:1rem; margin:.4rem 0 0; font-size:.72rem; color:var(--orange); }
+    .desk-stats {
+      display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.35rem; margin-top:.65rem;
+    }
+    .desk-stat {
+      background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.05);
+      border-radius:10px; padding:.38rem .4rem .32rem;
+    }
+    .desk-stat .k { display:block; font-size:.62rem; color:var(--muted); font-weight:700; letter-spacing:.04em; }
+    .desk-stat .v { display:block; margin-top:.08rem; font-size:.92rem; font-weight:750; font-variant-numeric:tabular-nums; }
+    .desk-stat .v.pos { color:var(--green); }
+    .desk-stat .v.neg { color:var(--red); }
+    .desk-wallet-line {
+      margin-top:.7rem; font-size:.75rem; color:var(--muted);
+      padding:.45rem .6rem; border-radius:10px; background:rgba(0,0,0,.25);
+    }
     .high-live-row {
       border:1px solid rgba(224,181,103,.32); border-radius:12px; padding:.55rem .65rem;
       background:rgba(0,0,0,.22); text-align:left;
     }
-    .high-live-row .hl-row-title { font-size:.88rem; font-weight:750; display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; }
-    .high-live-row .hl-row-meta { font-size:.72rem; color:var(--muted); margin-top:.25rem; line-height:1.35; }
-    .high-live-row .chip.prep { color:var(--orange); border:1px solid rgba(251,191,36,.45); font-size:.68rem; padding:.12rem .4rem; border-radius:999px; }
+    .high-live-row .chip.prep, .desk-chip {
+      color:var(--orange); border:1px solid rgba(251,191,36,.45); font-size:.68rem;
+      padding:.12rem .45rem; border-radius:999px; white-space:nowrap;
+    }
+    .desk-chip.live { color:var(--green); border-color:rgba(52,211,153,.5); }
+    .desk-chip.paper { color:#cbd5e1; border-color:rgba(203,213,225,.35); }
+    @media (max-width:800px) {
+      .high-live-rows, .desk-bot-grid { grid-template-columns:1fr; }
+    }
     .paper-run-fold {
       border:1px solid rgba(255,255,255,.08); border-radius:14px;
       background:var(--panel); margin:0 0 1rem;
@@ -529,9 +599,9 @@
     </div>
 
     <section class="sonu-gold-box" id="sonu-gold-box">
-      <div class="sonu-gold-kicker">Desk · Live</div>
+      <div class="sonu-gold-kicker">Desk · 兩個 Bot</div>
       <div class="section-head" style="margin-bottom:0">
-        <h2 style="font-size:1.05rem;margin:0">Live · Son U</h2>
+        <h2 style="font-size:1.05rem;margin:0">各自 Live / Paper</h2>
         <div class="status-line">
           <span class="pill warn" id="c15m-mode-pill">—</span>
           <span class="pill" id="c15m-backend-pill">後端 —</span>
@@ -542,16 +612,96 @@
         <span class="on-air-sign sonu-radio-live-text" id="c15m-on-air-text">LIVE ON</span>
       </div>
       <div class="sonu-paper-caption hidden" id="c15m-paper-caption">PAPER · ON-AIR 熄咗</div>
-      <div class="hint" id="c15m-mode-sub">讀緊後端模式…</div>
-      <div class="sonu-mode-toggles">
-        <button type="button" class="mode-toggle-btn" id="c15m-btn-live">
-          <span class="mode-lamp lamp-yellow" id="c15m-lamp-live"></span> Live 實盤
-        </button>
-        <button type="button" class="mode-toggle-btn" id="c15m-btn-paper">
-          <span class="mode-lamp lamp-green" id="c15m-lamp-paper"></span> Paper 模擬
-        </button>
+      <div class="hint" id="c15m-mode-sub">兩個 bot 各自有掣。轉一個，另一個唔會跟。</div>
+      <p class="desk-split-note">注碼分開儲存。終極5m：bet size 10 = 每注 $10。V2 兩腿：bet size 10 = 每注 $20。</p>
+      <div class="desk-bot-grid high-live-rows" id="high-live-rows" aria-label="兩個 bot 獨立控制">
+        <article class="desk-bot desk-bot-5m" data-bot-id="son-btc-5m-ultimate-live" data-multiplier="1" data-rule="v2 5m btc" data-display-name="終極5m" data-mode="paper">
+          <div class="desk-bot-head">
+            <div>
+              <div class="desk-bot-kicker">v2 5m btc · 獨立</div>
+              <h3>終極5m</h3>
+            </div>
+            <span class="desk-chip paper" data-mode-chip>PAPER</span>
+          </div>
+          <p class="desk-bot-status" data-status>跑緊 · 紙上預備 · 本金 $100</p>
+          <div class="desk-bot-actions">
+            <button type="button" class="mode-toggle-btn is-active" id="c15m-btn-paper" data-bot-action="to_paper">
+              <span class="mode-lamp lamp-green" id="c15m-lamp-paper"></span>
+              <span class="mode-label">模式：Paper（紙上）</span>
+            </button>
+            <button type="button" class="mode-toggle-btn" id="c15m-btn-live" data-bot-action="to_live">
+              <span class="mode-lamp lamp-yellow" id="c15m-lamp-live"></span>
+              <span class="mode-label">切換 → Live</span>
+            </button>
+          </div>
+          <div class="bet-size-box">
+            <label for="bet-size-sonu">Bet size</label>
+            <div class="bet-size-row">
+              <button type="button" data-bet-step="-1" aria-label="減少 bet size">−</button>
+              <input class="bet-size-input" id="bet-size-sonu" type="number" inputmode="decimal" min="0.5" max="500" step="0.5" value="10" autocomplete="off">
+              <button type="button" data-bet-step="1" aria-label="增加 bet size">+</button>
+              <button type="button" data-bet-apply>套用</button>
+            </div>
+            <p class="bet-size-readout">每注 <strong data-stake>$10</strong> · <span data-rule>v2 5m btc：10 = $10</span></p>
+          </div>
+          <p class="desk-bot-hint" data-bot-hint></p>
+          <div class="desk-stats">
+            <div class="desk-stat"><span class="k">考慮</span><span class="v" data-stat="considered">—</span></div>
+            <div class="desk-stat"><span class="k">過濾</span><span class="v" data-stat="filtered">—</span></div>
+            <div class="desk-stat"><span class="k">入場</span><span class="v" data-stat="entered">—</span></div>
+            <div class="desk-stat"><span class="k">WR</span><span class="v" data-stat="wr">—</span></div>
+            <div class="desk-stat"><span class="k">PnL</span><span class="v" data-stat="pnl">—</span></div>
+            <div class="desk-stat"><span class="k">結算</span><span class="v" data-stat="settled">—</span></div>
+            <div class="desk-stat"><span class="k">單數</span><span class="v" data-stat="count">—</span></div>
+            <div class="desk-stat"><span class="k">注碼</span><span class="v" data-stat="stake">$10/注</span></div>
+            <div class="desk-stat"><span class="k">本金</span><span class="v" data-stat="capital">$100</span></div>
+          </div>
+        </article>
+        <article class="desk-bot desk-bot-v2" data-bot-id="dual-leg-live-v2" data-multiplier="2" data-rule="v2" data-display-name="BTC 2 legs V2" data-mode="paper">
+          <div class="desk-bot-head">
+            <div>
+              <div class="desk-bot-kicker">v2 · 2 legs · 獨立</div>
+              <h3>BTC 2 legs V2</h3>
+            </div>
+            <span class="desk-chip paper" data-mode-chip>PAPER</span>
+          </div>
+          <p class="desk-bot-status" data-status>曾live · 紙上 rehearsal · 本金 $100</p>
+          <div class="desk-bot-actions">
+            <button type="button" class="mode-toggle-btn is-active" id="v2-btn-paper" data-bot-action="to_paper">
+              <span class="mode-lamp lamp-green" id="v2-lamp-paper"></span>
+              <span class="mode-label">模式：Paper（紙上）</span>
+            </button>
+            <button type="button" class="mode-toggle-btn" id="v2-btn-live" data-bot-action="to_live">
+              <span class="mode-lamp lamp-yellow" id="v2-lamp-live"></span>
+              <span class="mode-label">切換 → Live</span>
+            </button>
+          </div>
+          <div class="bet-size-box">
+            <label for="bet-size-v2">Bet size</label>
+            <div class="bet-size-row">
+              <button type="button" data-bet-step="-1" aria-label="減少 bet size">−</button>
+              <input class="bet-size-input" id="bet-size-v2" type="number" inputmode="decimal" min="0.5" max="500" step="0.5" value="10" autocomplete="off">
+              <button type="button" data-bet-step="1" aria-label="增加 bet size">+</button>
+              <button type="button" data-bet-apply>套用</button>
+            </div>
+            <p class="bet-size-readout">每注 <strong data-stake>$20</strong> · <span data-rule>v2：10 = $20（2 腿 × $10）</span></p>
+          </div>
+          <p class="desk-bot-hint" data-bot-hint></p>
+          <div class="desk-stats">
+            <div class="desk-stat"><span class="k">考慮</span><span class="v" data-stat="considered">—</span></div>
+            <div class="desk-stat"><span class="k">過濾</span><span class="v" data-stat="filtered">—</span></div>
+            <div class="desk-stat"><span class="k">入場</span><span class="v" data-stat="entered">—</span></div>
+            <div class="desk-stat"><span class="k">WR</span><span class="v" data-stat="wr">—</span></div>
+            <div class="desk-stat"><span class="k">PnL</span><span class="v" data-stat="pnl">—</span></div>
+            <div class="desk-stat"><span class="k">結算</span><span class="v" data-stat="settled">—</span></div>
+            <div class="desk-stat"><span class="k">單數</span><span class="v" data-stat="count">—</span></div>
+            <div class="desk-stat"><span class="k">注碼</span><span class="v" data-stat="stake">$20/注</span></div>
+            <div class="desk-stat"><span class="k">本金</span><span class="v" data-stat="capital">$100</span></div>
+          </div>
+        </article>
       </div>
-      <div class="hint" id="c15m-control-hint" style="margin-top:.45rem">—</div>
+      <div class="desk-wallet-line" id="desk-wallet-line">真錢包 —</div>
+      <div class="hint" id="c15m-control-hint" style="margin-top:.45rem">每個 bot 自己個掣切 Live / Paper，注碼要撳套用先儲存。</div>
       <div class="sonu-trades-line" id="c15m-trades-windows-line" aria-live="polite">
         <span class="label-tag">Trades</span>— 單 · — 窗
       </div>
@@ -593,7 +743,6 @@
         </div>
       </div>
       <div class="sonu-window-funnel-hint" id="c15m-window-funnel-hint">考慮 — · 過濾 — · 入場 —</div>
-      <div class="high-live-rows" id="high-live-rows" aria-label="Live prep · 其他高 Live"></div>
     </section>
 
     <div class="hero">
@@ -623,7 +772,7 @@
       <div class="grid two">
         <div class="card bot-card m15" id="c15m-control-card">
           <div class="section-head">
-            <h2>Trading control</h2>
+            <h2>終極5m · Trading control</h2>
             <span class="pill" id="c15m-status-pill">—</span>
           </div>
           <div class="hint" id="c15m-rules">—</div>
@@ -1100,6 +1249,7 @@
     }
 
     function renderDailyChart(data) {
+      if (typeof Chart === 'undefined') return;
       const labels = (data.total || []).map((r) => r.label || r.date?.slice(5));
       const btc = (data.btc || []).map((r) => Number(r.pnl || 0));
       const eth = (data.eth || []).map((r) => Number(r.pnl || 0));
@@ -1132,6 +1282,7 @@
     }
 
     function renderCumulChart(data) {
+      if (typeof Chart === 'undefined') return;
       const btcC = cumulative(data.btc || []);
       const ethC = cumulative(data.eth || []);
       const totC = cumulative(data.total || []);
@@ -1442,36 +1593,254 @@
       await refresh();
     }
 
-    function renderHighLiveRows(hl, sonULive) {
-      const el = $('high-live-rows');
-      if (!el) return;
-      const rows = (hl && Array.isArray(hl.rows)) ? hl.rows : [];
-      const extra = rows.filter((r) => r && r.id !== 'son-btc-5m-ultimate-live');
-      if (!extra.length) {
-        el.innerHTML = '';
-        return;
+    function deskFmt(n) {
+      const x = Math.round(Number(n) * 100) / 100;
+      if (!Number.isFinite(x)) return '—';
+      if (Math.abs(x - Math.round(x)) < 1e-9) return String(Math.round(x));
+      return String(x);
+    }
+
+    function deskRuleLine(rule, bet, mult) {
+      const stake = Math.round(Number(bet) * Number(mult) * 100) / 100;
+      if (Number(mult) === 2) {
+        return rule + '：' + deskFmt(bet) + ' = $' + deskFmt(stake) + '（2 腿 × $' + deskFmt(bet) + '）';
       }
-      el.innerHTML = extra.map((r) => {
-        const pill = r.live_enabled
-          ? '<span class="pill live">LIVE</span>'
-          : (r.had_live || r.live_tag === '曾live'
-            ? '<span class="chip prep">曾live · PREP</span>'
-            : '<span class="chip prep">PAPER PREP</span>');
-        return `<article class="high-live-row" data-high-live-id="${esc(r.id || '')}">
-          <div class="hl-row-title"><strong>${esc(r.display_name || r.id || '—')}</strong>${pill}</div>
-          <div class="hl-row-meta">${esc(r.status_label || r.status || '')} · ${esc(r.pnl_label || '')} · 真倉 OFF</div>
-        </article>`;
-      }).join('');
-      if (sonULive && sonULive.label_tc && hl && !hl.any_live) {
-        const note = document.createElement('div');
-        note.className = 'hint';
-        note.style.marginTop = '.35rem';
-        note.textContent = sonULive.label_tc;
-        if (!el.querySelector('[data-wallet-note]')) {
-          note.dataset.walletNote = '1';
-          el.appendChild(note);
+      return rule + '：' + deskFmt(bet) + ' = $' + deskFmt(stake);
+    }
+
+    function previewDeskBet(card) {
+      const input = card.querySelector('.bet-size-input');
+      const bet = Number(input && input.value);
+      const mult = Number(card.dataset.multiplier || 1);
+      const rule = card.dataset.rule || '';
+      if (!Number.isFinite(bet)) return;
+      const stake = Math.round(bet * mult * 100) / 100;
+      const stakeEl = card.querySelector('[data-stake]');
+      const ruleEl = card.querySelector('[data-rule]');
+      if (stakeEl) stakeEl.textContent = '$' + deskFmt(stake);
+      if (ruleEl) ruleEl.textContent = deskRuleLine(rule, bet, mult);
+    }
+
+    function paintSeat(card, mode) {
+      if (!card) return;
+      card.dataset.mode = mode || 'paper';
+      const liveBtn = card.querySelector('[data-bot-action="to_live"]');
+      const paperBtn = card.querySelector('[data-bot-action="to_paper"]');
+      const liveOn = mode === 'live' || mode === 'prep';
+      const paperOn = mode === 'paper';
+      if (liveBtn) {
+        liveBtn.classList.toggle('is-active', liveOn);
+        liveBtn.classList.toggle('is-prep', mode === 'prep');
+        const label = liveBtn.querySelector('.mode-label');
+        if (label) {
+          label.textContent = mode === 'live' ? '模式：Live（真倉）' : (mode === 'prep' ? '模式：Live prep' : '切換 → Live');
         }
       }
+      if (paperBtn) {
+        paperBtn.classList.toggle('is-active', paperOn);
+        const label = paperBtn.querySelector('.mode-label');
+        if (label) label.textContent = paperOn ? '模式：Paper（紙上）' : '切換 → Paper';
+      }
+      function lamp(el, kind) {
+        if (!el) return;
+        el.className = 'mode-lamp ' + (kind === 'green' ? 'lamp-green' : (kind === 'prep' ? 'lamp-prep' : 'lamp-yellow'));
+        if (kind === 'green') {
+          el.style.background = '#00ff00';
+          el.style.border = '1px solid #7fff7f';
+          el.style.boxShadow = '0 0 6px #00ff00, 0 0 14px rgba(0,255,0,.78)';
+          el.style.opacity = '1';
+          el.style.filter = 'none';
+        } else if (kind === 'prep') {
+          el.style.background = '#fbbf24';
+          el.style.border = '1px solid #fde68a';
+          el.style.boxShadow = '0 0 8px #fbbf24';
+          el.style.opacity = '1';
+          el.style.filter = 'none';
+        } else {
+          el.style.background = '';
+          el.style.border = '';
+          el.style.boxShadow = '';
+          el.style.opacity = '';
+          el.style.filter = '';
+        }
+      }
+      lamp(liveBtn && liveBtn.querySelector('.mode-lamp'), mode === 'live' ? 'green' : (mode === 'prep' ? 'prep' : 'dim'));
+      lamp(paperBtn && paperBtn.querySelector('.mode-lamp'), paperOn ? 'green' : 'dim');
+      const chip = card.querySelector('[data-mode-chip]');
+      if (chip) {
+        chip.textContent = mode === 'live' ? 'LIVE' : (mode === 'prep' ? 'PREP' : 'PAPER');
+        chip.className = 'desk-chip ' + (mode === 'live' ? 'live' : (mode === 'paper' ? 'paper' : ''));
+      }
+    }
+
+    function hydrateDeskCard(card, row) {
+      if (!card || !row) return;
+      const mode = row.mode || (row.live_enabled ? 'live' : (row.live_armed ? 'prep' : 'paper'));
+      paintSeat(card, mode);
+      const status = card.querySelector('[data-status]');
+      if (status) {
+        const capital = row.capital_usd != null ? ('$' + Number(row.capital_usd).toFixed(0)) : '$100';
+        status.textContent = (row.status_label || row.change || '—') + ' · 本金 ' + capital;
+      }
+      const funnel = row.window_funnel || {};
+      const setStat = (key, text, cls) => {
+        const el = card.querySelector('[data-stat="' + key + '"]');
+        if (!el) return;
+        el.textContent = text;
+        el.classList.remove('pos', 'neg');
+        if (cls) el.classList.add(cls);
+      };
+      setStat('considered', funnel.considered == null ? '—' : String(funnel.considered));
+      setStat('filtered', funnel.filtered == null ? '—' : String(funnel.filtered));
+      setStat('entered', funnel.entered == null ? '—' : String(funnel.entered));
+      setStat('wr', row.wr_label || '—');
+      if (row.pnl == null || row.pnl === '') setStat('pnl', '—');
+      else setStat('pnl', money(row.pnl), Number(row.pnl) >= 0 ? 'pos' : 'neg');
+      let settledTxt = row.settled_n == null ? '—' : String(row.settled_n);
+      if (row.wins != null || row.losses != null) {
+        settledTxt = (row.settled_n ?? 0) + ' (' + (row.wins || 0) + 'W/' + (row.losses || 0) + 'L)';
+      }
+      setStat('settled', settledTxt);
+      setStat('count', row.count_label || (row.trade_count == null ? '—' : (row.trade_count + ' 單')));
+      setStat('stake', row.stake_label || (row.stake_usd != null ? ('$' + row.stake_usd + '/注') : '—'));
+      setStat('capital', row.capital_usd != null ? ('$' + Number(row.capital_usd).toFixed(0)) : '$100');
+      const input = card.querySelector('.bet-size-input');
+      if (input && document.activeElement !== input && row.bet_size != null) input.value = row.bet_size;
+      const ruleEl = card.querySelector('[data-rule]');
+      const stakeEl = card.querySelector('[data-stake]');
+      if (ruleEl && row.rule_line) ruleEl.textContent = row.rule_line;
+      if (stakeEl && row.stake_usd != null) stakeEl.textContent = '$' + row.stake_usd;
+    }
+
+    function hydrateDeskBots(hl, sonULive) {
+      const rows = (hl && Array.isArray(hl.rows)) ? hl.rows : [];
+      const byId = {};
+      rows.forEach((row) => { if (row && row.id) byId[row.id] = row; });
+      const sonu = byId['son-btc-5m-ultimate-live'];
+      if (sonULive && sonULive.ok !== false) {
+        const mode = (sonULive.live_active && sonULive.exec_is_real_live)
+          ? 'live'
+          : ((sonULive.live_armed_prep || sonULive.live_armed) ? 'prep' : 'paper');
+        if (sonu) sonu.mode = mode;
+        else paintSeat(document.querySelector('[data-bot-id="son-btc-5m-ultimate-live"]'), mode);
+      }
+      document.querySelectorAll('#high-live-rows article.desk-bot').forEach((card) => {
+        hydrateDeskCard(card, byId[card.dataset.botId]);
+      });
+      const walletLine = $('desk-wallet-line');
+      if (walletLine) {
+        const cash = ($('wallet-cash') && $('wallet-cash').textContent) || '—';
+        const blocked = hl && hl.blocked ? ('阻擋：' + hl.blocked) : '冇阻擋';
+        const real = hl && hl.any_live ? '真倉 ON' : '真倉未開';
+        walletLine.textContent = '真錢包 ' + cash + ' · ' + blocked + ' · ' + real;
+      }
+    }
+
+    function renderHighLiveRows(hl, sonULive) {
+      hydrateDeskBots(hl, sonULive);
+    }
+
+    async function postDesk(card, action, betSize) {
+      const hint = card.querySelector('[data-bot-hint]');
+      const body = { action: action };
+      if (action === 'set_bet_size') body.bet_size = betSize;
+      card.querySelectorAll('button').forEach((btn) => { btn.disabled = true; });
+      let data = {};
+      try {
+        const res = await fetch('/api/desk/bots/' + encodeURIComponent(card.dataset.botId), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        data = await res.json().catch(() => ({}));
+        const msg = data.message_tc || data.error_tc || data.error || (data.ok ? '已更新' : '失敗');
+        if (hint) hint.textContent = msg;
+        const globalHint = $('c15m-control-hint');
+        if (globalHint) globalHint.textContent = (card.dataset.displayName || card.dataset.botId) + ' · ' + msg;
+        if (data.ok && (action === 'to_live' || action === 'to_paper')) {
+          const nextMode = data.desk_mode || data.mode;
+          if (nextMode) paintSeat(card, nextMode);
+        }
+        if (data.ok && data.rule_line) {
+          const ruleEl = card.querySelector('[data-rule]');
+          if (ruleEl) ruleEl.textContent = data.rule_line;
+        }
+        if (data.ok && data.stake_usd != null) {
+          const stakeEl = card.querySelector('[data-stake]');
+          if (stakeEl) stakeEl.textContent = '$' + data.stake_usd;
+          const stat = card.querySelector('[data-stat="stake"]');
+          if (stat) stat.textContent = '$' + data.stake_usd + '/注';
+        }
+      } catch (e) {
+        if (hint) hint.textContent = '連唔到後端';
+      }
+      try { await refresh(); } catch (e) { console.warn(e); }
+      card.querySelectorAll('button').forEach((btn) => { btn.disabled = false; });
+      return data;
+    }
+
+    function submitDeskBet(card) {
+      const input = card.querySelector('.bet-size-input');
+      const bet = Number(input && input.value);
+      const hint = card.querySelector('[data-bot-hint]');
+      if (!Number.isFinite(bet) || bet < 0.5 || bet > 500) {
+        if (hint) hint.textContent = 'bet size 要喺 0.5 到 500';
+        return;
+      }
+      previewDeskBet(card);
+      postDesk(card, 'set_bet_size', bet);
+    }
+
+    function bindDeskControls() {
+      const root = $('high-live-rows');
+      if (!root || root.dataset.bound === '1') return;
+      root.dataset.bound = '1';
+      root.addEventListener('click', (ev) => {
+        const card = ev.target.closest('article.desk-bot');
+        if (!card) return;
+        const step = ev.target.closest('[data-bet-step]');
+        if (step) {
+          const input = card.querySelector('.bet-size-input');
+          const next = Math.round((Number(input.value || 0) + Number(step.dataset.betStep)) * 100) / 100;
+          input.value = String(Math.min(500, Math.max(0.5, next)));
+          previewDeskBet(card);
+          submitDeskBet(card);
+          return;
+        }
+        if (ev.target.closest('[data-bet-apply]')) {
+          submitDeskBet(card);
+          return;
+        }
+        const modeBtn = ev.target.closest('[data-bot-action]');
+        if (!modeBtn) return;
+        const action = modeBtn.dataset.botAction;
+        const state = card.dataset.mode || 'paper';
+        const hint = card.querySelector('[data-bot-hint]');
+        if (action === 'to_paper' && state === 'paper') {
+          if (hint) hint.textContent = '已經係 Paper';
+          return;
+        }
+        if (action === 'to_live' && state === 'live') {
+          if (hint) hint.textContent = '已經係 Live（真倉）';
+          return;
+        }
+        const name = card.dataset.displayName || 'bot';
+        const msg = action === 'to_live'
+          ? '確認「' + name + '」切換 → Live？\n真倉路徑未接好時只會 armed prep，唔會動真錢。\n另一個 bot 唔會跟住轉。'
+          : '確認「' + name + '」切換 → Paper？真倉 OFF。\n另一個 bot 保持原狀。';
+        if (!window.confirm(msg)) return;
+        postDesk(card, action);
+      });
+      root.addEventListener('input', (ev) => {
+        const card = ev.target.closest('article.desk-bot');
+        if (card && ev.target.classList.contains('bet-size-input')) previewDeskBet(card);
+      });
+      root.addEventListener('keydown', (ev) => {
+        if (ev.key !== 'Enter' || !ev.target.classList.contains('bet-size-input')) return;
+        ev.preventDefault();
+        const card = ev.target.closest('article.desk-bot');
+        if (card) submitDeskBet(card);
+      });
     }
 
     function renderCrypto15m(summary, c15mControl, sonULive, highLive) {
@@ -1571,10 +1940,10 @@
       $('c15m-backend-pill').className = 'pill ' + (isLive ? (paused ? 'warn' : 'live') : (armedPrep ? 'warn' : ''));
 
       $('c15m-mode-sub').textContent = isLive
-        ? (paused ? '真實模式已上線 · 交易暫停中' : '真實 CLOB · 真倉 ON')
+        ? (paused ? '終極5m 真倉已上線 · 交易暫停 · V2 唔會跟' : '終極5m 真倉 ON · V2 唔會跟住轉')
         : (armedPrep
-          ? '紙上 armed · 真倉路徑未開（DRY_RUN placeholder）'
-          : (sonULive.label_tc || '模擬落單 · 唔會用真錢'));
+          ? '終極5m 紙上 armed · 真倉未開 · V2 要自己張卡先轉'
+          : '兩個 bot 各自有掣。轉一個，另一個唔會跟。');
 
       const lampLive = $('c15m-lamp-live');
       const lampPaper = $('c15m-lamp-paper');
@@ -1608,10 +1977,10 @@
 
       const gateHint = gate.ok === false && gate.message ? ` · ${gate.message}` : '';
       $('c15m-control-hint').textContent = isLive
-        ? (paused ? 'Live 已開 · 交易暫停（observer 仍跑）' : 'Live 模式 · 真實下單 · 獨立於 5m session')
+        ? (paused ? '終極5m Live 已開 · 交易暫停' : '終極5m Live · 真實下單')
         : (armedPrep
-          ? 'PREP · 紙上 armed · 真倉未開 · 可切返 Paper'
-          : ('Paper · 撳 Live 實盤 → armed prep（placeholder 唔會假 真倉）' + gateHint));
+          ? '終極5m PREP · 紙上 armed · 真倉未開 · 可切返 Paper'
+          : ('撳每個 bot 自己嘅 Live / Paper。placeholder 唔會假真倉' + gateHint));
 
       function c15mRequestLive() {
         if (isLive) return;
@@ -1626,8 +1995,6 @@
         if (!window.confirm('確認切換 → Paper？清除 armed prep · 真倉 OFF。')) return;
         postSonULive('to_paper');
       }
-      $('c15m-btn-live').onclick = c15mRequestLive;
-      $('c15m-btn-paper').onclick = c15mRequestPaper;
       const enableBtn = $('c15m-enable-live');
       const disableBtn = $('c15m-disable-live');
       if (enableBtn) {
@@ -1842,6 +2209,7 @@
       btn.onclick = () => { tradeLimit = btn.dataset.limit; refresh(); };
     });
 
+    bindDeskControls();
     refresh();
     setInterval(refresh, 30000);
   </script>

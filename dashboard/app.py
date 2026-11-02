@@ -1138,6 +1138,29 @@ def api_family_bots():
     return jsonify(_family_bots_payload())
 
 
+@app.route("/api/desk/bots", methods=["GET"])
+def api_desk_bots():
+    from desk_bots import desk_status
+
+    return jsonify(desk_status(ROOT, wallet_cash_usdc=_wallet_cash_usdc()))
+
+
+@app.route("/api/desk/bots/<bot_id>", methods=["POST"])
+def api_desk_bot(bot_id: str):
+    from desk_bots import handle_desk_action
+
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action") or "")
+    out = handle_desk_action(
+        ROOT,
+        bot_id,
+        action,
+        bet_size=data.get("bet_size"),
+        wallet_cash_usdc=_wallet_cash_usdc(),
+    )
+    return jsonify(out), (200 if out.get("ok") else 400)
+
+
 @app.route("/api/son-u/live-control", methods=["GET", "POST"])
 def api_son_u_live_control():
     from sonu_live_truth import apply_live_control_action, live_control_payload
