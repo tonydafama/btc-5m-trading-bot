@@ -348,14 +348,22 @@
     .sonu-gold-box .sonu-window-funnel .win-filtered .value { color:var(--orange); }
     .sonu-gold-box .sonu-window-funnel .win-entered .value { color:var(--green); }
     .sonu-gold-box .sonu-window-funnel-hint { font-size:.68rem; color:var(--muted); margin-top:.35rem; }
-    .log-view-tabs { display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.55rem; }
-    .log-view-tab {
-      cursor:pointer; border:1px solid var(--border); background:var(--panel2);
-      color:var(--muted); border-radius:8px; padding:.35rem .65rem; font-size:.74rem; font-weight:600;
+    .sonu-live-log-block { margin-top:.35rem; }
+    .sonu-live-log-kicker {
+      font-size:.72rem; font-weight:700; letter-spacing:.06em;
+      color:var(--live); margin-bottom:.4rem;
     }
-    .log-view-tab.active { color:var(--text); border-color:rgba(96,165,250,.45); background:rgba(96,165,250,.1); }
-    .log-panel { display:none; }
-    .log-panel.active { display:block; }
+    .sonu-paper-log-fold {
+      margin-top:.65rem; border:1px solid var(--border); border-radius:12px;
+      background:var(--panel2); overflow:hidden;
+    }
+    .sonu-paper-log-fold summary {
+      cursor:pointer; padding:.55rem .75rem; font-weight:650; font-size:.78rem;
+      color:var(--orange); list-style:none; display:flex; align-items:center; gap:.45rem;
+    }
+    .sonu-paper-log-fold summary::-webkit-details-marker { display:none; }
+    .sonu-paper-log-fold[open] summary { border-bottom:1px solid var(--border); }
+    .sonu-paper-log-body { padding:.55rem .75rem .75rem; }
     .paper-skips-toggle {
       margin:.45rem 0; font-size:.74rem; color:var(--muted); cursor:pointer;
       border:1px dashed rgba(255,255,255,.12); border-radius:8px; padding:.35rem .55rem;
@@ -524,37 +532,37 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card sonu-log-card">
         <div class="section-head">
-          <h2>Trade logs <span class="tag" id="c15m-trades-tag">分開 Live / Paper</span></h2>
+          <h2>Son U · Trade logs <span class="tag" id="c15m-trades-tag">Son U only · Live / Paper 分開</span></h2>
         </div>
-        <div class="log-view-tabs" role="tablist">
-          <button type="button" class="log-view-tab active" data-c15m-log="live" id="c15m-log-tab-live">Live log</button>
-          <button type="button" class="log-view-tab" data-c15m-log="paper" id="c15m-log-tab-paper">Paper log</button>
-        </div>
-        <label class="paper-skips-toggle" id="c15m-paper-skips-wrap" style="display:none">
-          <input type="checkbox" id="c15m-show-paper-skips"> 顯示 Paper skipped / 細節（預設收起）
-        </label>
-        <div class="log-panel active" id="c15m-log-panel-live">
+        <div class="sonu-live-log-block" id="c15m-log-panel-live">
+          <div class="sonu-live-log-kicker">Live log · Son U（15m BTC/ETH）</div>
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Time</th><th>Bot</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th></tr>
+                <tr><th>Time</th><th>Asset</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th></tr>
               </thead>
               <tbody id="c15m-live-trades-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
             </table>
           </div>
         </div>
-        <div class="log-panel" id="c15m-log-panel-paper">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr><th>Time</th><th>Bot</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th></tr>
-              </thead>
-              <tbody id="c15m-paper-trades-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
-            </table>
+        <details class="sonu-paper-log-fold" id="c15m-paper-log-fold">
+          <summary>Paper log · 預設收起（Son U only · 撳開）</summary>
+          <div class="sonu-paper-log-body" id="c15m-log-panel-paper">
+            <label class="paper-skips-toggle" id="c15m-paper-skips-wrap">
+              <input type="checkbox" id="c15m-show-paper-skips"> 顯示 Paper skipped / 細節（預設收起）
+            </label>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Time</th><th>Asset</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th></tr>
+                </thead>
+                <tbody id="c15m-paper-trades-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </details>
         <div class="hint" id="c15m-observer-hint" style="margin-top:.45rem">—</div>
       </div>
     </div>
@@ -1261,7 +1269,28 @@
     let c15mLiveTrades = [];
     let c15mPaperTradesAll = [];
     let c15mShowPaperSkips = false;
-    let c15mActiveLog = 'live';
+
+    const SONU_FLEET_TOKENS = ['V1', '5M', 'DUAL', 'FUNDING', 'MEME', 'SPORTS', 'GROK', 'NEWNEW'];
+
+    function isSonuTradeRow(r) {
+      if (!r) return false;
+      if (['sonu', 'crypto15m', 'son_u'].includes(r.desk)) return true;
+      const product = String(r.product || r.strategy_id || '').toLowerCase();
+      if (['crypto15m', 'son_u', 'sonu', 'crypto_15m'].includes(product)) return true;
+      const sess = String(r.session_id || r.session || '').toLowerCase();
+      if (sess.includes('crypto15m') || sess.includes('son_u') || sess.includes('sonu')) return true;
+      const bot = String(r.bot || r.asset || '').trim();
+      if (!bot) return true;
+      const upper = bot.toUpperCase();
+      if (SONU_FLEET_TOKENS.some((tok) => upper.includes(tok))) return false;
+      if (upper === 'BTC' || upper === 'ETH') return true;
+      if (upper.includes('15M') || upper.includes('SON U') || upper.includes('SONU')) return true;
+      return false;
+    }
+
+    function filterSonuLogRows(rows) {
+      return (Array.isArray(rows) ? rows : []).filter(isSonuTradeRow);
+    }
 
     function renderC15mTradeTable(bodyId, rows, emptyMsg) {
       const body = $(bodyId);
@@ -1270,16 +1299,19 @@
         body.innerHTML = `<tr><td colspan="8" class="muted">${emptyMsg}</td></tr>`;
         return;
       }
-      body.innerHTML = rows.map((r) => `<tr>
+      body.innerHTML = rows.map((r) => {
+        const asset = r.bot || r.asset || '—';
+        return `<tr>
         <td>${(r.timestamp_hkt || '').slice(0, 16)}</td>
-        <td>${r.bot || '—'}</td>
+        <td>${asset}</td>
         <td>${r.tier || '—'}</td>
         <td>${r.entry_ask ?? r.ask ?? '—'}</td>
         <td>$${Number(r.stake || 0).toFixed(2)}</td>
         <td>${r.trade_result || r.status || '—'}</td>
         <td class="${Number(r.pnl || 0) >= 0 ? 'pos' : 'neg'}">${r.pnl == null ? '—' : money(r.pnl)}</td>
         <td class="reason" title="${r.strategy_reason || ''}">${r.strategy_reason || ''}</td>
-      </tr>`).join('');
+      </tr>`;
+      }).join('');
     }
 
     function filterPaperLogRows(rows) {
@@ -1288,27 +1320,23 @@
     }
 
     function paintC15mLogPanels() {
-      renderC15mTradeTable('c15m-live-trades-body', c15mLiveTrades, 'Live log 尚無紀錄');
+      renderC15mTradeTable(
+        'c15m-live-trades-body',
+        c15mLiveTrades,
+        'Son U Live log 尚無紀錄（唔包其他 bot）',
+      );
       renderC15mTradeTable(
         'c15m-paper-trades-body',
         filterPaperLogRows(c15mPaperTradesAll),
-        c15mShowPaperSkips ? 'Paper log 尚無紀錄' : 'Paper 成交/失敗 · skipped 已收起（可勾選顯示）',
+        c15mShowPaperSkips ? 'Son U Paper log 尚無紀錄' : 'Paper 成交/失敗 · skipped 已收起（可勾選顯示）',
       );
-      document.querySelectorAll('[data-c15m-log]').forEach((btn) => {
-        const on = btn.dataset.c15mLog === c15mActiveLog;
-        btn.classList.toggle('active', on);
-      });
-      $('c15m-log-panel-live').classList.toggle('active', c15mActiveLog === 'live');
-      $('c15m-log-panel-paper').classList.toggle('active', c15mActiveLog === 'paper');
-      const skipWrap = $('c15m-paper-skips-wrap');
-      if (skipWrap) skipWrap.style.display = c15mActiveLog === 'paper' ? '' : 'none';
     }
 
     function renderCrypto15m(summary, liveTrades, paperTrades, c15mControl) {
       summary = summary || {};
       c15mControl = c15mControl || {};
-      c15mLiveTrades = Array.isArray(liveTrades) ? liveTrades : [];
-      c15mPaperTradesAll = Array.isArray(paperTrades) ? paperTrades : [];
+      c15mLiveTrades = filterSonuLogRows(liveTrades);
+      c15mPaperTradesAll = filterSonuLogRows(paperTrades);
 
       const mode = (c15mControl.mode || summary.mode || 'paper').toLowerCase();
       const isLive = mode === 'live';
@@ -1531,7 +1559,7 @@
       $('c15m-btc-meta').textContent = `${b.trades_entered ?? 0} entered · ${b.trades_closed ?? 0} closed · WR ${b.win_rate_pct ?? '—'}%`;
       $('c15m-eth-meta').textContent = `${e.trades_entered ?? 0} entered · ${e.trades_closed ?? 0} closed · WR ${e.win_rate_pct ?? '—'}%`;
       $('c15m-hero-hint').textContent = `${mode.toUpperCase()} · ${(b.trades_entered ?? 0) + (e.trades_entered ?? 0)} trades · Son U session`;
-      $('c15m-trades-tag').textContent = 'Live log / Paper log 分開 · 唔混流';
+      $('c15m-trades-tag').textContent = 'Son U only · Live 常駐 · Paper 摺起';
 
       const q = summary.quality?.combined || {};
       const ethQ = summary.quality?.eth || {};
@@ -1609,8 +1637,8 @@
         getJson('/api/overview-trades?limit=' + tradeLimit, []), getJson('/api/daily-pnl', { btc: [], eth: [], total: [] }),
         getJson('/api/stake-plan', {}), getJson('/api/timetable', {}),
         getJson('/api/crypto15m/summary', {}),
-        getJson('/api/crypto15m/trades?ledger=live&limit=50', []),
-        getJson('/api/crypto15m/trades?ledger=paper&limit=120', []),
+        getJson('/api/crypto15m/trades?ledger=live&sonu_only=1&limit=50', []),
+        getJson('/api/crypto15m/trades?ledger=paper&sonu_only=1&limit=120', []),
         getJson('/api/crypto15m/control', {}),
         getJson('/api/dual-leg/summary', {}), getJson('/api/dual-leg/trades?limit=50', []),
         getJson('/api/services-status', {}),
@@ -1661,12 +1689,6 @@
       renderDualLeg(dualLeg, dualLegTrades);
     }
 
-    document.querySelectorAll('[data-c15m-log]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        c15mActiveLog = btn.dataset.c15mLog || 'live';
-        paintC15mLogPanels();
-      });
-    });
     const c15mSkipCb = $('c15m-show-paper-skips');
     if (c15mSkipCb) {
       c15mSkipCb.addEventListener('change', () => {

@@ -78,10 +78,10 @@ Hard refresh browser (mobile: close tab, reopen).
 Quick check:
 
 ```bash
-curl -s http://127.0.0.1:8082/api/crypto15m/summary | python3 -c "import sys,json; d=json.load(sys.stdin); wf=d.get('window_funnel') or {}; print(wf.get('considered'), wf.get('filtered'), wf.get('entered'), wf.get('ledger'))"
+curl -s http://127.0.0.1:8082/api/crypto15m/summary | python3 -c "import sys,json; d=json.load(sys.stdin); wf=d.get('window_funnel') or {}; print('trades', wf.get('trades'), 'windows', wf.get('considered'), 'filtered', wf.get('filtered'), wf.get('ledger'))"
 ```
 
-Mobile: gold box should show **考慮 / 過濾 / 入場** numbers and hint line `考慮 N 窗 · 過濾 M · 入場 K · PAPER|LIVE · …`.
+Mobile: gold box shows **`Trades N 單 · M 窗 · 過濾 K`** (when filtered known), plus **考慮 / 過濾 / 入場** funnel tiles.
 
 ## 8. Verify
 
@@ -103,6 +103,18 @@ Surgical merge from PR `v1_only.html`:
 Do **not** duplicate `#sonu-gold-box` inside tabs. Do **not** overwrite droplet `paper_15m_engine.py` unless you only add funnel helpers.
 
 Verify mobile: only gold Live box + hero + Son U desk visible until user taps **Paper run**.
+
+## 10. Son U logs only (Live 常駐 · Paper 摺起)
+
+**Do not** mix 5m fleet / other robots into Son U Live log.
+
+1. Replace Son U log card with [sonu-log-fold.snippet.html](./sonu-log-fold.snippet.html) structure + PR `v1_only.html` CSS (`.sonu-live-log-block`, `.sonu-paper-log-fold`).
+2. JS: fetch `GET /api/crypto15m/trades?ledger=live&sonu_only=1` and `ledger=paper&sonu_only=1`; client `filterSonuLogRows` as backup.
+3. API (surgical `app.py` + optional engine helpers, **do not** blind-replace droplet engine):
+   - Query `sonu_only=1` (default) on `/api/crypto15m/trades`
+   - `is_sonu_trade_row()` drops rows whose bot looks like fleet (`BTC V1`, `5m`, Dual-Leg, etc.)
+
+Verify: Live log shows **only** Son U 15m BTC/ETH rows; Paper log hidden until user opens **Paper log · 預設收起**; 5m V1 trades stay in Paper run **Live 5m** tab only.
 
 ## Rollback
 

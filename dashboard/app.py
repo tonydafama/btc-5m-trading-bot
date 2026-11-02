@@ -861,6 +861,12 @@ def api_eth_summary():
 
 def _window_funnel_from_trade_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Per-window funnel from ledger rows (droplet-safe when engine lacks enrich)."""
+    try:
+        from paper_15m_engine import is_sonu_trade_row
+
+        rows = [r for r in rows if is_sonu_trade_row(r)]
+    except ImportError:
+        pass
     by_key: dict[str, dict[str, Any]] = {}
     for row in rows:
         key: str | None = None
@@ -963,13 +969,25 @@ def api_dual_leg_trades():
 
 
 def _crypto15m_recent_trades(
-    limit: int, ledger: str | None, entered_only: bool
+    limit: int,
+    ledger: str | None,
+    entered_only: bool,
+    sonu_only: bool = True,
 ) -> list[dict[str, Any]]:
     """Call droplet engine when present; tolerate older signatures (limit-only)."""
-    from paper_15m_engine import recent_trades
+    from paper_15m_engine import is_sonu_trade_row, recent_trades
 
     try:
-        return recent_trades(limit=limit, ledger=ledger, entered_only=entered_only)
+        return recent_trades(
+            limit=limit,
+            ledger=ledger,
+            entered_only=entered_only,
+            sonu_only=sonu_only,
+        )
+    except TypeError:
+        pass
+    try:
+        rows = recent_trades(limit=limit, ledger=ledger, entered_only=entered_only)
     except TypeError:
         rows = recent_trades(limit=limit)
         if ledger:
@@ -981,7 +999,14 @@ def _crypto15m_recent_trades(
             ]
         if entered_only:
             rows = [r for r in rows if r.get("entered")]
-        return rows
+    if sonu_only:
+        rows = [r for r in rows if is_sonu_trade_row(r)]
+    rows = sorted(
+        rows,
+        key=lambda r: str(r.get("timestamp_hkt") or r.get("timestamp_utc") or ""),
+        reverse=True,
+    )
+    return rows[:limit]
 
 
 def _crypto15m_wallet_gate() -> dict[str, Any]:
@@ -998,7 +1023,8 @@ def api_crypto15m_trades():
     limit = min(int(request.args.get("limit", 30)), 200)
     ledger = request.args.get("ledger")
     entered_only = request.args.get("entered_only", "0") in ("1", "true", "yes")
-    return jsonify(_crypto15m_recent_trades(limit, ledger, entered_only))
+    sonu_only = request.args.get("sonu_only", "1") not in ("0", "false", "no")
+    return jsonify(_crypto15m_recent_trades(limit, ledger, entered_only, sonu_only))
 
 
 def _crypto15m_control_payload() -> dict[str, Any]:

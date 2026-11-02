@@ -70,8 +70,48 @@ def _load_ledger(ledger: str) -> list[dict]:
     return rows if isinstance(rows, list) else []
 
 
+_FLEET_BOT_TOKENS = ("V1", "5M", "DUAL", "FUNDING", "MEME", "SPORTS", "GROK", "NEWNEW")
+
+
+def is_sonu_trade_row(row: dict) -> bool:
+    """Desk Live · Son U only — drop 5m fleet / other robots merged into 15m logs."""
+    if row.get("desk") in ("sonu", "crypto15m", "son_u"):
+        return True
+    product = str(row.get("product") or row.get("strategy_id") or "").lower()
+    if product in ("crypto15m", "son_u", "sonu", "crypto_15m"):
+        return True
+    sess = str(row.get("session_id") or row.get("session") or "").lower()
+    if "crypto15m" in sess or "son_u" in sess or "sonu" in sess:
+        return True
+    bot = str(row.get("bot") or row.get("asset") or "").strip()
+    if not bot:
+        return True
+    upper = bot.upper()
+    if any(tok in upper for tok in _FLEET_BOT_TOKENS):
+        return False
+    if upper in ("BTC", "ETH"):
+        return True
+    if "15M" in upper or "SON U" in upper or "SONU" in upper:
+        return True
+    if upper.startswith("BTC") and "15" in upper:
+        return True
+    if upper.startswith("ETH") and "15" in upper:
+        return True
+    return False
+
+
+def _sonu_rows(rows: list[dict]) -> list[dict]:
+    return [r for r in rows if is_sonu_trade_row(r)]
+
+
 def _asset_stats(rows: list[dict], bot: str) -> dict[str, Any]:
-    subset = [r for r in rows if str(r.get("bot") or r.get("asset") or "").upper().startswith(bot)]
+    rows = _sonu_rows(rows)
+    bot_u = bot.upper()
+    subset = [
+        r
+        for r in rows
+        if str(r.get("bot") or r.get("asset") or "").upper().startswith(bot_u)
+    ]
     entered = [r for r in subset if r.get("entered")]
     closed = [r for r in entered if r.get("trade_result") in ("WIN", "LOSS")]
     wins = sum(1 for r in closed if r.get("trade_result") == "WIN")
@@ -88,7 +128,7 @@ def _asset_stats(rows: list[dict], bot: str) -> dict[str, Any]:
 def _combined_pnl(rows: list[dict]) -> float:
     closed = [
         r
-        for r in rows
+        for r in _sonu_rows(rows)
         if r.get("entered") and r.get("trade_result") in ("WIN", "LOSS")
     ]
     return round(sum(float(r.get("pnl") or 0) for r in closed), 2)
@@ -106,6 +146,7 @@ def _window_key(row: dict) -> str:
 
 def _window_funnel_from_rows(rows: list[dict]) -> dict[str, Any]:
     """Per-window decisions from active ledger log (dedupe by market/window key)."""
+    rows = _sonu_rows(rows)
     by_key: dict[str, dict] = {}
     for row in rows:
         key = _window_key(row)
@@ -271,12 +312,15 @@ def recent_trades(
     limit: int = 30,
     ledger: str | None = None,
     entered_only: bool = False,
+    sonu_only: bool = True,
 ) -> list[dict]:
     mode = crypto_15m_trading_mode()
     if ledger is None:
         ledger = "live" if mode == "live" else "paper"
     ledger = ledger.lower()
     rows = _load_ledger(ledger)
+    if sonu_only:
+        rows = _sonu_rows(rows)
     for r in rows:
         r.setdefault("mode", ledger)
     if entered_only:

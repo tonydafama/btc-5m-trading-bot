@@ -52,6 +52,22 @@ class Crypto15mLogTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertTrue(rows[0]["entered"])
 
+    def test_sonu_only_excludes_fleet_bots(self) -> None:
+        log = Path(self.tmp) / "logs" / "crypto_15m_trade_log_live.json"
+        _write(
+            log,
+            [
+                {"entered": True, "trade_result": "WIN", "bot": "BTC V1", "timestamp_hkt": "2026-01-03 12:00:00"},
+                {"entered": True, "trade_result": "LOSS", "bot": "ETH", "timestamp_hkt": "2026-01-03 12:05:00"},
+            ],
+        )
+        import importlib
+
+        importlib.reload(self.eng)
+        rows = self.eng.recent_trades(ledger="live", limit=10, sonu_only=True)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["bot"], "ETH")
+
     def test_window_funnel_in_summary(self) -> None:
         summary = self.eng.crypto_15m_summary()
         wf = summary.get("window_funnel") or {}
@@ -83,6 +99,9 @@ class SonUTemplateTests(unittest.TestCase):
         self.assertIn("on-air-row", html)
         self.assertIn("LIVE ON", html)
         self.assertIn("c15m-log-panel-live", html)
+        self.assertIn("c15m-paper-log-fold", html)
+        self.assertIn("Son U · Trade logs", html)
+        self.assertIn("sonu_only=1", html)
         self.assertIn("c15m-show-paper-skips", html)
         self.assertIn("mode-lamp lamp-green", html)
         self.assertIn("c15m-win-considered", html)
