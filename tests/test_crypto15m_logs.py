@@ -58,6 +58,7 @@ class Crypto15mLogTests(unittest.TestCase):
         self.assertEqual(wf.get("considered"), 2)
         self.assertEqual(wf.get("filtered"), 1)
         self.assertEqual(wf.get("entered"), 1)
+        self.assertEqual(wf.get("trades"), 1)
         self.assertEqual(wf.get("ledger"), "paper")
 
     def test_enrich_summary_window_funnel(self) -> None:
