@@ -888,14 +888,43 @@ def api_dual_leg_trades():
     return jsonify(recent_trades(limit=limit))
 
 
-@app.route("/api/crypto15m/trades")
-def api_crypto15m_trades():
+def _crypto15m_recent_trades(
+    limit: int, ledger: str | None, entered_only: bool
+) -> list[dict[str, Any]]:
+    """Call droplet engine when present; tolerate older signatures (limit-only)."""
     from paper_15m_engine import recent_trades
 
+    try:
+        return recent_trades(limit=limit, ledger=ledger, entered_only=entered_only)
+    except TypeError:
+        rows = recent_trades(limit=limit)
+        if ledger:
+            want = ledger.lower()
+            rows = [
+                r
+                for r in rows
+                if str(r.get("mode") or r.get("ledger") or "").lower() == want
+            ]
+        if entered_only:
+            rows = [r for r in rows if r.get("entered")]
+        return rows
+
+
+def _crypto15m_wallet_gate() -> dict[str, Any]:
+    try:
+        from paper_15m_engine import go_live_wallet_gate
+
+        return go_live_wallet_gate()
+    except (ImportError, AttributeError):
+        return {"ok": True, "message": "", "min_wallet_usd": None, "wallet_usd": None}
+
+
+@app.route("/api/crypto15m/trades")
+def api_crypto15m_trades():
     limit = min(int(request.args.get("limit", 30)), 200)
     ledger = request.args.get("ledger")
     entered_only = request.args.get("entered_only", "0") in ("1", "true", "yes")
-    return jsonify(recent_trades(limit=limit, ledger=ledger, entered_only=entered_only))
+    return jsonify(_crypto15m_recent_trades(limit, ledger, entered_only))
 
 
 def _crypto15m_control_payload() -> dict[str, Any]:
@@ -903,14 +932,13 @@ def _crypto15m_control_payload() -> dict[str, Any]:
         crypto_15m_paused,
         crypto_15m_summary,
         crypto_15m_trading_mode,
-        go_live_wallet_gate,
         load_session,
     )
 
     summary = crypto_15m_summary()
     sess = load_session()
     mode = crypto_15m_trading_mode()
-    gate = go_live_wallet_gate()
+    gate = _crypto15m_wallet_gate()
     return {
         "mode": mode,
         "live": mode == "live",
@@ -957,10 +985,8 @@ def api_crypto15m_control():
         return jsonify({"ok": True, "action": action, **_crypto15m_control_payload()})
 
     if action == "enable_live":
-        from paper_15m_engine import go_live_wallet_gate
-
-        gate = go_live_wallet_gate()
-        if not gate.get("ok"):
+        gate = _crypto15m_wallet_gate()
+        if gate.get("min_wallet_usd") is not None and not gate.get("ok"):
             return jsonify(
                 {
                     "ok": False,

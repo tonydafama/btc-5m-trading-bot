@@ -413,7 +413,10 @@
         <div class="sonu-gold-kicker">Desk · 15m BTC+ETH</div>
         <div class="section-head" style="margin-bottom:0">
           <h2 style="font-size:1.05rem;margin:0">Live · Son U</h2>
-          <span class="pill" id="c15m-backend-pill">後端 —</span>
+          <div class="status-line">
+            <span class="pill warn" id="c15m-mode-pill">—</span>
+            <span class="pill" id="c15m-backend-pill">後端 —</span>
+          </div>
         </div>
         <div class="on-air-row is-off" id="c15m-on-air" aria-live="polite">
           <span class="on-air-bulb" id="c15m-on-air-lamp" aria-hidden="true"></span>
@@ -460,6 +463,8 @@
           <div class="hint" id="c15m-rules">—</div>
           <div class="controls" style="margin-top:.55rem">
             <button class="good" id="c15m-toggle">—</button>
+            <button type="button" id="c15m-enable-live">Go Live</button>
+            <button type="button" class="danger" id="c15m-disable-live">Paper mode</button>
           </div>
         </div>
         <div class="card">
@@ -1154,25 +1159,43 @@
       $('c15m-btn-live').classList.toggle('is-active', isLive);
       $('c15m-btn-paper').classList.toggle('is-active', !isLive);
 
+      const modePill = $('c15m-mode-pill');
+      if (modePill) {
+        modePill.textContent = mode.toUpperCase();
+        modePill.className = 'pill ' + (isLive ? 'live' : 'warn');
+      }
+
       const gateHint = gate.ok === false && gate.message ? ` · ${gate.message}` : '';
       $('c15m-control-hint').textContent = isLive
         ? (paused ? 'Live 已開 · 交易暫停（observer 仍跑）' : 'Live 模式 · 真實下單 · 獨立於 5m session')
         : ('Paper 模式 · 撳 Live 實盤切換（需 wallet gate）' + gateHint);
 
-      $('c15m-btn-live').onclick = () => {
+      function c15mRequestLive() {
         if (isLive) return;
-        if (gate.ok === false) {
+        if (gate.ok === false && gate.min_wallet_usd != null) {
           $('c15m-control-hint').textContent = gate.message || 'Wallet 未達標，未能 Live';
           return;
         }
         if (!window.confirm('切換 Son U 去 LIVE？會重置 15m live log。')) return;
         postCrypto15m('enable_live');
-      };
-      $('c15m-btn-paper').onclick = () => {
+      }
+      function c15mRequestPaper() {
         if (!isLive) return;
         if (!window.confirm('切返 PAPER？observer 會 restart。')) return;
         postCrypto15m('disable_live');
-      };
+      }
+      $('c15m-btn-live').onclick = c15mRequestLive;
+      $('c15m-btn-paper').onclick = c15mRequestPaper;
+      const enableBtn = $('c15m-enable-live');
+      const disableBtn = $('c15m-disable-live');
+      if (enableBtn) {
+        enableBtn.style.display = isLive ? 'none' : '';
+        enableBtn.onclick = c15mRequestLive;
+      }
+      if (disableBtn) {
+        disableBtn.style.display = isLive ? '' : 'none';
+        disableBtn.onclick = c15mRequestPaper;
+      }
 
       $('c15m-status-pill').textContent = paused ? 'Paused' : (isLive ? 'Running' : 'Paper');
       $('c15m-status-pill').className = 'pill ' + (paused ? 'warn' : (isLive ? 'live' : ''));

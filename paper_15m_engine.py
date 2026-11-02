@@ -1,4 +1,8 @@
-"""15m crypto observer — separate paper vs live trade logs."""
+"""15m crypto observer — separate paper vs live trade logs.
+
+Repo fallback for CI/dev. Production droplets often already ship a fuller
+``paper_15m_engine.py`` — do not overwrite that file on deploy (see docs/DEPLOY_DESK.md).
+"""
 
 from __future__ import annotations
 

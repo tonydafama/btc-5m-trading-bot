@@ -2,31 +2,39 @@
 
 Production serves the V1 desk at **port 8082** (proxy) → Flask **8083** (`dashboard/app.py`). The home page is `dashboard/templates/v1_only.html`.
 
-## Deploy after merge
+## Production-safe update (droplet already has gold box / deposit / folds)
 
-On the DigitalOcean droplet (typical path `/root/btc-5m-bot`):
+If the droplet already works, **do not** blind `git pull` a large unrelated branch. Prefer a **surgical** update:
+
+1. Back up the live tree: `cp -a dashboard/templates/v1_only.html dashboard/templates/v1_only.html.bak`
+2. If the server already has `paper_15m_engine.py`, **keep it** — do not replace with the repo stub:
+   ```bash
+   test -f paper_15m_engine.py && cp -a paper_15m_engine.py paper_15m_engine.py.bak
+   ```
+3. Merge or cherry-pick **only** Son U UI + small API helpers:
+   - `dashboard/templates/v1_only.html` (gold box, ON-AIR, lamps, log tabs only)
+   - `dashboard/app.py` hunks for `_crypto15m_recent_trades`, optional `ledger=` query, `armed` / `wallet_gate` on control GET
+4. Restore droplet engine if pull overwrote it: `mv paper_15m_engine.py.bak paper_15m_engine.py`
+5. Restart dashboard proxy only: `sudo systemctl restart btc-5m-dashboard`
+
+Son U JS still calls the same **`enable_live` / `disable_live` / pause / resume`** actions; **Go Live** and **Paper mode** buttons remain beside the lamp toggles.
+
+API is backward-compatible: older `recent_trades(limit=…)` without `ledger` still works.
+
+## Full deploy after merge to main
 
 ```bash
 cd /root/btc-5m-bot
 git pull origin main
-# If you use the project venv:
-/root/btc-5m-bot/venv/bin/pip install -r requirements.txt 2>/dev/null || true
-sudo systemctl restart btc-5m-dashboard   # proxy :8082
-sudo systemctl restart btc-5m-package2plus   # if Flask app is a separate unit on :8083
-sudo systemctl restart crypto-15m-observer     # Son U / 15m observer (optional)
+sudo systemctl restart btc-5m-dashboard
+sudo systemctl restart btc-5m-package2plus   # if Flask on :8083
 ```
 
 Verify:
 
-- `curl -s http://127.0.0.1:8082/ | head` shows `V1 Live Dashboard`
-- Open **Live · Son U** tab: red **LIVE** or blue **PAPER** banner, green/yellow lamps on mode buttons
-- `curl -s 'http://127.0.0.1:8082/api/crypto15m/control'` includes `mode`, `armed`, `wallet_gate`
+- **Live · Son U** tab: ON-AIR **LIVE ON** glows red when `mode=live`; near-black when Paper
+- Green/yellow lamps on Live/Paper toggles; **Go Live** / **Paper mode** still work
+- Live log / Paper log tabs; paper skipped collapsed by default
+- `curl -s 'http://127.0.0.1:8082/api/crypto15m/control'` → `mode`, `armed`
 
-## UI behaviour (this PR)
-
-- **Live · Son U** gold box reflects `CRYPTO_15M_TRADING_MODE` and `/api/crypto15m/control` (not cosmetic-only).
-- **Live log** / **Paper log** tabs call `/api/crypto15m/trades?ledger=live|paper`.
-- Paper skipped rows hidden by default; checkbox expands fine-grained paper noise.
-- `enable_live` still runs the existing go-live script when present; blocked by wallet gate (`CRYPTO_15M_MIN_WALLET_USD`, default 50) when wallet is below threshold.
-
-No change to 5m V1 live trading flags in this PR—Son U (15m) clarity only.
+No change to 5m V1 live flags, deposit logic, or unrelated dashboard panels in the Son U-only commits.
