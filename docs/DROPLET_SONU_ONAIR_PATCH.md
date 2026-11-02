@@ -104,17 +104,11 @@ Do **not** duplicate `#sonu-gold-box` inside tabs. Do **not** overwrite droplet 
 
 Verify mobile: only gold Live box + hero + Son U desk visible until user taps **Paper run**.
 
-## 10. Son U logs only (Live 常駐 · Paper 摺起)
+## 10. Son U logs — **/logs only** (not on main Desk)
 
-**Do not** mix 5m fleet / other robots into Son U Live log.
+Main `:8082/` **must not** show Live/Paper log tails on the Live · Son U card. See **[DROPLET_HIDE_SONU_LOG_ON_MAIN.md](./DROPLET_HIDE_SONU_LOG_ON_MAIN.md)** (incl. Family Desk `renderHighLive` / remove `sonuDualLog(...)`).
 
-1. Replace Son U log card with [sonu-log-fold.snippet.html](./sonu-log-fold.snippet.html) structure + PR `v1_only.html` CSS (`.sonu-live-log-block`, `.sonu-paper-log-fold`).
-2. JS: fetch `GET /api/crypto15m/trades?ledger=live&sonu_only=1` and `ledger=paper&sonu_only=1`; client `filterSonuLogRows` as backup.
-3. API (surgical `app.py` + optional engine helpers, **do not** blind-replace droplet engine):
-   - Query `sonu_only=1` (default) on `/api/crypto15m/trades`
-   - `is_sonu_trade_row()` drops rows whose bot looks like fleet (`BTC V1`, `5m`, Dual-Leg, etc.)
-
-Verify: Live log shows **only** Son U 15m BTC/ETH rows; Paper log hidden until user opens **Paper log · 預設收起**; 5m V1 trades stay in Paper run **Live 5m** tab only.
+On **`/logs`** (`family_logs.html` on DO): keep Son U-only Live log + collapsed Paper + other bots; API `sonu_only=1` on `/api/crypto15m/trades` still applies there.
 
 ## Rollback
 

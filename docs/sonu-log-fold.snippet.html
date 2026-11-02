@@ -1,10 +1,5 @@
-<!-- Son U logs — paste into #sonu-desk-panel (surgical v1_only.html) -->
-<!--
-- Live log always visible; Paper log in <details> default collapsed.
-- Fetch: /api/crypto15m/trades?ledger=live|paper&sonu_only=1
-- JS: filterSonuLogRows + renderCrypto15m from PR branch.
-- API: app.py sonu_only query + is_sonu_trade_row in paper_15m_engine (or app fallback).
--->
+<!-- DEPRECATED on main Desk — Son U logs belong on /logs only (see DROPLET_HIDE_SONU_LOG_ON_MAIN.md).
+     Use this snippet on family_logs.html / logs page, not v1_only home. -->
 
 <div class="card sonu-log-card">
   <div class="section-head">

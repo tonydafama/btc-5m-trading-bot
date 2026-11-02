@@ -1,0 +1,56 @@
+# Droplet surgical — hide Son U log tail on main Desk (:8082)
+
+Target host example: **143.110.240.132** (DigitalOcean).  
+**Do not** `git pull` the whole PR. **Do not** enable live trading. Patch HTML/JS only.
+
+## What to achieve
+
+- Main board **Live · Son U** gold card: stats only (LIVE ON, toggles, Trades/窗, WR/PnL, 單數/注碼/本金 on Family Desk).
+- **No** 「Live log · Son U only」 block, **no** inline log tail, **no** Paper log fold on the home page.
+- Full logs stay on **`/logs`** (`family_logs.html` on Family Desk, or `v1_detail.html` in this repo).
+
+## A. This repo template (`v1_only.html`)
+
+File: `/root/btc-5m-bot/dashboard/templates/v1_only.html`
+
+1. **Delete** the whole `#sonu-desk-panel` block that contains `.sonu-log-card` / `#c15m-log-panel-live` / `#c15m-paper-log-fold` (if still present).
+2. **Keep** `#sonu-gold-box` + optional `#sonu-desk-panel` trading control grid (no tables).
+3. **Add** (inside `#sonu-gold-box`, after funnel hint):
+
+```html
+<div class="sonu-logs-link-row">
+  <a class="sonu-logs-link" href="/logs">睇 Log → /logs</a>
+</div>
+```
+
+4. **Remove JS** on main page: `paintC15mLogPanels`, `renderC15mTradeTable`, fetches to `/api/crypto15m/trades` inside `refresh()` — logs load only on `/logs`.
+5. **Remove CSS** (main page only): `.sonu-live-log-block`, `.sonu-paper-log-fold`, `.paper-skips-toggle` if unused elsewhere.
+
+Restart: `sudo systemctl restart btc-5m-dashboard` · hard refresh mobile.
+
+## B. Family Desk (production — `renderHighLive` / `sonuDualLog`)
+
+If your droplet uses **Family Desk** (not byte-identical to PR `v1_only.html`):
+
+```bash
+cd /root/btc-5m-bot   # or your bot root
+cp -a dashboard/templates/v1_only.html dashboard/templates/v1_only.html.bak-$(date +%Y%m%d-%H%M)
+grep -n "sonuDualLog\|renderHighLive\|Live log · Son U only\|Live log · Son U" dashboard/templates/v1_only.html | head -30
+```
+
+1. In **`renderHighLive`** (or equivalent Son U card builder): **remove** the call to **`sonuDualLog(...)`** and any HTML string for live/paper log viewers under the stats grid.
+2. **Delete** markup matching user screenshot: red-bordered log container, `▾ Live · Son U (只呢隻…)`, Paper log `▸` fold **on the main page only**.
+3. **Do not edit** `/logs` template (`family_logs.html`) except to verify Son U lock still works there.
+4. Optional: add the same **`睇 Log → /logs`** link under the gold card.
+
+## Verify
+
+- Home `:8082/`: no SKIP tail, no 「Live log · Son U only」.
+- `:8082/logs`: Son U Live log + collapsed Paper + other bots unchanged.
+
+## Rollback
+
+```bash
+cp -a dashboard/templates/v1_only.html.bak-* dashboard/templates/v1_only.html
+sudo systemctl restart btc-5m-dashboard
+```
