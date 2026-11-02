@@ -73,6 +73,19 @@ curl -s http://127.0.0.1:8082/api/crypto15m/summary | python3 -c "import sys,jso
 - Gold box shows **考慮 / 過濾 / 入場** counts for current ledger.
 - WR / deposit / fold sections unchanged.
 
+## 8. Paper run fold（全部紙上區預設摺起）
+
+Surgical merge from PR `v1_only.html`:
+
+- **Keep expanded on top:** single `#sonu-gold-box` (Live · Son U) + `#sonu-desk-panel` (control + logs).
+- **Below that:** `<details id="paper-run-fold" class="paper-run-fold">` **without** `open` → default collapsed; summary title **Paper run**.
+- **Inside `#paper-run-body`:** `#all-paper-board`, profile, paper tabs (Live 5m / Dual-Leg), `#paper-run-extra`.
+- **Family Desk only:** mark each paper block (Sports FV, Grok Newborn, BTC families, 已停, 其他服務) with `data-paper-run-group` anywhere in the template; on load, JS moves them into `#paper-run-extra`.
+
+Do **not** duplicate `#sonu-gold-box` inside tabs. Do **not** overwrite droplet `paper_15m_engine.py` unless you only add funnel helpers.
+
+Verify mobile: only gold Live box + hero + Son U desk visible until user taps **Paper run**.
+
 ## Rollback
 
 ```bash

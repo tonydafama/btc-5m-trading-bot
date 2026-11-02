@@ -259,7 +259,12 @@ class PaperBoardTests(unittest.TestCase):
         self.assertIn("唔係下單 bot；只係研究或 scanner。", html)
         self.assertIn("/api/all-paper-strategies", html)
         self.assertIn("全部 Paper · 載入中", html)
-        self.assertLess(html.index("all-paper-board"), html.index('class="hero"'))
+        self.assertIn('id="paper-run-fold"', html)
+        self.assertIn("Paper run", html)
+        self.assertLess(html.index("sonu-gold-box"), html.index("paper-run-fold"))
+        self.assertLess(html.index("paper-run-fold"), html.index("all-paper-board"))
+        self.assertIn('id="paper-run-extra"', html)
+        self.assertNotIn('data-tab="paper15"', html)
 
 
 if __name__ == "__main__":
