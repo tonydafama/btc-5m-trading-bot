@@ -1,0 +1,44 @@
+<!-- === Son U window funnel — paste inside #sonu-gold-box after .sonu-metrics (surgical) === -->
+
+<!-- CSS: add to v1_only.html <style> (scoped to gold box) -->
+<!--
+.sonu-gold-box .sonu-funnel-kicker {
+  font-size:.68rem; font-weight:700; letter-spacing:.06em;
+  color:rgba(251,191,36,.88); margin-top:.6rem;
+}
+.sonu-gold-box .sonu-window-funnel {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.45rem;
+  margin-top:.35rem; padding:.5rem .45rem .45rem;
+  border:1px solid rgba(251,191,36,.28); border-radius:10px;
+  background:rgba(0,0,0,.22);
+}
+.sonu-gold-box .sonu-window-funnel .label { font-size:.62rem; font-weight:700; }
+.sonu-gold-box .sonu-window-funnel .value { font-size:1.25rem; font-weight:800; line-height:1.1; }
+.sonu-gold-box .sonu-window-funnel .win-filtered .value { color:var(--orange); }
+.sonu-gold-box .sonu-window-funnel .win-entered .value { color:var(--green); }
+.sonu-gold-box .sonu-window-funnel-hint { font-size:.68rem; color:var(--muted); margin-top:.35rem; }
+-->
+
+<div class="sonu-funnel-kicker">窗口漏斗 · 本 session</div>
+<div class="sonu-window-funnel" id="c15m-window-funnel" aria-label="窗口考慮／過濾／入場" aria-live="polite">
+  <div class="metric-mini win-considered">
+    <div class="label">考慮</div>
+    <div class="value" id="c15m-win-considered">—</div>
+    <div class="hint">窗</div>
+  </div>
+  <div class="metric-mini win-filtered">
+    <div class="label">過濾</div>
+    <div class="value" id="c15m-win-filtered">—</div>
+    <div class="hint">skip</div>
+  </div>
+  <div class="metric-mini win-entered">
+    <div class="label">入場</div>
+    <div class="value" id="c15m-win-entered">—</div>
+    <div class="hint">落單</div>
+  </div>
+</div>
+<div class="sonu-window-funnel-hint" id="c15m-window-funnel-hint">考慮 — · 過濾 — · 入場 —</div>
+
+<!-- JS: in renderCrypto15m / refresh, set c15m-win-* from summary.window_funnel
+     (considered / filtered / entered). API: GET /api/crypto15m/summary must include window_funnel.
+     Optional app.py patch: _enrich_crypto15m_window_funnel() on summary route (PR dashboard/app.py). -->

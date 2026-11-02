@@ -859,11 +859,81 @@ def api_eth_summary():
     return jsonify(eth_summary())
 
 
+def _window_funnel_from_trade_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Per-window funnel from ledger rows (droplet-safe when engine lacks enrich)."""
+    by_key: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        key: str | None = None
+        for field in ("slug", "market_id", "window_id", "condition_id", "market"):
+            val = row.get(field)
+            if val:
+                key = str(val)
+                break
+        if key is None:
+            bot = str(row.get("bot") or row.get("asset") or "")
+            ts = str(row.get("timestamp_hkt") or row.get("timestamp_utc") or "")
+            key = f"{bot}:{ts}"
+        prev = by_key.get(key)
+        if prev is None or row.get("entered"):
+            by_key[key] = row
+    considered = len(by_key)
+    entered = sum(1 for r in by_key.values() if r.get("entered"))
+    filtered = max(0, considered - entered)
+    return {
+        "considered": considered,
+        "filtered": filtered,
+        "entered": entered,
+        "source": "session_log",
+    }
+
+
+def _enrich_crypto15m_window_funnel(summary: dict[str, Any]) -> dict[str, Any]:
+    """Ensure summary.window_funnel for gold-box 考慮／過濾／入場 (engine or app fallback)."""
+    try:
+        from paper_15m_engine import enrich_summary_window_funnel
+
+        return enrich_summary_window_funnel(summary)
+    except (ImportError, AttributeError):
+        pass
+    out = dict(summary)
+    wf = out.get("window_funnel")
+    if isinstance(wf, dict) and wf.get("considered") is not None:
+        return out
+    mode = str(out.get("mode") or "paper").lower()
+    ledger = "live" if mode == "live" else "paper"
+    rows = _crypto15m_recent_trades(500, ledger, False)
+    funnel = _window_funnel_from_trade_rows(rows)
+    quality = out.get("quality") if isinstance(out.get("quality"), dict) else {}
+    combined = quality.get("combined") if isinstance(quality.get("combined"), dict) else {}
+    considered = (
+        combined.get("windows_considered")
+        or combined.get("windows")
+        or combined.get("strategy_signals")
+    )
+    if considered is not None:
+        btc = out.get("btc") if isinstance(out.get("btc"), dict) else {}
+        eth = out.get("eth") if isinstance(out.get("eth"), dict) else {}
+        entered_fb = int(btc.get("trades_entered") or 0) + int(eth.get("trades_entered") or 0)
+        entered_val = funnel.get("entered")
+        if entered_val is None:
+            entered_val = entered_fb
+        funnel = {
+            "considered": int(considered),
+            "entered": int(entered_val),
+            "filtered": None,
+            "source": "quality+log",
+        }
+        funnel["filtered"] = max(0, int(funnel["considered"]) - int(funnel["entered"]))
+    funnel["ledger"] = ledger
+    out["window_funnel"] = funnel
+    return out
+
+
 @app.route("/api/crypto15m/summary")
 def api_crypto15m_summary():
-    from paper_15m_engine import crypto_15m_summary, enrich_summary_window_funnel
+    from paper_15m_engine import crypto_15m_summary
 
-    return jsonify(enrich_summary_window_funnel(crypto_15m_summary()))
+    return jsonify(_enrich_crypto15m_window_funnel(crypto_15m_summary()))
 
 
 @app.route("/api/crypto15m/quality")

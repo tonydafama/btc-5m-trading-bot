@@ -299,17 +299,22 @@
       border-radius:10px; padding:.45rem .55rem;
     }
     .sonu-metrics .metric-mini .value { font-size:1.05rem; }
-    .sonu-window-funnel {
-      display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.45rem;
-      margin-top:.55rem; padding-top:.55rem;
-      border-top:1px solid rgba(251,191,36,.22);
+    .sonu-gold-box .sonu-funnel-kicker {
+      font-size:.68rem; font-weight:700; letter-spacing:.06em;
+      color:rgba(251,191,36,.88); margin-top:.6rem;
     }
-    .sonu-window-funnel .label { font-size:.62rem; }
-    .sonu-window-funnel .value { font-size:1.2rem; font-weight:800; }
-    .sonu-window-funnel .win-considered .value { color:var(--text); }
-    .sonu-window-funnel .win-filtered .value { color:var(--orange); }
-    .sonu-window-funnel .win-entered .value { color:var(--green); }
-    .sonu-window-funnel-hint { font-size:.68rem; color:var(--muted); margin-top:.35rem; }
+    .sonu-gold-box .sonu-window-funnel {
+      display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.45rem;
+      margin-top:.35rem; padding:.5rem .45rem .45rem;
+      border:1px solid rgba(251,191,36,.28); border-radius:10px;
+      background:rgba(0,0,0,.22);
+    }
+    .sonu-gold-box .sonu-window-funnel .label { font-size:.62rem; font-weight:700; }
+    .sonu-gold-box .sonu-window-funnel .value { font-size:1.25rem; font-weight:800; line-height:1.1; }
+    .sonu-gold-box .sonu-window-funnel .win-considered .value { color:var(--text); }
+    .sonu-gold-box .sonu-window-funnel .win-filtered .value { color:var(--orange); }
+    .sonu-gold-box .sonu-window-funnel .win-entered .value { color:var(--green); }
+    .sonu-gold-box .sonu-window-funnel-hint { font-size:.68rem; color:var(--muted); margin-top:.35rem; }
     .log-view-tabs { display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.55rem; }
     .log-view-tab {
       cursor:pointer; border:1px solid var(--border); background:var(--panel2);
@@ -415,24 +420,25 @@
           <div class="value" style="font-size:.85rem" id="c15m-session-inline">—</div>
         </div>
       </div>
-      <div class="sonu-window-funnel" id="c15m-window-funnel" aria-label="窗口考慮／過濾／入場">
+      <div class="sonu-funnel-kicker">窗口漏斗 · 本 session</div>
+      <div class="sonu-window-funnel" id="c15m-window-funnel" aria-label="窗口考慮／過濾／入場" aria-live="polite">
         <div class="metric-mini win-considered">
           <div class="label">考慮</div>
           <div class="value" id="c15m-win-considered">—</div>
-          <div class="hint">windows</div>
+          <div class="hint">窗</div>
         </div>
         <div class="metric-mini win-filtered">
           <div class="label">過濾</div>
           <div class="value" id="c15m-win-filtered">—</div>
-          <div class="hint">skipped</div>
+          <div class="hint">skip</div>
         </div>
         <div class="metric-mini win-entered">
           <div class="label">入場</div>
           <div class="value" id="c15m-win-entered">—</div>
-          <div class="hint">entered</div>
+          <div class="hint">落單</div>
         </div>
       </div>
-      <div class="sonu-window-funnel-hint" id="c15m-window-funnel-hint">—</div>
+      <div class="sonu-window-funnel-hint" id="c15m-window-funnel-hint">考慮 — · 過濾 — · 入場 —</div>
     </section>
 
     <div class="hero">
@@ -1450,8 +1456,14 @@
       $('c15m-win-entered').textContent = fmtWin(enteredWin);
       const ledger = funnel.ledger || (isLive ? 'live' : 'paper');
       const src = funnel.source || (Object.keys(qComb).length ? 'quality' : 'log');
-      $('c15m-window-funnel-hint').textContent =
-        `本 session · ${ledger.toUpperCase()} ledger · ${src === 'quality+log' ? 'quality + log' : src}`;
+      const srcLabel = src === 'quality+log' ? 'quality + log' : src;
+      const hintEl = $('c15m-window-funnel-hint');
+      if (hintEl) {
+        hintEl.textContent =
+          considered != null && filtered != null && enteredWin != null
+            ? `考慮 ${fmtWin(considered)} 窗 · 過濾 ${fmtWin(filtered)} · 入場 ${fmtWin(enteredWin)} · ${ledger.toUpperCase()} · ${srcLabel}`
+            : `本 session · ${ledger.toUpperCase()} ledger · ${srcLabel}`;
+      }
 
       $('c15m-btc-meta').textContent = `${b.trades_entered ?? 0} entered · ${b.trades_closed ?? 0} closed · WR ${b.win_rate_pct ?? '—'}%`;
       $('c15m-eth-meta').textContent = `${e.trades_entered ?? 0} entered · ${e.trades_closed ?? 0} closed · WR ${e.win_rate_pct ?? '—'}%`;

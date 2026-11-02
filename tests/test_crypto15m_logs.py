@@ -60,6 +60,14 @@ class Crypto15mLogTests(unittest.TestCase):
         self.assertEqual(wf.get("entered"), 1)
         self.assertEqual(wf.get("ledger"), "paper")
 
+    def test_enrich_summary_window_funnel(self) -> None:
+        bare = {"mode": "paper", "btc": {"trades_entered": 1}, "eth": {"trades_entered": 0}}
+        enriched = self.eng.enrich_summary_window_funnel(bare)
+        wf = enriched.get("window_funnel") or {}
+        self.assertEqual(wf.get("considered"), 2)
+        self.assertEqual(wf.get("entered"), 1)
+        self.assertEqual(wf.get("ledger"), "paper")
+
 
 def _write(path: Path, payload) -> None:
     path.write_text(json.dumps(payload), encoding="utf-8")
@@ -78,6 +86,11 @@ class SonUTemplateTests(unittest.TestCase):
         self.assertIn("mode-lamp lamp-green", html)
         self.assertIn("c15m-win-considered", html)
         self.assertIn("考慮", html)
+        self.assertIn("sonu-funnel-kicker", html)
+        self.assertIn("窗口漏斗", html)
+        self.assertIn("c15m-win-filtered", html)
+        self.assertIn("入場", html)
+        self.assertIn("paper-run-fold", html)
 
 
 if __name__ == "__main__":
