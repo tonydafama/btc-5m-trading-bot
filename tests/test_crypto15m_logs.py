@@ -91,6 +91,8 @@ class SonUTemplateTests(unittest.TestCase):
         self.assertIn("c15m-win-filtered", html)
         self.assertIn("入場", html)
         self.assertIn("paper-run-fold", html)
+        self.assertIn("c15m-trades-windows-line", html)
+        self.assertIn("sonu-trades-line", html)
 
 
 if __name__ == "__main__":

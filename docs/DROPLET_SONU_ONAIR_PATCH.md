@@ -69,8 +69,8 @@ Hard refresh browser (mobile: close tab, reopen).
 
 **Do not** move this into Paper run; it belongs **only** in the top `#sonu-gold-box`.
 
-1. Paste HTML (+ CSS comments) from [sonu-window-funnel.snippet.html](./sonu-window-funnel.snippet.html) **after** `.sonu-metrics` inside `#sonu-gold-box`.
-2. Merge **JS** from PR `v1_only.html` `renderCrypto15m` (sets `c15m-win-considered` / `filtered` / `entered` from `summary.window_funnel`).
+1. Paste HTML (+ CSS) from [sonu-window-funnel.snippet.html](./sonu-window-funnel.snippet.html) inside `#sonu-gold-box`: **`#c15m-trades-windows-line`** (Trades `N 單 · M 窗 · 過濾 K`) **before** `.sonu-metrics`, then the 考慮／過濾／入場 funnel row.
+2. Merge **JS** from PR `v1_only.html` `renderCrypto15m` (fills `c15m-trades-windows-line` + `c15m-win-*` from `summary.window_funnel`; `trades` = bot `trades_entered`, `considered` = windows from quality/log).
 3. Ensure API returns counts — **prefer surgical `dashboard/app.py` only** (no engine overwrite):
    - Copy `_enrich_crypto15m_window_funnel` + `_window_funnel_from_trade_rows` from PR `app.py` onto `/api/crypto15m/summary`.
    - Or merge funnel helpers into droplet `paper_15m_engine.py` if you already maintain that file.

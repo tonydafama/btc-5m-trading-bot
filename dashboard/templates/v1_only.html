@@ -322,6 +322,16 @@
       border-radius:10px; padding:.45rem .55rem;
     }
     .sonu-metrics .metric-mini .value { font-size:1.05rem; }
+    .sonu-gold-box .sonu-trades-line {
+      font-size:.9rem; font-weight:800; letter-spacing:.03em;
+      margin-top:.55rem; padding:.45rem .55rem;
+      border-radius:10px; border:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.2); color:var(--text);
+    }
+    .sonu-gold-box .sonu-trades-line .label-tag {
+      color:rgba(251,191,36,.92); font-weight:700; margin-right:.35rem;
+    }
+    .sonu-gold-box .sonu-trades-line .muted-part { color:var(--muted); font-weight:650; }
     .sonu-gold-box .sonu-funnel-kicker {
       font-size:.68rem; font-weight:700; letter-spacing:.06em;
       color:rgba(251,191,36,.88); margin-top:.6rem;
@@ -424,6 +434,9 @@
         </button>
       </div>
       <div class="hint" id="c15m-control-hint" style="margin-top:.45rem">—</div>
+      <div class="sonu-trades-line" id="c15m-trades-windows-line" aria-live="polite">
+        <span class="label-tag">Trades</span>— 單 · — 窗
+      </div>
       <div class="sonu-metrics">
         <div class="metric-mini">
           <div class="label">Combined PnL</div>
@@ -1490,6 +1503,16 @@
       let filtered = funnel.filtered ?? qComb.filtered ?? qComb.skipped;
       if (filtered == null && considered != null && enteredWin != null) {
         filtered = Math.max(0, Number(considered) - Number(enteredWin));
+      }
+      const tradesCount =
+        funnel.trades ?? ((b.trades_entered ?? 0) + (e.trades_entered ?? 0));
+      const tradesLine = $('c15m-trades-windows-line');
+      if (tradesLine) {
+        let tw = `<span class="label-tag">Trades</span>${fmtWin(tradesCount)} 單 · ${fmtWin(considered)} 窗`;
+        if (filtered != null && filtered !== '') {
+          tw += ` <span class="muted-part">· 過濾 ${fmtWin(filtered)}</span>`;
+        }
+        tradesLine.innerHTML = tw;
       }
       $('c15m-win-considered').textContent = fmtWin(considered);
       $('c15m-win-filtered').textContent = fmtWin(filtered);

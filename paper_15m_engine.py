@@ -146,6 +146,13 @@ def _window_funnel_from_quality(quality: dict[str, Any] | None) -> dict[str, Any
     }
 
 
+def _attach_funnel_trades(funnel: dict[str, Any], trades_entered: int) -> dict[str, Any]:
+    """Gold-card line: N 單 (log entered rows) · M 窗 (considered windows)."""
+    out = dict(funnel)
+    out["trades"] = int(trades_entered or 0)
+    return out
+
+
 def _resolve_window_funnel(
     rows: list[dict],
     quality_combined: dict[str, Any] | None,
@@ -160,8 +167,8 @@ def _resolve_window_funnel(
         if out.get("filtered") is None and out.get("considered") is not None and out.get("entered") is not None:
             out["filtered"] = max(0, int(out["considered"]) - int(out["entered"]))
         out["source"] = "quality+log"
-        return out
-    return from_log
+        return _attach_funnel_trades(out, trades_entered_fallback)
+    return _attach_funnel_trades(from_log, trades_entered_fallback)
 
 
 def enrich_summary_window_funnel(summary: dict[str, Any]) -> dict[str, Any]:
@@ -169,6 +176,13 @@ def enrich_summary_window_funnel(summary: dict[str, Any]) -> dict[str, Any]:
     out = dict(summary)
     wf = out.get("window_funnel")
     if isinstance(wf, dict) and wf.get("considered") is not None:
+        if wf.get("trades") is None:
+            btc = out.get("btc") if isinstance(out.get("btc"), dict) else {}
+            eth = out.get("eth") if isinstance(out.get("eth"), dict) else {}
+            entered_fb = int(btc.get("trades_entered") or 0) + int(eth.get("trades_entered") or 0)
+            wf = dict(wf)
+            wf["trades"] = entered_fb
+            out["window_funnel"] = wf
         return out
     mode = str(out.get("mode") or crypto_15m_trading_mode()).lower()
     ledger = "live" if mode == "live" else "paper"
@@ -178,7 +192,10 @@ def enrich_summary_window_funnel(summary: dict[str, Any]) -> dict[str, Any]:
     btc = out.get("btc") if isinstance(out.get("btc"), dict) else {}
     eth = out.get("eth") if isinstance(out.get("eth"), dict) else {}
     entered_fb = int(btc.get("trades_entered") or 0) + int(eth.get("trades_entered") or 0)
-    funnel = _resolve_window_funnel(rows, combined, entered_fb)
+    funnel = _attach_funnel_trades(
+        _resolve_window_funnel(rows, combined, entered_fb),
+        entered_fb,
+    )
     funnel["ledger"] = ledger
     out["window_funnel"] = funnel
     return out

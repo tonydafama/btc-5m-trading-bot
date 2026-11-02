@@ -924,6 +924,10 @@ def _enrich_crypto15m_window_funnel(summary: dict[str, Any]) -> dict[str, Any]:
             "source": "quality+log",
         }
         funnel["filtered"] = max(0, int(funnel["considered"]) - int(funnel["entered"]))
+    btc = out.get("btc") if isinstance(out.get("btc"), dict) else {}
+    eth = out.get("eth") if isinstance(out.get("eth"), dict) else {}
+    trades = int(btc.get("trades_entered") or 0) + int(eth.get("trades_entered") or 0)
+    funnel["trades"] = trades
     funnel["ledger"] = ledger
     out["window_funnel"] = funnel
     return out

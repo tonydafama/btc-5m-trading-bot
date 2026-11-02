@@ -2,6 +2,15 @@
 
 <!-- CSS: add to v1_only.html <style> (scoped to gold box) -->
 <!--
+.sonu-gold-box .sonu-trades-line {
+  font-size:.9rem; font-weight:800; letter-spacing:.03em;
+  margin-top:.55rem; padding:.45rem .55rem;
+  border-radius:10px; border:1px solid rgba(255,255,255,.08);
+  background:rgba(0,0,0,.2); color:var(--text);
+}
+.sonu-gold-box .sonu-trades-line .label-tag {
+  color:rgba(251,191,36,.92); font-weight:700; margin-right:.35rem;
+}
 .sonu-gold-box .sonu-funnel-kicker {
   font-size:.68rem; font-weight:700; letter-spacing:.06em;
   color:rgba(251,191,36,.88); margin-top:.6rem;
@@ -18,6 +27,10 @@
 .sonu-gold-box .sonu-window-funnel .win-entered .value { color:var(--green); }
 .sonu-gold-box .sonu-window-funnel-hint { font-size:.68rem; color:var(--muted); margin-top:.35rem; }
 -->
+
+<div class="sonu-trades-line" id="c15m-trades-windows-line" aria-live="polite">
+  <span class="label-tag">Trades</span>— 單 · — 窗
+</div>
 
 <div class="sonu-funnel-kicker">窗口漏斗 · 本 session</div>
 <div class="sonu-window-funnel" id="c15m-window-funnel" aria-label="窗口考慮／過濾／入場" aria-live="polite">
