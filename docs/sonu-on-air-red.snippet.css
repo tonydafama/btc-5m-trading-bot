@@ -1,0 +1,43 @@
+/* === Son U ON-AIR — paste once into v1_only.html <style> (surgical) === */
+.sonu-gold-box .on-air-row.is-on,
+.sonu-gold-box #c15m-on-air.is-on,
+.sonu-gold-box #sonu-live-on-pill.is-on,
+.sonu-gold-box .live-on-pill.is-on {
+  opacity: 1 !important;
+  filter: none !important;
+  background: linear-gradient(180deg, #520000 0%, #140000 100%) !important;
+  border: 2px solid #ff0000 !important;
+  box-shadow: 0 0 14px rgba(255, 0, 0, 0.55), 0 0 28px rgba(255, 0, 0, 0.28) !important;
+  color: #ff0000 !important;
+}
+.sonu-gold-box .on-air-row.is-on .on-air-sign,
+.sonu-gold-box .on-air-row.is-on #c15m-on-air-text,
+.sonu-gold-box #c15m-on-air.is-on #c15m-on-air-text,
+.sonu-gold-box #sonu-live-on-pill.is-on,
+.sonu-gold-box .live-on-pill.is-on,
+.sonu-gold-box [data-sonu-on-air="live"] {
+  color: #ff0000 !important;
+  -webkit-text-fill-color: #ff0000 !important;
+  background: transparent !important;
+  text-shadow: 0 0 2px #ff0000, 0 0 8px #ff0000, 0 0 18px #ef4444 !important;
+}
+.sonu-gold-box .on-air-row.is-on .on-air-bulb,
+.sonu-gold-box #c15m-on-air.is-on .on-air-bulb {
+  background: #ff0000 !important;
+  border-color: #ff6666 !important;
+  box-shadow: 0 0 8px #ff0000, 0 0 20px #ff0000 !important;
+}
+.sonu-gold-box .on-air-row.is-off,
+.sonu-gold-box #c15m-on-air.is-off,
+.sonu-gold-box #sonu-live-on-pill.is-off,
+.sonu-gold-box .live-on-pill.is-off,
+.sonu-gold-box [data-sonu-on-air="paper"] {
+  opacity: 0.28 !important;
+  filter: saturate(0) brightness(0.45) !important;
+  background: #020304 !important;
+  border-color: #050607 !important;
+  box-shadow: none !important;
+  color: #0a0b0c !important;
+  text-shadow: none !important;
+}
+/* === end Son U ON-AIR snippet === */

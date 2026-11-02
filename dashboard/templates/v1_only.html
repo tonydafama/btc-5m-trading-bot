@@ -151,6 +151,56 @@
       font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
       color:var(--orange); margin-bottom:.35rem;
     }
+    /* ON-AIR must never inherit gold-box amber/orange pill styling */
+    .sonu-gold-box .on-air-row,
+    .sonu-gold-box #c15m-on-air {
+      --sonu-on-air-red: #ff0000;
+      --sonu-on-air-red-alt: #ef4444;
+    }
+    .sonu-gold-box .on-air-row.is-on,
+    .sonu-gold-box #c15m-on-air.is-on,
+    .sonu-gold-box .on-air-row.is-on.pill,
+    .sonu-gold-box #c15m-on-air.is-on.pill {
+      background: linear-gradient(180deg, #520000 0%, #140000 100%) !important;
+      border: 2px solid #ff0000 !important;
+      box-shadow: 0 0 14px rgba(255,0,0,.55), 0 0 28px rgba(255,0,0,.28) !important;
+      color: #ff0000 !important;
+      filter: none !important;
+      opacity: 1 !important;
+    }
+    .sonu-gold-box .on-air-row.is-on .on-air-sign,
+    .sonu-gold-box .on-air-row.is-on #c15m-on-air-text,
+    .sonu-gold-box #c15m-on-air.is-on .on-air-sign,
+    .sonu-gold-box #c15m-on-air.is-on #c15m-on-air-text,
+    .sonu-gold-box .on-air-row.is-on.pill .on-air-sign,
+    .sonu-gold-box #sonu-live-on-pill.is-on,
+    .sonu-gold-box .live-on-pill.is-on,
+    .sonu-gold-box [data-sonu-on-air="live"] {
+      color: #ff0000 !important;
+      -webkit-text-fill-color: #ff0000 !important;
+      background: transparent !important;
+      border-color: transparent !important;
+      text-shadow:
+        0 0 2px #ff0000,
+        0 0 8px #ff0000,
+        0 0 18px #ef4444 !important;
+    }
+    .sonu-gold-box .on-air-row.is-off,
+    .sonu-gold-box #c15m-on-air.is-off {
+      background: #020304 !important;
+      border-color: #050607 !important;
+      box-shadow: none !important;
+      filter: saturate(0) brightness(0.45) !important;
+      opacity: 0.28 !important;
+    }
+    .sonu-gold-box .on-air-row.is-off .on-air-sign,
+    .sonu-gold-box .on-air-row.is-off #c15m-on-air-text,
+    .sonu-gold-box #c15m-on-air.is-off .on-air-sign {
+      color: #0a0b0c !important;
+      -webkit-text-fill-color: #0a0b0c !important;
+      text-shadow: none !important;
+      background: transparent !important;
+    }
     /* Radio-station ON-AIR: vivid #ff0000 when LIVE; near-black when Paper (no filter on .is-on) */
     @keyframes sonu-on-air-glow {
       0%, 100% {
@@ -442,9 +492,9 @@
             <span class="pill" id="c15m-backend-pill">後端 —</span>
           </div>
         </div>
-        <div class="on-air-row is-off" id="c15m-on-air" aria-live="polite">
+        <div class="on-air-row sonu-on-air-indicator is-off" id="c15m-on-air" data-sonu-on-air="paper" aria-live="polite">
           <span class="on-air-bulb" id="c15m-on-air-lamp" aria-hidden="true"></span>
-          <span class="on-air-sign" id="c15m-on-air-text">LIVE ON</span>
+          <span class="on-air-sign sonu-radio-live-text" id="c15m-on-air-text">LIVE ON</span>
         </div>
         <div class="sonu-paper-caption hidden" id="c15m-paper-caption">PAPER · ON-AIR 熄咗</div>
         <div class="hint" id="c15m-mode-sub">讀緊後端模式…</div>
@@ -1162,10 +1212,62 @@
       $('c15m-control-card').className = 'card bot-card m15' + (isLive && !paused ? ' live-on' : '');
 
       const onAir = $('c15m-on-air');
-      onAir.className = 'on-air-row ' + (isLive ? 'is-on' : 'is-off');
+      const onAirText = $('c15m-on-air-text');
+      const onAirLamp = $('c15m-on-air-lamp');
+      onAir.className = 'on-air-row sonu-on-air-indicator ' + (isLive ? 'is-on' : 'is-off');
+      onAir.dataset.sonuOnAir = isLive ? 'live' : 'paper';
       $('c15m-on-air-text').textContent = 'LIVE ON';
+      if (isLive) {
+        onAir.style.cssText =
+          'opacity:1;filter:none;border-color:#ff0000;background:linear-gradient(180deg,#520000,#140000);box-shadow:0 0 14px rgba(255,0,0,.55);';
+        if (onAirText) {
+          onAirText.style.color = '#ff0000';
+          onAirText.style.webkitTextFillColor = '#ff0000';
+          onAirText.style.background = 'transparent';
+          onAirText.style.textShadow = '0 0 8px #ff0000, 0 0 18px #ef4444';
+        }
+        if (onAirLamp) {
+          onAirLamp.style.background = '#ff0000';
+          onAirLamp.style.boxShadow = '0 0 8px #ff0000, 0 0 20px #ff0000';
+          onAirLamp.style.borderColor = '#ff6666';
+        }
+      } else {
+        onAir.style.cssText =
+          'opacity:0.28;filter:saturate(0) brightness(0.45);border-color:#050607;background:#020304;box-shadow:none;';
+        if (onAirText) {
+          onAirText.style.color = '#0a0b0c';
+          onAirText.style.webkitTextFillColor = '#0a0b0c';
+          onAirText.style.textShadow = 'none';
+          onAirText.style.background = 'transparent';
+        }
+        if (onAirLamp) {
+          onAirLamp.style.background = '#080808';
+          onAirLamp.style.boxShadow = 'none';
+          onAirLamp.style.borderColor = '#0a0a0a';
+        }
+      }
       const paperCap = $('c15m-paper-caption');
       if (paperCap) paperCap.classList.toggle('hidden', isLive);
+      document.querySelectorAll('#sonu-live-on-pill, .live-on-pill, .sonu-live-on').forEach((el) => {
+        el.classList.toggle('is-on', isLive);
+        el.classList.toggle('is-off', !isLive);
+        el.dataset.sonuOnAir = isLive ? 'live' : 'paper';
+        if (isLive) {
+          el.style.background = 'linear-gradient(180deg,#520000,#140000)';
+          el.style.borderColor = '#ff0000';
+          el.style.color = '#ff0000';
+          el.style.boxShadow = '0 0 14px rgba(255,0,0,.55)';
+          el.style.opacity = '1';
+          el.style.filter = 'none';
+        } else {
+          el.style.background = '#020304';
+          el.style.borderColor = '#050607';
+          el.style.color = '#0a0b0c';
+          el.style.boxShadow = 'none';
+          el.style.opacity = '0.28';
+          el.style.filter = 'saturate(0) brightness(0.45)';
+        }
+      });
 
       $('c15m-backend-pill').textContent = armed
         ? (paused ? '後端 LIVE · 暫停' : '後端 LIVE · armed')
