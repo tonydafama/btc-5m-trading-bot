@@ -95,6 +95,24 @@ from backtest_research import refresh_live_session_research  # noqa: E402
 app = Flask(__name__, template_folder="templates", static_folder="static")
 # Single-user dashboard: reload index.html on each request so layout edits show without restart.
 app.config["TEMPLATES_AUTO_RELOAD"] = True
+
+
+@app.after_request
+def _inject_sonu_seat_display(resp):
+    """Display-only: correct Son U paper/live labels on diverged Family Desk HTML.
+
+    Does not touch order routing or mode switches. No-ops unless the page is HTML.
+    """
+    if request.path not in ("/", "/logs", "/logs/"):
+        return resp
+    if (resp.mimetype or "") != "text/html":
+        return resp
+    data = resp.get_data()
+    if b"sonu-seat-display.js" in data or b"</body>" not in data:
+        return resp
+    tag = b'<script src="/static/sonu-seat-display.js"></script>'
+    resp.set_data(data.replace(b"</body>", tag + b"</body>", 1))
+    return resp
 HKT = ZoneInfo("Asia/Hong_Kong")
 
 _BG_STARTED = False

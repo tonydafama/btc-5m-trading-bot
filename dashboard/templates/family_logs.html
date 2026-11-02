@@ -129,6 +129,7 @@
 
   <script>
     /* CORE LOG HELPERS — Do NOT delete parseLine / statusTag / renderRows when patching Son U lock. */
+    window.__sonuSeatBuiltin = true;
     const DEFAULT_LIVE_BOT = 'son-btc-5m-ultimate-live';
     const LIVE_TAIL_N = 40;
     const SONU_FLEET_TOKENS = ['V1', '5M', 'DUAL', 'FUNDING', 'MEME', 'SPORTS', 'GROK', 'NEWNEW'];
@@ -142,6 +143,12 @@
         row.trade_result = row.trade_result || row.result || row.status || '';
         row.reason = row.strategy_reason || row.reason || row.skip_category || '';
         row.bot = row.bot || row.asset || '';
+        const res0 = String(row.trade_result || '').toUpperCase();
+        const pnlNum = Number(row.pnl);
+        if (!res0 && row.pnl != null && !Number.isNaN(pnlNum)) {
+          row.trade_result = pnlNum < 0 ? 'LOSS' : 'WIN';
+          row.entered = true;
+        }
         return row;
       }
       const line = String(raw).trim();
@@ -149,21 +156,28 @@
       if (line.startsWith('{')) {
         try { return parseLine(JSON.parse(line)); } catch (e) { /* fall through */ }
       }
-      const tsMatch = line.match(/^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}[^|]*)/);
+      const tsMatch = line.match(/^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2})/);
       const upper = line.toUpperCase();
+      const pnlMatch = line.match(/pnl=\s*([+-]?\d+(?:\.\d+)?)/i);
       let trade_result = '';
       if (/\bSKIP\b/.test(upper)) trade_result = 'SKIPPED';
+      else if (pnlMatch) trade_result = Number(pnlMatch[1]) < 0 ? 'LOSS' : 'WIN';
       else if (/\bWIN\b/.test(upper)) trade_result = 'WIN';
       else if (/\bLOSS\b/.test(upper)) trade_result = 'LOSS';
       else if (/\bFAIL/.test(upper)) trade_result = 'FAILED';
       const slugMatch = line.match(/btc-updown[^\s|]*/i) || line.match(/eth-updown[^\s|]*/i);
+      const slug = slugMatch ? slugMatch[0] : '';
+      let reason = line;
+      if (tsMatch) reason = line.slice(tsMatch[0].length).replace(/^[\s·]+/, '');
+      if (slug && reason.includes(slug)) reason = reason.replace(slug, '').replace(/[\s·]+$/, '').trim();
       return {
         timestamp_hkt: tsMatch ? tsMatch[1].trim() : '',
-        slug: slugMatch ? slugMatch[0] : line.slice(0, 140),
+        slug: slug || line.slice(0, 140),
         trade_result,
-        entered: trade_result && trade_result !== 'SKIPPED',
+        entered: trade_result ? trade_result !== 'SKIPPED' : undefined,
+        pnl: pnlMatch ? Number(pnlMatch[1]) : undefined,
         bot: line.includes('ETH') ? 'ETH' : 'BTC',
-        reason: line,
+        reason,
         raw: line,
       };
     }
@@ -257,14 +271,22 @@
 
     function statusLineFromBot(bot) {
       if (!bot) return '紙上預備 · 跑緊';
-      if (bot.status_line) return bot.status_line;
-      const st = String(bot.status || '').trim();
-      if (st && (/[·・]/.test(st) || /[\u4e00-\u9fff]/.test(st))) return st;
       const mode = String(bot.mode || bot.ledger || '').toLowerCase();
-      const seat = mode === 'live' || bot.live ? '真倉 ON' : '紙上預備';
+      const st = String(bot.status || '').trim();
+      const low = st.toLowerCase();
       const paused = bot.paused === true || bot.running === false
-        || /pause|stopped|idle/i.test(st);
-      return `${seat} · ${paused ? '暫停' : '跑緊'}`;
+        || /pause|stopped|idle|停/i.test(st);
+      const runWord = paused ? '暫停' : '跑緊';
+      /* Seat follows mode flags. A fill count must not flip paper → 真倉. */
+      const liveSeat = mode === 'live' || bot.live === true || bot.live_active === true;
+      if (liveSeat) return `真倉 ON · ${runWord}`;
+      if (mode === 'paper' || bot.dry_run === true || bot.paper_active === true
+          || /paper|dry|預備/i.test(low) || /紙上/.test(st)) {
+        return `紙上預備 · ${runWord}`;
+      }
+      if (bot.status_line) return String(bot.status_line);
+      if (st && (/[·・]/.test(st) || /[\u4e00-\u9fff]/.test(st))) return st;
+      return `紙上預備 · ${runWord}`;
     }
 
     function emptyTradesMsg(stats) {
@@ -305,12 +327,25 @@
     let paperRows = [];
     let fleetRows = [];
     let familyBots = null;
+    let liveControl = null;
 
     function paintLiveStatus() {
       const lineEl = document.getElementById('live-status-line');
       if (!lineEl) return;
-      const bot = findSonULiveBot(familyBots);
-      const text = statusLineFromBot(bot);
+      const ctrlMode = String((liveControl && liveControl.mode) || '').toLowerCase();
+      const ctrlLive = !!(liveControl && (liveControl.live_active === true || ctrlMode === 'live'));
+      const ctrlPaper = !!(liveControl && !ctrlLive && (liveControl.paper_active === true || ctrlMode === 'paper'));
+      const ctrlOff = !!(liveControl && liveControl.live_active === false && liveControl.paper_active === false);
+      const ctrl = (liveControl && (ctrlLive || ctrlPaper))
+        ? {
+            mode: ctrlLive ? 'live' : 'paper',
+            live_active: ctrlLive,
+            paper_active: ctrlPaper,
+            paused: ctrlOff,
+            running: !ctrlOff,
+          }
+        : findSonULiveBot(familyBots);
+      const text = statusLineFromBot(ctrl);
       lineEl.textContent = text;
       lineEl.classList.toggle('paused', /暫停/.test(text));
     }
@@ -335,14 +370,16 @@
     }
 
     async function refreshLiveUnit() {
-      const [bots, payload] = await Promise.all([
+      const [bots, payload, ctrl] = await Promise.all([
         fetchJson('/api/family-bots'),
         fetchJson(
           `/api/bot-log-tail?id=${encodeURIComponent(DEFAULT_LIVE_BOT)}&mode=all&n=${LIVE_TAIL_N}`,
         ),
+        fetchJson('/api/son-u/live-control'),
       ]);
-      if (bots) {
-        familyBots = bots;
+      if (ctrl && (ctrl.mode || ctrl.live_active != null)) liveControl = ctrl;
+      if (bots || ctrl) {
+        if (bots) familyBots = bots;
         paintLiveStatus();
       }
       if (payload && Array.isArray(payload.lines)) {
