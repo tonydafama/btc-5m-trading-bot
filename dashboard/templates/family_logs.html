@@ -229,6 +229,44 @@
       return parsed.filter(isFillRow);
     }
 
+    /** Droplet tail: stats.trades; repo may send stats.fills. */
+    function normalizeTailStats(raw) {
+      if (!raw || typeof raw !== 'object') return { fills: 0, skips: 0, total: 0 };
+      const fills = raw.trades ?? raw.fills ?? 0;
+      return {
+        fills: Number(fills) || 0,
+        skips: Number(raw.skips) || 0,
+        total: Number(raw.total) || 0,
+      };
+    }
+
+    function tailSource(payload) {
+      if (!payload) return '';
+      return payload.source || payload.source_file || '';
+    }
+
+    /** Droplet: GET /api/family-bots → { ok, n, bots:[{ id, display_name, status, … }] } */
+    function findSonULiveBot(payload) {
+      if (!payload) return null;
+      const bots = payload.bots;
+      if (Array.isArray(bots)) {
+        return bots.find((b) => String(b?.id || '').trim() === DEFAULT_LIVE_BOT) || null;
+      }
+      return payload.son_u_live || null;
+    }
+
+    function statusLineFromBot(bot) {
+      if (!bot) return '紙上預備 · 跑緊';
+      if (bot.status_line) return bot.status_line;
+      const st = String(bot.status || '').trim();
+      if (st && (/[·・]/.test(st) || /[\u4e00-\u9fff]/.test(st))) return st;
+      const mode = String(bot.mode || bot.ledger || '').toLowerCase();
+      const seat = mode === 'live' || bot.live ? '真倉 ON' : '紙上預備';
+      const paused = bot.paused === true || bot.running === false
+        || /pause|stopped|idle/i.test(st);
+      return `${seat} · ${paused ? '暫停' : '跑緊'}`;
+    }
+
     function emptyTradesMsg(stats) {
       const skips = stats?.skips ?? 0;
       return `暫無成交（${skips} skip）· 切去全部睇`;
@@ -271,19 +309,20 @@
     function paintLiveStatus() {
       const lineEl = document.getElementById('live-status-line');
       if (!lineEl) return;
-      const fb = familyBots?.son_u_live;
-      const text = fb?.status_line || '紙上預備 · 跑緊';
+      const bot = findSonULiveBot(familyBots);
+      const text = statusLineFromBot(bot);
       lineEl.textContent = text;
-      lineEl.classList.toggle('paused', !!fb?.paused);
+      lineEl.classList.toggle('paused', /暫停/.test(text));
     }
 
     function paintLiveUnit(tailPayload) {
-      if (tailPayload && tailPayload.stats) liveStats = tailPayload.stats;
+      if (tailPayload && tailPayload.stats) liveStats = normalizeTailStats(tailPayload.stats);
       const statsEl = document.getElementById('live-stats-line');
       if (statsEl) {
         statsEl.innerHTML = `成交 <strong>${liveStats.fills ?? 0}</strong> · skip ${liveStats.skips ?? 0}`;
       }
-      if (tailPayload?.source_file) liveSource = tailPayload.source_file;
+      const src = tailSource(tailPayload);
+      if (src) liveSource = src;
       const foot = document.getElementById('page-foot');
       if (foot && liveSource) foot.textContent = `source: ${liveSource}`;
 
@@ -308,7 +347,7 @@
       }
       if (payload && Array.isArray(payload.lines)) {
         liveAllRows = payload.lines;
-        liveStats = payload.stats || countStats(liveAllRows);
+        liveStats = payload.stats ? normalizeTailStats(payload.stats) : countStats(liveAllRows);
         paintLiveUnit(payload);
         return;
       }
@@ -316,7 +355,7 @@
       const rows = (Array.isArray(fallback) ? fallback : []).filter(isSonuTradeRow);
       liveStats = countStats(rows);
       liveAllRows = rows;
-      paintLiveUnit({ stats: liveStats, source_file: 'crypto_15m_trade_log_live.json' });
+      paintLiveUnit({ stats: { trades: liveStats.fills, skips: liveStats.skips, total: liveStats.total }, source: 'crypto_15m_trade_log_live.json' });
     }
 
     function paintPaper() {
@@ -334,7 +373,7 @@
     function paintFleet() {
       renderRows('fleet-log-body', fleetRows.slice(0, 120), '其他 bot 尚無紀錄');
       const sum = document.getElementById('fleet-fold-summary');
-      const n = familyBots?.fleet_count ?? fleetRows.length;
+      const n = familyBots?.n ?? familyBots?.bots?.length ?? familyBots?.fleet_count ?? fleetRows.length;
       if (sum) sum.textContent = `其他機械人 (${n}) · 預設收起`;
     }
 

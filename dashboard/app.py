@@ -1081,32 +1081,36 @@ def _crypto15m_control_payload() -> dict[str, Any]:
 
 
 def _family_bots_payload() -> dict[str, Any]:
-    """Lightweight bot roster for /logs (Live Son U status line)."""
+    """Droplet-shaped roster for /logs: { ok, n, bots:[{ id, display_name, status, … }] }."""
     ctrl = _crypto15m_control_payload()
     mode = str(ctrl.get("mode") or "paper").lower()
     paused = bool(ctrl.get("paused"))
     seat_short = "真倉 ON" if mode == "live" else "紙上預備"
     run_short = "暫停" if paused else "跑緊"
-    son_u_live = {
-        "id": "son-btc-5m-ultimate-live",
-        "title": "終極5m · Live",
-        "mode": mode,
-        "paused": paused,
-        "status_line": f"{seat_short} · {run_short}",
-    }
-    fleet: list[dict[str, Any]] = []
+    status_line = f"{seat_short} · {run_short}"
+    bots: list[dict[str, Any]] = [
+        {
+            "id": "son-btc-5m-ultimate-live",
+            "display_name": "終極5m · Live",
+            "status": status_line,
+            "mode": mode,
+            "paused": paused,
+            "running": not paused,
+        }
+    ]
     try:
         rows = _crypto15m_recent_trades(80, None, False, sonu_only=False)
         seen: set[str] = set()
         for r in rows:
-            bot = str(r.get("bot") or r.get("asset") or "").strip()
-            if not bot or bot in seen:
+            name = str(r.get("bot") or r.get("asset") or "").strip()
+            if not name or name in seen:
                 continue
-            seen.add(bot)
-            fleet.append({"name": bot})
+            seen.add(name)
+            slug = name.lower().replace(" ", "-")
+            bots.append({"id": slug, "display_name": name, "status": "paper"})
     except Exception:
         pass
-    return {"son_u_live": son_u_live, "fleet_count": len(fleet), "fleet": fleet[:60]}
+    return {"ok": True, "n": len(bots), "bots": bots}
 
 
 @app.route("/api/family-bots")

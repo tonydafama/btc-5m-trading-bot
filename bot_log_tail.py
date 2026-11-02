@@ -103,12 +103,13 @@ def tail_bot_log(
         key=lambda r: str(r.get("timestamp_hkt") or r.get("timestamp_utc") or r.get("logged_at") or ""),
         reverse=True,
     )
-    stats = {"fills": 0, "skips": 0, "total": len(rows)}
+    stats: dict[str, int] = {"fills": 0, "skips": 0, "total": len(rows)}
     for r in rows:
         if is_fill_row(r):
             stats["fills"] += 1
         elif is_skip_row(r):
             stats["skips"] += 1
+    stats["trades"] = stats["fills"]
 
     mode = (mode or "trades").lower()
     if mode == "trades":
@@ -119,12 +120,14 @@ def tail_bot_log(
 
     sample = rows[0] if rows else {}
     elapsed_ms = int((time.perf_counter() - t0) * 1000)
+    src = path.name if path else None
     return {
         "bot": bot_key,
         "mode": mode,
         "lines": lines,
         "stats": stats,
-        "source_file": path.name if path else None,
+        "source": src,
+        "source_file": src,
         "elapsed_ms": elapsed_ms,
         "seat_label": live_seat_label(bot_key, sample),
         "running_label": "RUNNING · " + (str(sample.get("mode") or sample.get("ledger") or "paper").lower()),

@@ -30,6 +30,10 @@ class FamilyLogsTemplateTests(unittest.TestCase):
         self.assertIn("data-live-mode=\"all\"", html)
         self.assertIn("let liveMode = 'all'", html)
         self.assertIn("/api/bot-log-tail?id=", html)
+        self.assertIn("function findSonULiveBot(", html)
+        self.assertIn("function statusLineFromBot(", html)
+        self.assertIn("function normalizeTailStats(", html)
+        self.assertIn("son-btc-5m-ultimate-live", html)
         self.assertNotIn("LOCKED · Live", html)
         self.assertNotIn("id=son-btc", html)
 
