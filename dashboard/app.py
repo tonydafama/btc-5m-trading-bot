@@ -893,7 +893,9 @@ def api_crypto15m_trades():
     from paper_15m_engine import recent_trades
 
     limit = min(int(request.args.get("limit", 30)), 200)
-    return jsonify(recent_trades(limit=limit))
+    ledger = request.args.get("ledger")
+    entered_only = request.args.get("entered_only", "0") in ("1", "true", "yes")
+    return jsonify(recent_trades(limit=limit, ledger=ledger, entered_only=entered_only))
 
 
 def _crypto15m_control_payload() -> dict[str, Any]:
@@ -901,12 +903,14 @@ def _crypto15m_control_payload() -> dict[str, Any]:
         crypto_15m_paused,
         crypto_15m_summary,
         crypto_15m_trading_mode,
+        go_live_wallet_gate,
         load_session,
     )
 
     summary = crypto_15m_summary()
     sess = load_session()
     mode = crypto_15m_trading_mode()
+    gate = go_live_wallet_gate()
     return {
         "mode": mode,
         "live": mode == "live",
@@ -914,6 +918,8 @@ def _crypto15m_control_payload() -> dict[str, Any]:
         "running": mode == "live" and not crypto_15m_paused(),
         "session": sess,
         "summary": summary,
+        "wallet_gate": gate,
+        "armed": mode == "live",
     }
 
 
@@ -951,9 +957,25 @@ def api_crypto15m_control():
         return jsonify({"ok": True, "action": action, **_crypto15m_control_payload()})
 
     if action == "enable_live":
+        from paper_15m_engine import go_live_wallet_gate
+
+        gate = go_live_wallet_gate()
+        if not gate.get("ok"):
+            return jsonify(
+                {
+                    "ok": False,
+                    "action": action,
+                    "error": gate.get("message") or "Wallet gate blocked go-live",
+                    "wallet_gate": gate,
+                    **_crypto15m_control_payload(),
+                }
+            ), 400
         py = ROOT / "venv/bin/python3"
+        if not py.exists():
+            py = Path(sys.executable)
         script = ROOT / "scripts/start_crypto_15m_live_session.py"
-        subprocess.run([str(py), str(script)], check=False, cwd=str(ROOT))
+        if script.exists():
+            subprocess.run([str(py), str(script)], check=False, cwd=str(ROOT))
         return jsonify({"ok": True, "action": action, **_crypto15m_control_payload()})
 
     if action == "disable_live":

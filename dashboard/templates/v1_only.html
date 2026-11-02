@@ -138,6 +138,69 @@
     .exp-item:first-child { border-top:0; padding-top:0; }
     .exp-name { font-weight:650; }
     .exp-note { color:var(--muted); font-size:.78rem; margin-top:.12rem; }
+    /* Live · Son U (15m) gold control box */
+    .sonu-gold-box {
+      border:1px solid rgba(251,191,36,0.45);
+      border-radius:16px;
+      padding:1rem 1.05rem;
+      margin-bottom:.75rem;
+      background:linear-gradient(145deg, rgba(251,191,36,0.14), rgba(18,24,32,0.92));
+      box-shadow:0 0 0 1px rgba(251,191,36,0.08);
+    }
+    .sonu-gold-kicker {
+      font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+      color:var(--orange); margin-bottom:.35rem;
+    }
+    .sonu-mode-banner {
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:1.35rem; font-weight:800; letter-spacing:.12em;
+      padding:.35rem 1rem; border-radius:10px; margin:.25rem 0 .55rem;
+      border:2px solid transparent;
+    }
+    .sonu-mode-banner.is-live {
+      color:#ff6b6b; border-color:rgba(248,113,113,.55);
+      background:rgba(248,113,113,.12);
+    }
+    .sonu-mode-banner.is-paper {
+      color:#93c5fd; border-color:rgba(147,197,253,.35);
+      background:rgba(96,165,250,.08);
+    }
+    .sonu-mode-toggles { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:.45rem; }
+    .mode-toggle-btn {
+      display:inline-flex; align-items:center; gap:.45rem;
+      padding:.45rem .85rem; border-radius:10px; font-weight:600; font-size:.78rem;
+      border:1px solid var(--border); background:var(--panel2); color:var(--text);
+    }
+    .mode-toggle-btn:hover { border-color:var(--orange); }
+    .mode-toggle-btn.is-active { border-color:rgba(52,211,153,.55); background:rgba(52,211,153,.08); }
+    .mode-lamp {
+      width:.55rem; height:.55rem; border-radius:50%; flex-shrink:0;
+    }
+    .mode-lamp.lamp-green { background:var(--green); box-shadow:0 0 0 3px rgba(52,211,153,.2); }
+    .mode-lamp.lamp-yellow { background:var(--orange); box-shadow:0 0 0 3px rgba(251,191,36,.18); }
+    .sonu-metrics {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(7rem,1fr));
+      gap:.55rem; margin-top:.65rem;
+    }
+    .sonu-metrics .metric-mini {
+      background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.06);
+      border-radius:10px; padding:.45rem .55rem;
+    }
+    .sonu-metrics .metric-mini .value { font-size:1.05rem; }
+    .log-view-tabs { display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.55rem; }
+    .log-view-tab {
+      cursor:pointer; border:1px solid var(--border); background:var(--panel2);
+      color:var(--muted); border-radius:8px; padding:.35rem .65rem; font-size:.74rem; font-weight:600;
+    }
+    .log-view-tab.active { color:var(--text); border-color:rgba(96,165,250,.45); background:rgba(96,165,250,.1); }
+    .log-panel { display:none; }
+    .log-panel.active { display:block; }
+    .paper-skips-toggle {
+      margin:.45rem 0; font-size:.74rem; color:var(--muted); cursor:pointer;
+      border:1px dashed rgba(255,255,255,.12); border-radius:8px; padding:.35rem .55rem;
+      background:rgba(0,0,0,.12);
+    }
+    .paper-skips-toggle input { margin-right:.35rem; accent-color:var(--orange); }
     @media (max-width:900px) {
       .hero { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .grid.two, .grid.three { grid-template-columns:1fr; }
@@ -244,7 +307,7 @@
 
     <div class="tabs" id="tabs">
       <button class="tab active" data-tab="live">Live 5m</button>
-      <button class="tab" data-tab="paper15">15m Bot</button>
+      <button class="tab" data-tab="paper15">Live · Son U</button>
       <button class="tab" data-tab="dualeg">Dual-Leg Paper</button>
       <button class="tab" data-tab="charts">Charts</button>
       <button class="tab" data-tab="config">Config</button>
@@ -308,25 +371,57 @@
     </div>
 
     <div id="panel-paper15" class="panel">
+      <section class="sonu-gold-box" id="sonu-gold-box">
+        <div class="sonu-gold-kicker">Desk · 15m BTC+ETH</div>
+        <div class="section-head" style="margin-bottom:0">
+          <h2 style="font-size:1.05rem;margin:0">Live · Son U</h2>
+          <span class="pill" id="c15m-backend-pill">後端 —</span>
+        </div>
+        <div class="sonu-mode-banner is-paper" id="c15m-mode-banner">PAPER</div>
+        <div class="hint" id="c15m-mode-sub">讀緊後端模式…</div>
+        <div class="sonu-mode-toggles">
+          <button type="button" class="mode-toggle-btn" id="c15m-btn-live">
+            <span class="mode-lamp lamp-yellow" id="c15m-lamp-live"></span> Live 實盤
+          </button>
+          <button type="button" class="mode-toggle-btn" id="c15m-btn-paper">
+            <span class="mode-lamp lamp-green" id="c15m-lamp-paper"></span> Paper 模擬
+          </button>
+        </div>
+        <div class="hint" id="c15m-control-hint" style="margin-top:.45rem">—</div>
+        <div class="sonu-metrics">
+          <div class="metric-mini">
+            <div class="label">Combined PnL</div>
+            <div class="value" id="c15m-combined">—</div>
+          </div>
+          <div class="metric-mini">
+            <div class="label">Win rate</div>
+            <div class="value" id="c15m-wr-combined">—</div>
+            <div class="hint" id="c15m-wr-detail">—</div>
+          </div>
+          <div class="metric-mini">
+            <div class="label">Stake ref</div>
+            <div class="value" style="font-size:.92rem" id="c15m-stake-ref">—</div>
+          </div>
+          <div class="metric-mini">
+            <div class="label">Session</div>
+            <div class="value" style="font-size:.85rem" id="c15m-session-inline">—</div>
+          </div>
+        </div>
+      </section>
+
       <div class="grid two">
         <div class="card bot-card m15" id="c15m-control-card">
           <div class="section-head">
-            <h2>15m Bot · BTC + ETH</h2>
-            <div class="status-line">
-              <span class="pill" id="c15m-mode-pill">—</span>
-              <span class="pill" id="c15m-status-pill">—</span>
-            </div>
+            <h2>Trading control</h2>
+            <span class="pill" id="c15m-status-pill">—</span>
           </div>
           <div class="hint" id="c15m-rules">—</div>
           <div class="controls" style="margin-top:.55rem">
             <button class="good" id="c15m-toggle">—</button>
-            <button id="c15m-enable-live">Go Live</button>
-            <button class="danger" id="c15m-disable-live">Paper mode</button>
           </div>
-          <div class="hint" id="c15m-control-hint" style="margin-top:.45rem">—</div>
         </div>
         <div class="card">
-          <div class="section-head"><h2>Session</h2><span class="pill" id="c15m-session-pill">—</span></div>
+          <div class="section-head"><h2>Per asset</h2><span class="pill" id="c15m-session-pill">—</span></div>
           <div class="grid three" style="margin-top:.45rem">
             <div><div class="label">BTC 15m</div><div class="value" style="font-size:1.15rem" id="c15m-btc">—</div><div class="hint" id="c15m-btc-meta">—</div></div>
             <div><div class="label">ETH 15m</div><div class="value" style="font-size:1.15rem" id="c15m-eth">—</div><div class="hint" id="c15m-eth-meta">—</div></div>
@@ -337,15 +432,34 @@
 
       <div class="card">
         <div class="section-head">
-          <h2>15m Trades <span class="tag" id="c15m-trades-tag">BTC + ETH</span></h2>
+          <h2>Trade logs <span class="tag" id="c15m-trades-tag">分開 Live / Paper</span></h2>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Time</th><th>Bot</th><th>Mode</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th></tr>
-            </thead>
-            <tbody id="c15m-trades-body"><tr><td colspan="9" class="muted">Loading…</td></tr></tbody>
-          </table>
+        <div class="log-view-tabs" role="tablist">
+          <button type="button" class="log-view-tab active" data-c15m-log="live" id="c15m-log-tab-live">Live log</button>
+          <button type="button" class="log-view-tab" data-c15m-log="paper" id="c15m-log-tab-paper">Paper log</button>
+        </div>
+        <label class="paper-skips-toggle" id="c15m-paper-skips-wrap" style="display:none">
+          <input type="checkbox" id="c15m-show-paper-skips"> 顯示 Paper skipped / 細節（預設收起）
+        </label>
+        <div class="log-panel active" id="c15m-log-panel-live">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Time</th><th>Bot</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th></tr>
+              </thead>
+              <tbody id="c15m-live-trades-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="log-panel" id="c15m-log-panel-paper">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Time</th><th>Bot</th><th>Tier</th><th>Ask</th><th>Stake</th><th>Result</th><th>PnL</th><th>Reason</th></tr>
+              </thead>
+              <tbody id="c15m-paper-trades-body"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
         </div>
         <div class="hint" id="c15m-observer-hint" style="margin-top:.45rem">—</div>
       </div>
@@ -887,23 +1001,78 @@
     }
 
     async function postCrypto15m(action) {
-      await fetch('/api/crypto15m/control', {
+      const res = await fetch('/api/crypto15m/control', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok && data.error) {
+        $('c15m-control-hint').textContent = data.error;
+      }
       await refresh();
     }
 
-    function renderCrypto15m(summary, trades, c15mControl) {
+    let c15mLiveTrades = [];
+    let c15mPaperTradesAll = [];
+    let c15mShowPaperSkips = false;
+    let c15mActiveLog = 'live';
+
+    function renderC15mTradeTable(bodyId, rows, emptyMsg) {
+      const body = $(bodyId);
+      if (!body) return;
+      if (!rows.length) {
+        body.innerHTML = `<tr><td colspan="8" class="muted">${emptyMsg}</td></tr>`;
+        return;
+      }
+      body.innerHTML = rows.map((r) => `<tr>
+        <td>${(r.timestamp_hkt || '').slice(0, 16)}</td>
+        <td>${r.bot || '—'}</td>
+        <td>${r.tier || '—'}</td>
+        <td>${r.entry_ask ?? r.ask ?? '—'}</td>
+        <td>$${Number(r.stake || 0).toFixed(2)}</td>
+        <td>${r.trade_result || r.status || '—'}</td>
+        <td class="${Number(r.pnl || 0) >= 0 ? 'pos' : 'neg'}">${r.pnl == null ? '—' : money(r.pnl)}</td>
+        <td class="reason" title="${r.strategy_reason || ''}">${r.strategy_reason || ''}</td>
+      </tr>`).join('');
+    }
+
+    function filterPaperLogRows(rows) {
+      if (c15mShowPaperSkips) return rows;
+      return rows.filter((r) => r.entered || (r.trade_result && r.trade_result !== 'SKIPPED'));
+    }
+
+    function paintC15mLogPanels() {
+      renderC15mTradeTable('c15m-live-trades-body', c15mLiveTrades, 'Live log 尚無紀錄');
+      renderC15mTradeTable(
+        'c15m-paper-trades-body',
+        filterPaperLogRows(c15mPaperTradesAll),
+        c15mShowPaperSkips ? 'Paper log 尚無紀錄' : 'Paper 成交/失敗 · skipped 已收起（可勾選顯示）',
+      );
+      document.querySelectorAll('[data-c15m-log]').forEach((btn) => {
+        const on = btn.dataset.c15mLog === c15mActiveLog;
+        btn.classList.toggle('active', on);
+      });
+      $('c15m-log-panel-live').classList.toggle('active', c15mActiveLog === 'live');
+      $('c15m-log-panel-paper').classList.toggle('active', c15mActiveLog === 'paper');
+      const skipWrap = $('c15m-paper-skips-wrap');
+      if (skipWrap) skipWrap.style.display = c15mActiveLog === 'paper' ? '' : 'none';
+    }
+
+    function renderCrypto15m(summary, liveTrades, paperTrades, c15mControl) {
       summary = summary || {};
-      trades = Array.isArray(trades) ? trades : [];
       c15mControl = c15mControl || {};
-      const mode = (summary.mode || c15mControl.mode || 'paper').toLowerCase();
+      c15mLiveTrades = Array.isArray(liveTrades) ? liveTrades : [];
+      c15mPaperTradesAll = Array.isArray(paperTrades) ? paperTrades : [];
+
+      const mode = (c15mControl.mode || summary.mode || 'paper').toLowerCase();
       const isLive = mode === 'live';
-      const paused = !!(summary.paused ?? c15mControl.paused);
+      const paused = !!(c15mControl.paused ?? summary.paused);
+      const armed = c15mControl.armed === true || c15mControl.live === true || isLive;
+      const gate = c15mControl.wallet_gate || {};
       const dc = summary.data_collection !== false && !isLive;
       const rules = summary.rules || {};
+
       const fillNote = isLive ? ' · CLOB FOK · max ask 0.85' : (summary.paper_fill_model === 'live_style_fok' ? ' · FOK sim' : '');
       const dcNote = dc
         ? ' · 資料收集（US/core 放寬 · max ask ' + (summary.paper_max_ask_favorite || '0.92') + '）'
@@ -912,44 +1081,89 @@
         `Entry ${rules.entry_window || '—'} · BTC ≥ $${rules.min_btc_move_usd ?? '—'} · ETH ≥ $${rules.min_eth_move_usd ?? '—'} · depth ≥ $${rules.min_depth_usd ?? '—'}${fillNote}${dcNote}`;
 
       const sess = summary.session || c15mControl.session || {};
-      $('c15m-session-pill').textContent = (sess.session_id || '15m').replace('crypto15m-', '');
-      $('c15m-hero-label').textContent = isLive ? '15m Live PnL' : '15m Paper PnL';
+      const sessLabel = (sess.session_id || '15m').replace('crypto15m-', '');
+      $('c15m-session-pill').textContent = sessLabel;
+      $('c15m-session-inline').textContent = sessLabel;
+
+      const heroLabel = $('c15m-hero-label');
+      if (heroLabel) heroLabel.textContent = isLive ? 'Son U Live PnL' : 'Son U Paper PnL';
       $('c15m-hero-metric').className = 'metric m15' + (isLive && !paused ? ' live-on' : '');
       $('c15m-control-card').className = 'card bot-card m15' + (isLive && !paused ? ' live-on' : '');
 
-      $('c15m-mode-pill').textContent = mode.toUpperCase();
-      $('c15m-mode-pill').className = 'pill ' + (isLive ? 'live' : 'warn');
+      const banner = $('c15m-mode-banner');
+      banner.textContent = isLive ? 'LIVE' : 'PAPER';
+      banner.className = 'sonu-mode-banner ' + (isLive ? 'is-live' : 'is-paper');
+
+      $('c15m-backend-pill').textContent = armed
+        ? (paused ? '後端 LIVE · 暫停' : '後端 LIVE · armed')
+        : '後端 PAPER';
+      $('c15m-backend-pill').className = 'pill ' + (armed ? (paused ? 'warn' : 'live') : 'warn');
+
+      $('c15m-mode-sub').textContent = isLive
+        ? (paused ? '真實模式已上線 · 交易暫停中' : '真實 CLOB · observer armed')
+        : '模擬落單 · 唔會用真錢';
+
+      const lampLive = $('c15m-lamp-live');
+      const lampPaper = $('c15m-lamp-paper');
+      lampLive.className = 'mode-lamp ' + (isLive ? 'lamp-green' : 'lamp-yellow');
+      lampPaper.className = 'mode-lamp ' + (isLive ? 'lamp-yellow' : 'lamp-green');
+      $('c15m-btn-live').classList.toggle('is-active', isLive);
+      $('c15m-btn-paper').classList.toggle('is-active', !isLive);
+
+      const gateHint = gate.ok === false && gate.message ? ` · ${gate.message}` : '';
+      $('c15m-control-hint').textContent = isLive
+        ? (paused ? 'Live 已開 · 交易暫停（observer 仍跑）' : 'Live 模式 · 真實下單 · 獨立於 5m session')
+        : ('Paper 模式 · 撳 Live 實盤切換（需 wallet gate）' + gateHint);
+
+      $('c15m-btn-live').onclick = () => {
+        if (isLive) return;
+        if (gate.ok === false) {
+          $('c15m-control-hint').textContent = gate.message || 'Wallet 未達標，未能 Live';
+          return;
+        }
+        if (!window.confirm('切換 Son U 去 LIVE？會重置 15m live log。')) return;
+        postCrypto15m('enable_live');
+      };
+      $('c15m-btn-paper').onclick = () => {
+        if (!isLive) return;
+        if (!window.confirm('切返 PAPER？observer 會 restart。')) return;
+        postCrypto15m('disable_live');
+      };
+
       $('c15m-status-pill').textContent = paused ? 'Paused' : (isLive ? 'Running' : 'Paper');
       $('c15m-status-pill').className = 'pill ' + (paused ? 'warn' : (isLive ? 'live' : ''));
 
       const toggle = $('c15m-toggle');
       if (!isLive) {
-        toggle.textContent = 'Resume (需先 Go Live)';
+        toggle.textContent = 'Pause（需先 Live）';
         toggle.className = '';
         toggle.disabled = true;
+        toggle.onclick = null;
       } else {
         toggle.disabled = false;
         toggle.textContent = paused ? 'Resume trading' : 'Pause trading';
         toggle.className = paused ? 'good' : 'danger';
         toggle.onclick = () => postCrypto15m(paused ? 'resume' : 'pause');
       }
-      $('c15m-enable-live').onclick = () => postCrypto15m('enable_live');
-      $('c15m-enable-live').style.display = isLive ? 'none' : '';
-      $('c15m-disable-live').onclick = () => postCrypto15m('disable_live');
-      $('c15m-disable-live').style.display = isLive ? '' : 'none';
-      $('c15m-control-hint').textContent = isLive
-        ? (paused ? 'Live 模式已開 · 交易暫停中（observer 仍跑）' : 'Live 模式 · 真實 CLOB 下單 · 不計入 5m session')
-        : 'Paper 模式 · 按 Go Live 開始真實下單（會重置 15m live log）';
 
-      setPnl('c15m-combined', summary.combined_overall_pnl ?? 0);
+      const metricsPnl = isLive ? (summary.combined_live_pnl ?? summary.combined_overall_pnl) : (summary.combined_paper_pnl ?? summary.combined_overall_pnl);
+      setPnl('c15m-combined', metricsPnl ?? 0);
       setPnl('c15m-btc', summary.btc?.overall_pnl ?? 0);
       setPnl('c15m-eth', summary.eth?.overall_pnl ?? 0);
       const b = summary.btc || {};
       const e = summary.eth || {};
+      const closed = (b.trades_closed ?? 0) + (e.trades_closed ?? 0);
+      const wins = closed && b.win_rate_pct != null && e.win_rate_pct != null
+        ? Math.round(((b.win_rate_pct * (b.trades_closed || 0)) + (e.win_rate_pct * (e.trades_closed || 0))) / Math.max(1, closed) * 10) / 10
+        : (b.win_rate_pct ?? e.win_rate_pct);
+      $('c15m-wr-combined').textContent = wins != null ? `${wins}%` : '—';
+      $('c15m-wr-detail').textContent = `${b.trades_closed ?? 0}+${e.trades_closed ?? 0} closed · BTC/ETH`;
+      $('c15m-stake-ref').textContent = `entered ${(b.trades_entered ?? 0) + (e.trades_entered ?? 0)} · stake log`;
+
       $('c15m-btc-meta').textContent = `${b.trades_entered ?? 0} entered · ${b.trades_closed ?? 0} closed · WR ${b.win_rate_pct ?? '—'}%`;
       $('c15m-eth-meta').textContent = `${e.trades_entered ?? 0} entered · ${e.trades_closed ?? 0} closed · WR ${e.win_rate_pct ?? '—'}%`;
-      $('c15m-hero-hint').textContent = `${mode.toUpperCase()} · ${(b.trades_entered ?? 0) + (e.trades_entered ?? 0)} trades · isolated session`;
-      $('c15m-trades-tag').textContent = isLive ? 'LIVE · BTC + ETH' : 'PAPER · BTC + ETH';
+      $('c15m-hero-hint').textContent = `${mode.toUpperCase()} · ${(b.trades_entered ?? 0) + (e.trades_entered ?? 0)} trades · Son U session`;
+      $('c15m-trades-tag').textContent = 'Live log / Paper log 分開 · 唔混流';
 
       const q = summary.quality?.combined || {};
       const ethQ = summary.quality?.eth || {};
@@ -965,22 +1179,7 @@
         return `Observer · signals ${sig} · ${isLive ? 'CLOB live fills' : 'paper FOK sim'} · 獨立於 5m live PnL`;
       })();
 
-      const body = $('c15m-trades-body');
-      if (!trades.length) {
-        body.innerHTML = `<tr><td colspan="9" class="muted">15m ${isLive ? 'live' : 'paper'} 尚無紀錄</td></tr>`;
-        return;
-      }
-      body.innerHTML = trades.map((r) => `<tr>
-        <td>${(r.timestamp_hkt || '').slice(0, 16)}</td>
-        <td>${r.bot || '—'}</td>
-        <td>${(r.mode || mode).toUpperCase()}</td>
-        <td>${r.tier || '—'}</td>
-        <td>${r.entry_ask ?? r.ask ?? '—'}</td>
-        <td>$${Number(r.stake || 0).toFixed(2)}</td>
-        <td>${r.trade_result || r.status || '—'}</td>
-        <td class="${Number(r.pnl || 0) >= 0 ? 'pos' : 'neg'}">${r.pnl == null ? '—' : money(r.pnl)}</td>
-        <td class="reason" title="${r.strategy_reason || ''}">${r.strategy_reason || ''}</td>
-      </tr>`).join('');
+      paintC15mLogPanels();
     }
 
     function renderDualLeg(summary, trades) {
@@ -1036,12 +1235,14 @@
     }
 
     async function refresh() {
-      let [wallet, account, btc, eth, control, tier, trades, daily, stakePlan, timetable, c15m, c15mTrades, c15mControl, dualLeg, dualLegTrades, services, allPaper] = await Promise.all([
+      let [wallet, account, btc, eth, control, tier, trades, daily, stakePlan, timetable, c15m, c15mLiveTradesRaw, c15mPaperTradesRaw, c15mControl, dualLeg, dualLegTrades, services, allPaper] = await Promise.all([
         getJson('/api/wallet', {}), getJson('/api/account-pnl', {}), getJson('/api/summary', {}),
         getJson('/api/eth-summary', {}), getJson('/api/bot-control', {}), getJson('/api/tier-pause', {}),
         getJson('/api/overview-trades?limit=' + tradeLimit, []), getJson('/api/daily-pnl', { btc: [], eth: [], total: [] }),
         getJson('/api/stake-plan', {}), getJson('/api/timetable', {}),
-        getJson('/api/crypto15m/summary', {}), getJson('/api/crypto15m/trades?limit=25', []),
+        getJson('/api/crypto15m/summary', {}),
+        getJson('/api/crypto15m/trades?ledger=live&limit=50', []),
+        getJson('/api/crypto15m/trades?ledger=paper&limit=120', []),
         getJson('/api/crypto15m/control', {}),
         getJson('/api/dual-leg/summary', {}), getJson('/api/dual-leg/trades?limit=50', []),
         getJson('/api/services-status', {}),
@@ -1088,8 +1289,22 @@
       renderTrades(trades);
       renderDailyChart(daily);
       renderCumulChart(daily);
-      renderCrypto15m(c15m, c15mTrades, c15mControl);
+      renderCrypto15m(c15m, c15mLiveTradesRaw, c15mPaperTradesRaw, c15mControl);
       renderDualLeg(dualLeg, dualLegTrades);
+    }
+
+    document.querySelectorAll('[data-c15m-log]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        c15mActiveLog = btn.dataset.c15mLog || 'live';
+        paintC15mLogPanels();
+      });
+    });
+    const c15mSkipCb = $('c15m-show-paper-skips');
+    if (c15mSkipCb) {
+      c15mSkipCb.addEventListener('change', () => {
+        c15mShowPaperSkips = c15mSkipCb.checked;
+        paintC15mLogPanels();
+      });
     }
 
     document.querySelectorAll('[data-release]').forEach((btn) => {
