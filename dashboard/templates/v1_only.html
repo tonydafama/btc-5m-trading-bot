@@ -352,18 +352,113 @@
       border:1px solid rgba(255,255,255,.08); border-radius:14px;
       background:var(--panel); margin:0 0 1rem;
     }
-    .paper-run-fold summary {
-      cursor:pointer; list-style:none; display:flex; align-items:center; gap:.55rem;
-      padding:.75rem .95rem; font-weight:700; font-size:.88rem;
-      border-radius:14px;
+    .paper-run-fold > summary {
+      cursor:pointer; list-style:none; border-radius:14px;
     }
     .paper-run-fold summary::-webkit-details-marker { display:none; }
-    .paper-run-fold[open] summary { border-bottom:1px solid var(--border); border-radius:14px 14px 0 0; }
-    .paper-run-fold[open] .paper-run-chevron { transform:rotate(90deg); }
-    .paper-run-title { color:var(--orange); letter-spacing:.04em; }
-    .paper-run-badge { color:var(--muted); font-size:.72rem; font-weight:600; flex:1; text-align:right; }
-    .paper-run-chevron { color:var(--muted); transition:transform .15s ease; }
+    .paper-run-fold[open] > summary { border-bottom:1px solid var(--border); border-radius:14px 14px 0 0; }
+    .paper-run-title { color:var(--orange); letter-spacing:.02em; }
+    .paper-run-hint { color:var(--muted); font-weight:500; }
     .paper-run-body { padding:.65rem .85rem .85rem; }
+    /* Family Desk paper-run inner folds — merge to droplet main template (/root/btc-5m-bot/…) */
+    .desk-fold-summary {
+      display:grid;
+      grid-template-columns:1rem minmax(0,1fr) minmax(5.75rem,36%);
+      column-gap:.55rem; row-gap:.15rem;
+      align-items:center;
+      padding:.58rem .78rem;
+      text-align:left;
+      font-size:.82rem; font-weight:700;
+    }
+    .desk-fold-summary::before {
+      grid-column:1; grid-row:1 / span 2;
+      align-self:center;
+      color:var(--muted); font-size:.72rem; font-weight:400;
+    }
+    details.paper-run-fold > .desk-fold-summary::before { content:"▸"; }
+    details.paper-run-fold[open] > .desk-fold-summary::before { content:"▾"; }
+    .desk-fold-left {
+      grid-column:2; min-width:0;
+      display:flex; flex-direction:column; align-items:flex-start; gap:.12rem;
+    }
+    .desk-fold-right,
+    .desk-fold-meta {
+      grid-column:3; grid-row:1 / span 2;
+      justify-self:end; align-self:center;
+      text-align:right;
+      font-size:.68rem; font-weight:500; color:var(--muted);
+      line-height:1.35; max-width:11.5rem;
+    }
+    .desk-fold-badges {
+      display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.25rem;
+      margin-bottom:.18rem;
+    }
+    .desk-fold-badges .pill { font-size:.62rem; padding:.12rem .38rem; }
+    .desk-fold-title,
+    .sfv-fold-title,
+    .fam-fold-title {
+      font-size:.82rem; font-weight:700; color:var(--text);
+      line-height:1.25; display:block;
+    }
+    .desk-fold-hint,
+    .sfv-fold-hint,
+    .fam-fold-hint {
+      display:block;
+      font-size:.68rem; font-weight:500; color:var(--muted);
+      margin-left:0 !important;
+    }
+    #paper-run-fold details > summary,
+    .paper-run-inner > details > summary,
+    .paper-run-body .paper-run-inner > details > summary,
+    #paper-run-extra details > summary {
+      display:grid;
+      grid-template-columns:1rem minmax(0,1fr) minmax(5.75rem,36%);
+      column-gap:.55rem; align-items:center;
+      padding:.58rem .78rem;
+      text-align:left;
+    }
+    #paper-run-fold details > summary::before,
+    .paper-run-inner > details > summary::before,
+    #paper-run-extra details > summary::before {
+      grid-column:1; align-self:center;
+      color:var(--muted); font-size:.72rem;
+    }
+    #paper-run-fold details[open] > summary::before,
+    .paper-run-inner > details[open] > summary::before,
+    #paper-run-extra details[open] > summary::before { content:"▾ "; }
+    #paper-run-fold details:not([open]) > summary::before,
+    .paper-run-inner > details:not([open]) > summary::before,
+    #paper-run-extra details:not([open]) > summary::before { content:"▸ "; }
+    #paper-run-fold details > summary > span:first-child,
+    .paper-run-inner > details > summary > span:first-child,
+    #paper-run-extra details > summary > span:first-child {
+      grid-column:2; min-width:0;
+      display:flex; flex-direction:column; align-items:flex-start; gap:.12rem;
+    }
+    #paper-run-fold details > summary > span:last-child,
+    .paper-run-inner > details > summary > span:last-child,
+    #paper-run-extra details > summary > span:last-child {
+      grid-column:3; justify-self:end; align-self:center;
+      text-align:right;
+      font-size:.68rem !important; font-weight:500 !important;
+      color:var(--muted) !important; max-width:11.5rem;
+    }
+    #paper-run-fold .sfv-fold-title,
+    #paper-run-fold .fam-fold-title,
+    .paper-run-inner .sfv-fold-title,
+    .paper-run-inner .fam-fold-title {
+      font-size:.82rem !important; font-weight:700 !important;
+      color:var(--text) !important;
+    }
+    #paper-run-fold .sfv-fold-hint,
+    #paper-run-fold .fam-fold-hint,
+    .paper-run-inner .sfv-fold-hint,
+    .paper-run-inner .fam-fold-hint {
+      display:block !important;
+      font-size:.68rem !important; font-weight:500 !important;
+      color:var(--muted) !important;
+      margin-left:0 !important;
+    }
     .paper-run-body .board { margin-bottom:0; }
     .paper-run-body .board-hero { margin-bottom:.65rem; }
     .paper-run-extra:empty { display:none; }
@@ -513,10 +608,12 @@
     </div>
 
     <details class="paper-run-fold" id="paper-run-fold">
-      <summary class="paper-run-summary">
-        <span class="paper-run-title">Paper run</span>
-        <span class="paper-run-badge" id="paper-run-badge">紙上策略 · 預設摺起</span>
-        <span class="paper-run-chevron" aria-hidden="true">▸</span>
+      <summary class="desk-fold-summary paper-run-summary">
+        <span class="desk-fold-left">
+          <span class="desk-fold-title paper-run-title">Paper run</span>
+          <span class="desk-fold-hint paper-run-hint">Sports FV · Newborn · newnew / 5m A / V2 · 已停 · 其他 · 預設摺起</span>
+        </span>
+        <span class="desk-fold-right desk-fold-meta" id="paper-run-badge">摺起 · 撳開睇全部紙上</span>
       </summary>
       <div class="paper-run-body" id="paper-run-body">
     <section class="board" id="all-paper-board">
@@ -762,7 +859,47 @@
         if (!extra.contains(el)) extra.appendChild(el);
       });
     }
+
+    /** Align Paper run fold headers (Family Desk): left title stack + right meta; move 曾live pill off title row. */
+    function normalizeDeskFoldSummaries(root) {
+      const scope = root || document.getElementById('paper-run-fold')
+        || document.querySelector('.paper-run-inner') || document.getElementById('paper-run-extra');
+      if (!scope) return;
+      scope.querySelectorAll('details > summary').forEach((summary) => {
+        summary.classList.add('desk-fold-summary');
+        const spans = [...summary.children].filter((el) => el.tagName === 'SPAN');
+        if (spans.length >= 2) {
+          spans[0].classList.add('desk-fold-left');
+          const meta = spans[spans.length - 1];
+          meta.classList.add('desk-fold-right', 'desk-fold-meta');
+          meta.style.removeProperty('color');
+          meta.style.removeProperty('font-size');
+          let badges = meta.querySelector('.desk-fold-badges');
+          if (!badges) {
+            badges = document.createElement('span');
+            badges.className = 'desk-fold-badges';
+            meta.insertBefore(badges, meta.firstChild);
+          }
+          spans[0].querySelectorAll('.pill.live, .pill.run').forEach((pill) => {
+            if (pill.closest('.desk-fold-badges')) return;
+            badges.appendChild(pill);
+          });
+        }
+      });
+    }
+
+    function watchDeskFoldSummaries() {
+      normalizeDeskFoldSummaries();
+      ['families', 'paper-run-extra', 'paper-run-fold'].forEach((id) => {
+        const node = $(id);
+        if (!node || node._deskFoldObs) return;
+        node._deskFoldObs = true;
+        new MutationObserver(() => normalizeDeskFoldSummaries(node)).observe(node, { childList: true, subtree: true });
+      });
+    }
+
     tuckPaperRunGroups();
+    watchDeskFoldSummaries();
 
     function money(v) {
       const n = Number(v || 0);

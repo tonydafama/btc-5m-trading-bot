@@ -264,6 +264,8 @@ class PaperBoardTests(unittest.TestCase):
         self.assertLess(html.index("sonu-gold-box"), html.index("paper-run-fold"))
         self.assertLess(html.index("paper-run-fold"), html.index("all-paper-board"))
         self.assertIn('id="paper-run-extra"', html)
+        self.assertIn("desk-fold-summary", html)
+        self.assertIn("normalizeDeskFoldSummaries", html)
         self.assertNotIn('data-tab="paper15"', html)
 
 

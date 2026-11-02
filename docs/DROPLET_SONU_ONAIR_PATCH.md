@@ -104,6 +104,8 @@ Do **not** duplicate `#sonu-gold-box` inside tabs. Do **not** overwrite droplet 
 
 Verify mobile: only gold Live box + hero + Son U desk visible until user taps **Paper run**.
 
+**Paper run fold header alignment:** merge `desk-fold-summary` / `#paper-run-fold details > summary` CSS + `normalizeDeskFoldSummaries()` from PR `v1_only.html` into the Family Desk main template at `/root/btc-5m-bot/dashboard/templates/` (same file you patch for Son U). Fixes left/right column zigzag and moves **曾live** into the right meta strip.
+
 ## 10. Son U logs — **/logs only** (not on main Desk)
 
 Main `:8082/` **must not** show Live/Paper log tails on the Live · Son U card. See **[DROPLET_HIDE_SONU_LOG_ON_MAIN.md](./DROPLET_HIDE_SONU_LOG_ON_MAIN.md)** (incl. Family Desk `renderHighLive` / remove `sonuDualLog(...)`).
