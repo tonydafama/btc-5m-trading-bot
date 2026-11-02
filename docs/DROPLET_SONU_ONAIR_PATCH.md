@@ -53,10 +53,24 @@ curl -sI http://127.0.0.1:8082/ | head -3
 
 Hard refresh browser (mobile: close tab, reopen).
 
-## 6. Verify
+## 6. Window funnel row (考慮／過濾／入場)
+
+If missing on droplet, add inside `#sonu-gold-box` (after metrics grid) the block with ids
+`c15m-win-considered`, `c15m-win-filtered`, `c15m-win-entered` from PR `v1_only.html`, and ensure
+`/api/crypto15m/summary` returns `window_funnel` (merge PR `paper_15m_engine.py` funnel helpers only,
+or rely on droplet engine if it already exposes `window_funnel` / `quality.combined.windows`).
+
+Quick check:
+
+```bash
+curl -s http://127.0.0.1:8082/api/crypto15m/summary | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('window_funnel'))"
+```
+
+## 7. Verify
 
 - **Live (真倉 ON):** LIVE ON = **#ff0000** glow, red lamp — **not** gold/amber.
 - **Paper:** LIVE ON area near-black / off.
+- Gold box shows **考慮 / 過濾 / 入場** counts for current ledger.
 - WR / deposit / fold sections unchanged.
 
 ## Rollback

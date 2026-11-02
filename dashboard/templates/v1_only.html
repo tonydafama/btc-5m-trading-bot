@@ -299,6 +299,17 @@
       border-radius:10px; padding:.45rem .55rem;
     }
     .sonu-metrics .metric-mini .value { font-size:1.05rem; }
+    .sonu-window-funnel {
+      display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.45rem;
+      margin-top:.55rem; padding-top:.55rem;
+      border-top:1px solid rgba(251,191,36,.22);
+    }
+    .sonu-window-funnel .label { font-size:.62rem; }
+    .sonu-window-funnel .value { font-size:1.2rem; font-weight:800; }
+    .sonu-window-funnel .win-considered .value { color:var(--text); }
+    .sonu-window-funnel .win-filtered .value { color:var(--orange); }
+    .sonu-window-funnel .win-entered .value { color:var(--green); }
+    .sonu-window-funnel-hint { font-size:.68rem; color:var(--muted); margin-top:.35rem; }
     .log-view-tabs { display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.55rem; }
     .log-view-tab {
       cursor:pointer; border:1px solid var(--border); background:var(--panel2);
@@ -526,6 +537,24 @@
             <div class="value" style="font-size:.85rem" id="c15m-session-inline">—</div>
           </div>
         </div>
+        <div class="sonu-window-funnel" id="c15m-window-funnel" aria-label="窗口考慮／過濾／入場">
+          <div class="metric-mini win-considered">
+            <div class="label">考慮</div>
+            <div class="value" id="c15m-win-considered">—</div>
+            <div class="hint">windows</div>
+          </div>
+          <div class="metric-mini win-filtered">
+            <div class="label">過濾</div>
+            <div class="value" id="c15m-win-filtered">—</div>
+            <div class="hint">skipped</div>
+          </div>
+          <div class="metric-mini win-entered">
+            <div class="label">入場</div>
+            <div class="value" id="c15m-win-entered">—</div>
+            <div class="hint">entered</div>
+          </div>
+        </div>
+        <div class="sonu-window-funnel-hint" id="c15m-window-funnel-hint">—</div>
       </section>
 
       <div class="grid two">
@@ -1352,6 +1381,23 @@
       $('c15m-wr-combined').textContent = wins != null ? `${wins}%` : '—';
       $('c15m-wr-detail').textContent = `${b.trades_closed ?? 0}+${e.trades_closed ?? 0} closed · BTC/ETH`;
       $('c15m-stake-ref').textContent = `entered ${(b.trades_entered ?? 0) + (e.trades_entered ?? 0)} · stake log`;
+
+      const funnel = summary.window_funnel || {};
+      const qComb = summary.quality?.combined || {};
+      const fmtWin = (n) => (n == null || n === '' ? '—' : String(n));
+      let considered = funnel.considered ?? qComb.windows ?? qComb.windows_considered ?? qComb.strategy_signals;
+      let enteredWin = funnel.entered ?? ((b.trades_entered ?? 0) + (e.trades_entered ?? 0));
+      let filtered = funnel.filtered ?? qComb.filtered ?? qComb.skipped;
+      if (filtered == null && considered != null && enteredWin != null) {
+        filtered = Math.max(0, Number(considered) - Number(enteredWin));
+      }
+      $('c15m-win-considered').textContent = fmtWin(considered);
+      $('c15m-win-filtered').textContent = fmtWin(filtered);
+      $('c15m-win-entered').textContent = fmtWin(enteredWin);
+      const ledger = funnel.ledger || (isLive ? 'live' : 'paper');
+      const src = funnel.source || (Object.keys(qComb).length ? 'quality' : 'log');
+      $('c15m-window-funnel-hint').textContent =
+        `本 session · ${ledger.toUpperCase()} ledger · ${src === 'quality+log' ? 'quality + log' : src}`;
 
       $('c15m-btc-meta').textContent = `${b.trades_entered ?? 0} entered · ${b.trades_closed ?? 0} closed · WR ${b.win_rate_pct ?? '—'}%`;
       $('c15m-eth-meta').textContent = `${e.trades_entered ?? 0} entered · ${e.trades_closed ?? 0} closed · WR ${e.win_rate_pct ?? '—'}%`;

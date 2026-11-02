@@ -861,9 +861,9 @@ def api_eth_summary():
 
 @app.route("/api/crypto15m/summary")
 def api_crypto15m_summary():
-    from paper_15m_engine import crypto_15m_summary
+    from paper_15m_engine import crypto_15m_summary, enrich_summary_window_funnel
 
-    return jsonify(crypto_15m_summary())
+    return jsonify(enrich_summary_window_funnel(crypto_15m_summary()))
 
 
 @app.route("/api/crypto15m/quality")
