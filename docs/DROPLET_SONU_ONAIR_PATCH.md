@@ -108,7 +108,7 @@ Verify mobile: only gold Live box + hero + Son U desk visible until user taps **
 
 Main `:8082/` **must not** show Live/Paper log tails on the Live · Son U card. See **[DROPLET_HIDE_SONU_LOG_ON_MAIN.md](./DROPLET_HIDE_SONU_LOG_ON_MAIN.md)** (incl. Family Desk `renderHighLive` / remove `sonuDualLog(...)`).
 
-On **`/logs`** (`family_logs.html` on DO): keep Son U-only Live log + collapsed Paper + other bots; API `sonu_only=1` on `/api/crypto15m/trades` still applies there.
+On **`/logs`** (`family_logs.html` on DO): keep Son U-only Live log + collapsed Paper + other bots; API `sonu_only=1` on `/api/crypto15m/trades` still applies there. **Must keep** `parseLine`, `statusTag`, `renderRows` — [FAMILY_LOGS_HELPERS.md](./FAMILY_LOGS_HELPERS.md).
 
 ## Rollback
 

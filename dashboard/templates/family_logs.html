@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Family Desk · Logs</title>
+  <style>
+    :root {
+      --bg:#080b10; --panel:#121820; --panel2:#0c1018; --border:#2a3340;
+      --text:#e8eef5; --muted:#8b98a8; --green:#34d399; --red:#f87171;
+      --blue:#60a5fa; --orange:#fbbf24;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; line-height:1.45; }
+    .wrap { max-width:960px; margin:0 auto; padding:1rem 1.1rem 2rem; }
+    a { color:var(--blue); text-decoration:none; }
+    header { display:flex; flex-wrap:wrap; justify-content:space-between; gap:.75rem; margin-bottom:1rem; }
+    h1 { margin:0; font-size:1.2rem; }
+    .sub { color:var(--muted); font-size:.78rem; margin-top:.2rem; }
+    button {
+      border:1px solid var(--border); background:var(--panel2); color:var(--text);
+      border-radius:8px; padding:.4rem .65rem; font-size:.78rem; cursor:pointer;
+    }
+    button.active { border-color:rgba(96,165,250,.5); background:rgba(96,165,250,.12); }
+    .section { border:1px solid var(--border); border-radius:14px; background:var(--panel); margin-bottom:.85rem; overflow:hidden; }
+    .section-head { padding:.65rem .85rem; border-bottom:1px solid var(--border); }
+    .section-head h2 { margin:0; font-size:.92rem; }
+    .live-head { border-left:3px solid var(--red); }
+    .live-head h2 { color:#ff6666; }
+    .log-toolbar { display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; padding:.45rem .85rem; border-bottom:1px solid var(--border); }
+    .log-meta { color:var(--muted); font-size:.72rem; margin-left:auto; }
+    .log-list { max-height:420px; overflow:auto; padding:.35rem .55rem .65rem; }
+    .log-line {
+      display:flex; flex-wrap:wrap; gap:.45rem; align-items:flex-start;
+      padding:.42rem .45rem; border-bottom:1px solid rgba(255,255,255,.05); font-size:.76rem;
+    }
+    .log-line:last-child { border-bottom:0; }
+    .log-ts { color:var(--muted); white-space:nowrap; min-width:9.5rem; }
+    .log-slug { flex:1; word-break:break-all; }
+    .tag {
+      display:inline-flex; align-items:center; padding:.12rem .45rem; border-radius:6px;
+      font-size:.68rem; font-weight:700; letter-spacing:.03em; border:1px solid var(--border);
+    }
+    .tag.skip { color:var(--muted); background:rgba(255,255,255,.04); }
+    .tag.win { color:var(--green); border-color:rgba(52,211,153,.35); }
+    .tag.loss { color:var(--red); border-color:rgba(248,113,113,.35); }
+    .tag.entered { color:var(--blue); border-color:rgba(96,165,250,.35); }
+    .tag.failed { color:var(--orange); border-color:rgba(251,191,36,.35); }
+    details.fold summary {
+      cursor:pointer; padding:.65rem .85rem; font-weight:650; color:var(--orange); list-style:none;
+    }
+    details.fold summary::-webkit-details-marker { display:none; }
+    details.fold[open] summary { border-bottom:1px solid var(--border); }
+    .empty { color:var(--muted); padding:.75rem .85rem; font-size:.78rem; }
+    label.skips { font-size:.74rem; color:var(--muted); display:flex; align-items:center; gap:.35rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Family Desk · Logs</h1>
+        <div class="sub">Son U lock · Live 常駐 · Paper / 其他 bot 摺起 · 主頁唔 tail</div>
+      </div>
+      <div>
+        <a href="/"><button type="button">← Desk</button></a>
+      </div>
+    </header>
+
+    <div class="section" id="sonu-live-section">
+      <div class="section-head live-head">
+        <h2>Live log · Son U only</h2>
+      </div>
+      <div class="log-toolbar">
+        <span class="sub">15m BTC/ETH · sonu_only</span>
+        <button type="button" class="active" data-sonu-live-mode="trades" id="sonu-live-mode-trades">成交</button>
+        <button type="button" data-sonu-live-mode="all" id="sonu-live-mode-all">全部</button>
+        <span class="log-meta" id="sonu-live-meta">—</span>
+      </div>
+      <div class="log-list" id="sonu-live-log-body"></div>
+    </div>
+
+    <details class="section fold" id="sonu-paper-fold">
+      <summary>Paper log · 預設收起（Son U paper · 撳開）</summary>
+      <div class="log-toolbar">
+        <label class="skips"><input type="checkbox" id="sonu-paper-show-skips"> 顯示 skipped</label>
+        <button type="button" class="active" data-sonu-paper-mode="trades" id="sonu-paper-mode-trades">成交</button>
+        <button type="button" data-sonu-paper-mode="all" id="sonu-paper-mode-all">全部</button>
+        <span class="log-meta" id="sonu-paper-meta">—</span>
+      </div>
+      <div class="log-list" id="sonu-paper-log-body"></div>
+    </details>
+
+    <details class="section fold" id="fleet-log-fold">
+      <summary>其他 bot · 預設收起（非 Son U · 撳開）</summary>
+      <div class="log-toolbar">
+        <span class="log-meta" id="fleet-log-meta">—</span>
+      </div>
+      <div class="log-list" id="fleet-log-body"></div>
+    </details>
+  </div>
+
+  <script>
+    /* ============================================================
+       CORE LOG HELPERS — required by Son U lock + Family Desk UI.
+       Do NOT delete parseLine / statusTag / renderRows when patching.
+       ============================================================ */
+
+    const SONU_FLEET_TOKENS = ['V1', '5M', 'DUAL', 'FUNDING', 'MEME', 'SPORTS', 'GROK', 'NEWNEW'];
+
+    function parseLine(raw) {
+      if (raw == null) return null;
+      if (typeof raw === 'object') {
+        const row = { ...raw };
+        row.timestamp_hkt = row.timestamp_hkt || row.logged_at || row.time || row.ts || '';
+        row.slug = row.slug || row.market_id || row.window_id || row.condition_id || row.market || '';
+        row.trade_result = row.trade_result || row.result || row.status || '';
+        row.bot = row.bot || row.asset || '';
+        row.entered = !!row.entered;
+        return row;
+      }
+      const line = String(raw).trim();
+      if (!line) return null;
+      if (line.startsWith('{')) {
+        try {
+          return parseLine(JSON.parse(line));
+        } catch (e) {
+          /* fall through */
+        }
+      }
+      const tsMatch = line.match(/^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}[^|]*)/);
+      const timestamp_hkt = tsMatch ? tsMatch[1].trim() : '';
+      const upper = line.toUpperCase();
+      let trade_result = '';
+      if (upper.includes('SKIP')) trade_result = 'SKIPPED';
+      else if (upper.includes('WIN')) trade_result = 'WIN';
+      else if (upper.includes('LOSS')) trade_result = 'LOSS';
+      else if (upper.includes('FAIL')) trade_result = 'FAILED';
+      const slugMatch = line.match(/btc-updown[^\s|]*/i) || line.match(/eth-updown[^\s|]*/i);
+      return {
+        timestamp_hkt,
+        slug: slugMatch ? slugMatch[0] : line.slice(0, 120),
+        trade_result,
+        entered: trade_result && trade_result !== 'SKIPPED',
+        bot: line.includes('ETH') ? 'ETH' : 'BTC',
+        raw: line,
+      };
+    }
+
+    function statusTag(row) {
+      const r = parseLine(row) || {};
+      const res = String(r.trade_result || r.status || '').toUpperCase();
+      if (res === 'SKIPPED' || res === 'SKIP') {
+        return { label: 'SKIP', className: 'tag skip' };
+      }
+      if (res === 'WIN') return { label: 'WIN', className: 'tag win' };
+      if (res === 'LOSS') return { label: 'LOSS', className: 'tag loss' };
+      if (res === 'FAILED' || res === 'FAIL') return { label: 'FAIL', className: 'tag failed' };
+      if (r.entered) return { label: 'ENTER', className: 'tag entered' };
+      return { label: res || '—', className: 'tag skip' };
+    }
+
+    function renderRows(container, rows, emptyMsg) {
+      const el = typeof container === 'string' ? document.getElementById(container) : container;
+      if (!el) return;
+      const list = (Array.isArray(rows) ? rows : [])
+        .map((raw) => parseLine(raw))
+        .filter(Boolean);
+      if (!list.length) {
+        el.innerHTML = `<div class="empty">${emptyMsg || '尚無紀錄'}</div>`;
+        return;
+      }
+      el.innerHTML = list.map((row) => {
+        const tag = statusTag(row);
+        const ts = (row.timestamp_hkt || '').slice(0, 19);
+        const slug = row.slug || row.raw || row.strategy_reason || '—';
+        const stake = row.stake != null ? ` · $${Number(row.stake).toFixed(2)}` : '';
+        const pnl = row.pnl != null ? ` · ${Number(row.pnl) >= 0 ? '+' : ''}$${Number(row.pnl).toFixed(2)}` : '';
+        return `<div class="log-line">
+          <span class="log-ts">${ts || '—'}</span>
+          <span class="${tag.className}">${tag.label}</span>
+          <span class="log-slug">${slug}${stake}${pnl}</span>
+        </div>`;
+      }).join('');
+    }
+
+    /* ——— Son U lock (uses helpers above) ——— */
+
+    function isSonuTradeRow(r) {
+      const row = parseLine(r);
+      if (!row) return false;
+      if (['sonu', 'crypto15m', 'son_u'].includes(row.desk)) return true;
+      const product = String(row.product || row.strategy_id || '').toLowerCase();
+      if (['crypto15m', 'son_u', 'sonu', 'crypto_15m'].includes(product)) return true;
+      const sess = String(row.session_id || row.session || '').toLowerCase();
+      if (sess.includes('crypto15m') || sess.includes('son_u') || sess.includes('sonu')) return true;
+      const bot = String(row.bot || row.asset || '').trim();
+      if (!bot) return true;
+      const upper = bot.toUpperCase();
+      if (SONU_FLEET_TOKENS.some((tok) => upper.includes(tok))) return false;
+      if (upper === 'BTC' || upper === 'ETH') return true;
+      if (upper.includes('15M') || upper.includes('SON U') || upper.includes('SONU')) return true;
+      return false;
+    }
+
+    function isFleetRow(r) {
+      return !isSonuTradeRow(r);
+    }
+
+    async function fetchJson(url) {
+      try {
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) return [];
+        return await res.json();
+      } catch (e) {
+        return [];
+      }
+    }
+
+    let sonuLiveRows = [];
+    let sonuPaperRows = [];
+    let fleetRows = [];
+    let sonuLiveMode = 'trades';
+    let sonuPaperMode = 'trades';
+    let sonuPaperShowSkips = false;
+
+    function filterTradesMode(rows, mode, showSkips) {
+      let out = rows;
+      if (mode === 'trades') {
+        out = out.filter((r) => {
+          const p = parseLine(r);
+          return p && (p.entered || (p.trade_result && p.trade_result !== 'SKIPPED'));
+        });
+      }
+      if (!showSkips) {
+        out = out.filter((r) => {
+          const p = parseLine(r);
+          return p && p.trade_result !== 'SKIPPED';
+        });
+      }
+      return out;
+    }
+
+    function paintSonuLive() {
+      const rows = filterTradesMode(sonuLiveRows, sonuLiveMode, true);
+      renderRows('sonu-live-log-body', rows, 'Son U Live log 尚無紀錄');
+      const meta = document.getElementById('sonu-live-meta');
+      if (meta) meta.textContent = `${rows.length} 行 · ledger=live · sonu_only`;
+    }
+
+    function paintSonuPaper() {
+      const rows = filterTradesMode(sonuPaperRows, sonuPaperMode, sonuPaperShowSkips);
+      renderRows('sonu-paper-log-body', rows, sonuPaperShowSkips ? 'Paper 尚無紀錄' : 'Paper 成交/失敗 · skipped 已收起');
+      const meta = document.getElementById('sonu-paper-meta');
+      if (meta) meta.textContent = `${rows.length} 行 · ledger=paper · sonu_only`;
+    }
+
+    function paintFleet() {
+      renderRows('fleet-log-body', fleetRows.slice(0, 200), '非 Son U bot 尚無紀錄');
+      const meta = document.getElementById('fleet-log-meta');
+      if (meta) meta.textContent = `${Math.min(fleetRows.length, 200)} 行 · fleet`;
+    }
+
+    async function refreshAll() {
+      const [liveRaw, paperRaw] = await Promise.all([
+        fetchJson('/api/crypto15m/trades?ledger=live&sonu_only=1&limit=200'),
+        fetchJson('/api/crypto15m/trades?ledger=paper&sonu_only=1&limit=300'),
+      ]);
+      sonuLiveRows = (Array.isArray(liveRaw) ? liveRaw : []).map(parseLine).filter(isSonuTradeRow);
+      sonuPaperRows = (Array.isArray(paperRaw) ? paperRaw : []).map(parseLine).filter(isSonuTradeRow);
+
+      const fleetRaw = await fetchJson('/api/crypto15m/trades?ledger=paper&sonu_only=0&limit=120');
+      fleetRows = (Array.isArray(fleetRaw) ? fleetRaw : []).filter(isFleetRow);
+
+      paintSonuLive();
+      paintSonuPaper();
+      paintFleet();
+    }
+
+    document.querySelectorAll('[data-sonu-live-mode]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        sonuLiveMode = btn.dataset.sonuLiveMode || 'trades';
+        document.querySelectorAll('[data-sonu-live-mode]').forEach((b) => b.classList.toggle('active', b === btn));
+        paintSonuLive();
+      });
+    });
+    document.querySelectorAll('[data-sonu-paper-mode]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        sonuPaperMode = btn.dataset.sonuPaperMode || 'trades';
+        document.querySelectorAll('[data-sonu-paper-mode]').forEach((b) => b.classList.toggle('active', b === btn));
+        paintSonuPaper();
+      });
+    });
+    const skipCb = document.getElementById('sonu-paper-show-skips');
+    if (skipCb) {
+      skipCb.addEventListener('change', () => {
+        sonuPaperShowSkips = skipCb.checked;
+        paintSonuPaper();
+      });
+    }
+
+    refreshAll();
+    setInterval(refreshAll, 30000);
+  </script>
+</body>
+</html>

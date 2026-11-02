@@ -15,16 +15,13 @@ File: `/root/btc-5m-bot/dashboard/templates/v1_only.html`
 
 1. **Delete** the whole `#sonu-desk-panel` block that contains `.sonu-log-card` / `#c15m-log-panel-live` / `#c15m-paper-log-fold` (if still present).
 2. **Keep** `#sonu-gold-box` + optional `#sonu-desk-panel` trading control grid (no tables).
-3. **Add** (inside `#sonu-gold-box`, after funnel hint):
-
-```html
-<div class="sonu-logs-link-row">
-  <a class="sonu-logs-link" href="/logs">睇 Log → /logs</a>
-</div>
-```
-
-4. **Remove JS** on main page: `paintC15mLogPanels`, `renderC15mTradeTable`, fetches to `/api/crypto15m/trades` inside `refresh()` — logs load only on `/logs`.
+3. **Logs entry:** top-right **`Log → /logs`** only — **no** second log link on the gold card, **no** log tail on home.
+4. **Remove JS** on main page: `paintC15mLogPanels`, `renderC15mTradeTable`, `sonuDualLog`, fetches to `/api/crypto15m/trades` inside `refresh()` — logs load only on `/logs`.
 5. **Remove CSS** (main page only): `.sonu-live-log-block`, `.sonu-paper-log-fold`, `.paper-skips-toggle` if unused elsewhere.
+
+### `/logs` template (`family_logs.html`)
+
+When patching Son U lock on the logs page, **never remove** `parseLine`, `statusTag`, `renderRows` — see [FAMILY_LOGS_HELPERS.md](./FAMILY_LOGS_HELPERS.md). Copy the whole helper block from PR `family_logs.html` if unsure.
 
 Restart: `sudo systemctl restart btc-5m-dashboard` · hard refresh mobile.
 

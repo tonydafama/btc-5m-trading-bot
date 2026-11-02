@@ -1386,13 +1386,15 @@ def v1_logs():
     )
     from package2_strategy import v1_stake_plan_snapshot
 
-    return render_template(
-        "v1_detail.html",
-        strategy_display=strategy_display,
-        v1_risk=config.get("v1_risk") or {},
-        v1_scaling=config.get("v1_stake_scaling") or {},
-        stake_plan=v1_stake_plan_snapshot(),
-    )
+    ctx = {
+        "strategy_display": strategy_display,
+        "v1_risk": config.get("v1_risk") or {},
+        "v1_scaling": config.get("v1_stake_scaling") or {},
+        "stake_plan": v1_stake_plan_snapshot(),
+    }
+    family_tpl = DASHBOARD_DIR / "templates" / "family_logs.html"
+    template = "family_logs.html" if family_tpl.is_file() else "v1_detail.html"
+    return render_template(template, **ctx)
 
 
 @app.route("/simple")
