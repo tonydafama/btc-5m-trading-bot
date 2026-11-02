@@ -104,7 +104,7 @@ Do **not** duplicate `#sonu-gold-box` inside tabs. Do **not** overwrite droplet 
 
 Verify mobile: only gold Live box + hero + Son U desk visible until user taps **Paper run**.
 
-**Paper run fold header alignment:** merge `desk-fold-summary` / `#paper-run-fold details > summary` CSS + `normalizeDeskFoldSummaries()` from PR `v1_only.html` into the Family Desk main template at `/root/btc-5m-bot/dashboard/templates/` (same file you patch for Son U). Fixes left/right column zigzag and moves **曾live** into the right meta strip.
+**Paper run fold header alignment:** append (end of `<style>`) the **`#paper-run-fold … summary`** grid block + `DESK_FOLD_SUMMARY_SEL` / `normalizeDeskFoldSummaries()` from PR `v1_only.html` into the Family Desk main template at `/root/btc-5m-bot/dashboard/templates/`. Uses `!important` to override legacy `display:flex; justify-content:space-between; flex-wrap:wrap` on `sfv-fold` / `nb-fold` / `fam-fold` / `paused-fold` / `other` summaries. No `text-align:center` on fold headers.
 
 ## 10. Son U logs — **/logs only** (not on main Desk)
 

@@ -360,105 +360,134 @@
     .paper-run-title { color:var(--orange); letter-spacing:.02em; }
     .paper-run-hint { color:var(--muted); font-weight:500; }
     .paper-run-body { padding:.65rem .85rem .85rem; }
-    /* Family Desk paper-run inner folds — merge to droplet main template (/root/btc-5m-bot/…) */
-    .desk-fold-summary {
-      display:grid;
-      grid-template-columns:1rem minmax(0,1fr) minmax(5.75rem,36%);
-      column-gap:.55rem; row-gap:.15rem;
-      align-items:center;
-      padding:.58rem .78rem;
-      text-align:left;
-      font-size:.82rem; font-weight:700;
+    /*
+     * Family Desk Paper run fold headers — merge to droplet (/root/btc-5m-bot/…).
+     * Overrides legacy flex + space-between + flex-wrap (causes centered/zigzag titles).
+     */
+    #paper-run-fold > summary,
+    #paper-run-fold details.paper-run-fold > summary,
+    #paper-run-fold details.sfv-fold > summary,
+    #paper-run-fold details.nb-fold > summary,
+    #paper-run-fold details.fam-fold > summary,
+    #paper-run-fold details.paused-fold > summary,
+    #paper-run-fold details.other > summary,
+    .paper-run-inner > details.sfv-fold > summary,
+    .paper-run-inner > details.nb-fold > summary,
+    .paper-run-inner > details.fam-fold > summary,
+    .paper-run-inner > details.paused-fold > summary,
+    .paper-run-inner > details.other > summary,
+    #paper-run-extra details > summary,
+    summary.desk-fold-summary {
+      display:grid !important;
+      grid-template-columns:1rem minmax(0,1fr) minmax(5.75rem,36%) !important;
+      grid-template-rows:auto auto !important;
+      column-gap:.55rem !important; row-gap:.12rem !important;
+      align-items:start !important;
+      align-content:start !important;
+      justify-content:start !important;
+      justify-items:start !important;
+      flex-wrap:nowrap !important;
+      padding:.58rem .78rem !important;
+      text-align:left !important;
+      font-size:.82rem !important;
+      font-weight:700 !important;
+      list-style:none !important;
+      cursor:pointer;
     }
-    .desk-fold-summary::before {
-      grid-column:1; grid-row:1 / span 2;
-      align-self:center;
-      color:var(--muted); font-size:.72rem; font-weight:400;
-    }
-    details.paper-run-fold > .desk-fold-summary::before { content:"▸"; }
-    details.paper-run-fold[open] > .desk-fold-summary::before { content:"▾"; }
-    .desk-fold-left {
-      grid-column:2; min-width:0;
-      display:flex; flex-direction:column; align-items:flex-start; gap:.12rem;
-    }
-    .desk-fold-right,
-    .desk-fold-meta {
-      grid-column:3; grid-row:1 / span 2;
-      justify-self:end; align-self:center;
-      text-align:right;
-      font-size:.68rem; font-weight:500; color:var(--muted);
-      line-height:1.35; max-width:11.5rem;
-    }
-    .desk-fold-badges {
-      display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.25rem;
-      margin-bottom:.18rem;
-    }
-    .desk-fold-badges .pill { font-size:.62rem; padding:.12rem .38rem; }
-    .desk-fold-title,
-    .sfv-fold-title,
-    .fam-fold-title {
-      font-size:.82rem; font-weight:700; color:var(--text);
-      line-height:1.25; display:block;
-    }
-    .desk-fold-hint,
-    .sfv-fold-hint,
-    .fam-fold-hint {
-      display:block;
-      font-size:.68rem; font-weight:500; color:var(--muted);
-      margin-left:0 !important;
-    }
-    #paper-run-fold details > summary,
-    .paper-run-inner > details > summary,
-    .paper-run-body .paper-run-inner > details > summary,
-    #paper-run-extra details > summary {
-      display:grid;
-      grid-template-columns:1rem minmax(0,1fr) minmax(5.75rem,36%);
-      column-gap:.55rem; align-items:center;
-      padding:.58rem .78rem;
-      text-align:left;
-    }
-    #paper-run-fold details > summary::before,
+    #paper-run-fold > summary::before,
+    #paper-run-fold details.sfv-fold > summary::before,
+    #paper-run-fold details.nb-fold > summary::before,
+    #paper-run-fold details.fam-fold > summary::before,
+    #paper-run-fold details.paused-fold > summary::before,
+    #paper-run-fold details.other > summary::before,
     .paper-run-inner > details > summary::before,
     #paper-run-extra details > summary::before {
-      grid-column:1; align-self:center;
-      color:var(--muted); font-size:.72rem;
+      grid-column:1 !important;
+      grid-row:1 / span 2 !important;
+      align-self:center !important;
+      justify-self:start !important;
+      color:var(--muted) !important;
+      font-size:.72rem !important;
+      font-weight:400 !important;
     }
     #paper-run-fold details[open] > summary::before,
     .paper-run-inner > details[open] > summary::before,
-    #paper-run-extra details[open] > summary::before { content:"▾ "; }
+    #paper-run-extra details[open] > summary::before { content:"▾ " !important; }
     #paper-run-fold details:not([open]) > summary::before,
     .paper-run-inner > details:not([open]) > summary::before,
-    #paper-run-extra details:not([open]) > summary::before { content:"▸ "; }
-    #paper-run-fold details > summary > span:first-child,
-    .paper-run-inner > details > summary > span:first-child,
-    #paper-run-extra details > summary > span:first-child {
-      grid-column:2; min-width:0;
-      display:flex; flex-direction:column; align-items:flex-start; gap:.12rem;
+    #paper-run-extra details:not([open]) > summary::before { content:"▸ " !important; }
+    #paper-run-fold summary > .desk-fold-left,
+    #paper-run-fold summary > span:first-of-type,
+    .paper-run-inner details > summary > span:first-of-type,
+    #paper-run-extra details > summary > span:first-of-type {
+      grid-column:2 !important;
+      grid-row:1 / span 2 !important;
+      min-width:0 !important;
+      width:100% !important;
+      display:flex !important;
+      flex-direction:column !important;
+      align-items:flex-start !important;
+      justify-content:flex-start !important;
+      text-align:left !important;
+      gap:.12rem !important;
     }
-    #paper-run-fold details > summary > span:last-child,
-    .paper-run-inner > details > summary > span:last-child,
-    #paper-run-extra details > summary > span:last-child {
-      grid-column:3; justify-self:end; align-self:center;
-      text-align:right;
-      font-size:.68rem !important; font-weight:500 !important;
-      color:var(--muted) !important; max-width:11.5rem;
-    }
-    #paper-run-fold .sfv-fold-title,
-    #paper-run-fold .fam-fold-title,
-    .paper-run-inner .sfv-fold-title,
-    .paper-run-inner .fam-fold-title {
-      font-size:.82rem !important; font-weight:700 !important;
-      color:var(--text) !important;
-    }
-    #paper-run-fold .sfv-fold-hint,
-    #paper-run-fold .fam-fold-hint,
-    .paper-run-inner .sfv-fold-hint,
-    .paper-run-inner .fam-fold-hint {
-      display:block !important;
-      font-size:.68rem !important; font-weight:500 !important;
+    #paper-run-fold summary > .desk-fold-right,
+    #paper-run-fold summary > .desk-fold-meta,
+    #paper-run-fold summary > span:last-of-type,
+    .paper-run-inner details > summary > span:last-of-type,
+    #paper-run-extra details > summary > span:last-of-type {
+      grid-column:3 !important;
+      grid-row:1 / span 2 !important;
+      justify-self:end !important;
+      align-self:center !important;
+      text-align:right !important;
+      font-size:.68rem !important;
+      font-weight:500 !important;
       color:var(--muted) !important;
+      line-height:1.35 !important;
+      max-width:11.5rem !important;
+    }
+    #paper-run-fold summary .desk-fold-title,
+    #paper-run-fold summary .paper-run-title,
+    #paper-run-fold summary .sfv-fold-title,
+    #paper-run-fold summary .fam-fold-title,
+    .paper-run-inner details > summary .sfv-fold-title,
+    .paper-run-inner details > summary .fam-fold-title {
+      display:block !important;
+      width:100% !important;
+      text-align:left !important;
+      font-size:.82rem !important;
+      font-weight:700 !important;
+      color:var(--text) !important;
+      line-height:1.25 !important;
+      margin:0 !important;
+    }
+    .paper-run-title { color:var(--orange); letter-spacing:.02em; }
+    #paper-run-fold summary .desk-fold-hint,
+    #paper-run-fold summary .paper-run-hint,
+    #paper-run-fold summary .sfv-fold-hint,
+    #paper-run-fold summary .fam-fold-hint,
+    .paper-run-inner details > summary .sfv-fold-hint,
+    .paper-run-inner details > summary .fam-fold-hint {
+      display:block !important;
+      width:100% !important;
+      text-align:left !important;
+      font-size:.68rem !important;
+      font-weight:500 !important;
+      color:var(--muted) !important;
+      margin:0 !important;
       margin-left:0 !important;
     }
+    .paper-run-hint { font-weight:500; }
+    .desk-fold-badges {
+      display:flex !important;
+      flex-wrap:wrap !important;
+      justify-content:flex-end !important;
+      gap:.25rem !important;
+      margin-bottom:.18rem !important;
+      width:100% !important;
+    }
+    .desk-fold-badges .pill { font-size:.62rem; padding:.12rem .38rem; }
     .paper-run-body .board { margin-bottom:0; }
     .paper-run-body .board-hero { margin-bottom:.65rem; }
     .paper-run-extra:empty { display:none; }
@@ -860,27 +889,60 @@
       });
     }
 
-    /** Align Paper run fold headers (Family Desk): left title stack + right meta; move 曾live pill off title row. */
+    const DESK_FOLD_SUMMARY_SEL = [
+      '#paper-run-fold > summary',
+      '#paper-run-fold details.sfv-fold > summary',
+      '#paper-run-fold details.nb-fold > summary',
+      '#paper-run-fold details.fam-fold > summary',
+      '#paper-run-fold details.paused-fold > summary',
+      '#paper-run-fold details.other > summary',
+      '.paper-run-inner > details.sfv-fold > summary',
+      '.paper-run-inner > details.nb-fold > summary',
+      '.paper-run-inner > details.fam-fold > summary',
+      '.paper-run-inner > details.paused-fold > summary',
+      '.paper-run-inner > details.other > summary',
+      '#paper-run-extra details > summary',
+    ].join(',');
+
+    /** Paper run fold headers: force left grid; 曾live → right meta only (incl. renderFamilies). */
     function normalizeDeskFoldSummaries(root) {
       const scope = root || document.getElementById('paper-run-fold')
         || document.querySelector('.paper-run-inner') || document.getElementById('paper-run-extra');
       if (!scope) return;
-      scope.querySelectorAll('details > summary').forEach((summary) => {
+      scope.querySelectorAll(DESK_FOLD_SUMMARY_SEL).forEach((summary) => {
         summary.classList.add('desk-fold-summary');
+        summary.style.setProperty('display', 'grid', 'important');
+        summary.style.setProperty('text-align', 'left', 'important');
+        summary.style.setProperty('justify-content', 'flex-start', 'important');
+        summary.style.setProperty('flex-wrap', 'nowrap', 'important');
+        summary.style.removeProperty('align-items');
+
         const spans = [...summary.children].filter((el) => el.tagName === 'SPAN');
         if (spans.length >= 2) {
-          spans[0].classList.add('desk-fold-left');
+          const left = spans[0];
           const meta = spans[spans.length - 1];
+          left.classList.add('desk-fold-left');
           meta.classList.add('desk-fold-right', 'desk-fold-meta');
+          left.style.setProperty('text-align', 'left', 'important');
+          meta.style.setProperty('text-align', 'right', 'important');
           meta.style.removeProperty('color');
           meta.style.removeProperty('font-size');
+
+          left.querySelectorAll(
+            '.desk-fold-title, .paper-run-title, .sfv-fold-title, .fam-fold-title, .desk-fold-hint, .paper-run-hint, .sfv-fold-hint, .fam-fold-hint',
+          ).forEach((el) => {
+            el.style.setProperty('display', 'block', 'important');
+            el.style.setProperty('text-align', 'left', 'important');
+            el.style.setProperty('margin-left', '0', 'important');
+          });
+
           let badges = meta.querySelector('.desk-fold-badges');
           if (!badges) {
             badges = document.createElement('span');
             badges.className = 'desk-fold-badges';
             meta.insertBefore(badges, meta.firstChild);
           }
-          spans[0].querySelectorAll('.pill.live, .pill.run').forEach((pill) => {
+          left.querySelectorAll('.pill.live, .pill.run').forEach((pill) => {
             if (pill.closest('.desk-fold-badges')) return;
             badges.appendChild(pill);
           });
@@ -894,8 +956,19 @@
         const node = $(id);
         if (!node || node._deskFoldObs) return;
         node._deskFoldObs = true;
-        new MutationObserver(() => normalizeDeskFoldSummaries(node)).observe(node, { childList: true, subtree: true });
+        new MutationObserver(() => {
+          normalizeDeskFoldSummaries(node);
+        }).observe(node, { childList: true, subtree: true });
       });
+      if (typeof window.renderFamilies === 'function' && !window._deskFoldRenderFamiliesPatched) {
+        window._deskFoldRenderFamiliesPatched = true;
+        const orig = window.renderFamilies;
+        window.renderFamilies = function patchedRenderFamilies() {
+          const out = orig.apply(this, arguments);
+          normalizeDeskFoldSummaries(document.getElementById('families'));
+          return out;
+        };
+      }
     }
 
     tuckPaperRunGroups();

@@ -266,6 +266,11 @@ class PaperBoardTests(unittest.TestCase):
         self.assertIn('id="paper-run-extra"', html)
         self.assertIn("desk-fold-summary", html)
         self.assertIn("normalizeDeskFoldSummaries", html)
+        self.assertIn("DESK_FOLD_SUMMARY_SEL", html)
+        fold_css = html.split("Family Desk Paper run fold headers", 1)[1].split(".paper-run-body", 1)[0]
+        self.assertNotIn("text-align:center", fold_css.replace(" ", ""))
+        self.assertIn("text-align:left", fold_css)
+        self.assertIn("#paper-run-fold details.fam-fold > summary", html)
         self.assertNotIn('data-tab="paper15"', html)
 
 
