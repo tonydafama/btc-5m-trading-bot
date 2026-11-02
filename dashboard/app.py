@@ -1056,6 +1056,17 @@ def api_crypto15m_trades():
     return jsonify(_crypto15m_recent_trades(limit, ledger, entered_only, sonu_only))
 
 
+def _wallet_cash_usdc() -> float | None:
+    try:
+        from wallet import wallet_snapshot  # type: ignore
+
+        snap = wallet_snapshot() or {}
+        val = snap.get("cash_usdc") or snap.get("available_usdc")
+        return float(val) if val is not None else None
+    except Exception:
+        return None
+
+
 def _crypto15m_control_payload() -> dict[str, Any]:
     from paper_15m_engine import (
         crypto_15m_paused,
@@ -1068,15 +1079,24 @@ def _crypto15m_control_payload() -> dict[str, Any]:
     sess = load_session()
     mode = crypto_15m_trading_mode()
     gate = _crypto15m_wallet_gate()
+    from sonu_live_truth import live_control_payload
+
+    sonu = live_control_payload(ROOT, wallet_cash_usdc=_wallet_cash_usdc())
+    live_active = bool(sonu.get("live_active"))
+    armed_prep = bool(sonu.get("live_armed_prep"))
     return {
-        "mode": mode,
-        "live": mode == "live",
+        "mode": "live" if live_active else "paper",
+        "live": live_active,
         "paused": crypto_15m_paused(),
-        "running": mode == "live" and not crypto_15m_paused(),
+        "running": live_active and not crypto_15m_paused(),
         "session": sess,
         "summary": summary,
         "wallet_gate": gate,
-        "armed": mode == "live",
+        "armed": live_active or armed_prep,
+        "live_armed_prep": armed_prep,
+        "exec_is_real_live": sonu.get("exec_is_real_live"),
+        "exec_dry_run_placeholder": sonu.get("exec_dry_run_placeholder"),
+        "label_tc": sonu.get("label_tc"),
     }
 
 
@@ -1118,6 +1138,20 @@ def api_family_bots():
     return jsonify(_family_bots_payload())
 
 
+@app.route("/api/son-u/live-control", methods=["GET", "POST"])
+def api_son_u_live_control():
+    from sonu_live_truth import apply_live_control_action, live_control_payload
+
+    wallet = _wallet_cash_usdc()
+    if request.method == "GET":
+        return jsonify(live_control_payload(ROOT, wallet_cash_usdc=wallet))
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action") or "").lower()
+    out = apply_live_control_action(ROOT, action, wallet_cash_usdc=wallet)
+    status = 200 if out.get("ok") else 400
+    return jsonify(out), status
+
+
 @app.route("/api/crypto15m/control", methods=["GET", "POST"])
 def api_crypto15m_control():
     import subprocess
@@ -1152,8 +1186,14 @@ def api_crypto15m_control():
         return jsonify({"ok": True, "action": action, **_crypto15m_control_payload()})
 
     if action == "enable_live":
+        from sonu_live_truth import apply_live_control_action
+
+        wallet = _wallet_cash_usdc()
+        out = apply_live_control_action(ROOT, "to_live", wallet_cash_usdc=wallet)
+        if not out.get("ok"):
+            return jsonify({**out, "action": action, **_crypto15m_control_payload()}), 400
         gate = _crypto15m_wallet_gate()
-        if gate.get("min_wallet_usd") is not None and not gate.get("ok"):
+        if out.get("exec_is_real_live") and gate.get("min_wallet_usd") is not None and not gate.get("ok"):
             return jsonify(
                 {
                     "ok": False,
@@ -1163,19 +1203,23 @@ def api_crypto15m_control():
                     **_crypto15m_control_payload(),
                 }
             ), 400
-        py = ROOT / "venv/bin/python3"
-        if not py.exists():
-            py = Path(sys.executable)
-        script = ROOT / "scripts/start_crypto_15m_live_session.py"
-        if script.exists():
-            subprocess.run([str(py), str(script)], check=False, cwd=str(ROOT))
-        return jsonify({"ok": True, "action": action, **_crypto15m_control_payload()})
+        if out.get("exec_is_real_live"):
+            py = ROOT / "venv/bin/python3"
+            if not py.exists():
+                py = Path(sys.executable)
+            script = ROOT / "scripts/start_crypto_15m_live_session.py"
+            if script.exists():
+                subprocess.run([str(py), str(script)], check=False, cwd=str(ROOT))
+        return jsonify({"ok": True, "action": action, **out, **_crypto15m_control_payload()})
 
     if action == "disable_live":
+        from sonu_live_truth import apply_live_control_action
+
+        out = apply_live_control_action(ROOT, "to_paper", wallet_cash_usdc=_wallet_cash_usdc())
         _set_env_key("CRYPTO_15M_TRADING_MODE", "paper")
         _set_env_key("CRYPTO_15M_DATA_COLLECTION", "1")
         subprocess.run(["systemctl", "restart", "crypto-15m-observer"], check=False)
-        return jsonify({"ok": True, "action": action, **_crypto15m_control_payload()})
+        return jsonify({"ok": True, "action": action, **out, **_crypto15m_control_payload()})
 
     return jsonify({"error": "action must be pause, resume, enable_live, or disable_live"}), 400
 

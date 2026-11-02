@@ -348,6 +348,14 @@
     .sonu-gold-box .sonu-window-funnel .win-filtered .value { color:var(--orange); }
     .sonu-gold-box .sonu-window-funnel .win-entered .value { color:var(--green); }
     .sonu-gold-box .sonu-window-funnel-hint { font-size:.68rem; color:var(--muted); margin-top:.35rem; }
+    .high-live-rows { margin-top:.75rem; display:grid; gap:.55rem; }
+    .high-live-row {
+      border:1px solid rgba(224,181,103,.32); border-radius:12px; padding:.55rem .65rem;
+      background:rgba(0,0,0,.22); text-align:left;
+    }
+    .high-live-row .hl-row-title { font-size:.88rem; font-weight:750; display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; }
+    .high-live-row .hl-row-meta { font-size:.72rem; color:var(--muted); margin-top:.25rem; line-height:1.35; }
+    .high-live-row .chip.prep { color:var(--orange); border:1px solid rgba(251,191,36,.45); font-size:.68rem; padding:.12rem .4rem; border-radius:999px; }
     .paper-run-fold {
       border:1px solid rgba(255,255,255,.08); border-radius:14px;
       background:var(--panel); margin:0 0 1rem;
@@ -585,6 +593,7 @@
         </div>
       </div>
       <div class="sonu-window-funnel-hint" id="c15m-window-funnel-hint">考慮 — · 過濾 — · 入場 —</div>
+      <div class="high-live-rows" id="high-live-rows" aria-label="Live prep · 其他高 Live"></div>
     </section>
 
     <div class="hero">
@@ -1415,20 +1424,68 @@
         body: JSON.stringify({ action }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok && data.error) {
-        $('c15m-control-hint').textContent = data.error;
+      if (!res.ok && (data.error_tc || data.error)) {
+        $('c15m-control-hint').textContent = data.error_tc || data.error;
       }
       await refresh();
     }
 
-    function renderCrypto15m(summary, c15mControl) {
+    async function postSonULive(action) {
+      const res = await fetch('/api/son-u/live-control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json().catch(() => ({}));
+      const hint = $('c15m-control-hint');
+      if (hint) hint.textContent = data.message_tc || data.error_tc || data.error || (data.ok ? '已更新' : '—');
+      await refresh();
+    }
+
+    function renderHighLiveRows(hl, sonULive) {
+      const el = $('high-live-rows');
+      if (!el) return;
+      const rows = (hl && Array.isArray(hl.rows)) ? hl.rows : [];
+      const extra = rows.filter((r) => r && r.id !== 'son-btc-5m-ultimate-live');
+      if (!extra.length) {
+        el.innerHTML = '';
+        return;
+      }
+      el.innerHTML = extra.map((r) => {
+        const pill = r.live_enabled
+          ? '<span class="pill live">LIVE</span>'
+          : (r.had_live || r.live_tag === '曾live'
+            ? '<span class="chip prep">曾live · PREP</span>'
+            : '<span class="chip prep">PAPER PREP</span>');
+        return `<article class="high-live-row" data-high-live-id="${esc(r.id || '')}">
+          <div class="hl-row-title"><strong>${esc(r.display_name || r.id || '—')}</strong>${pill}</div>
+          <div class="hl-row-meta">${esc(r.status_label || r.status || '')} · ${esc(r.pnl_label || '')} · 真倉 OFF</div>
+        </article>`;
+      }).join('');
+      if (sonULive && sonULive.label_tc && hl && !hl.any_live) {
+        const note = document.createElement('div');
+        note.className = 'hint';
+        note.style.marginTop = '.35rem';
+        note.textContent = sonULive.label_tc;
+        if (!el.querySelector('[data-wallet-note]')) {
+          note.dataset.walletNote = '1';
+          el.appendChild(note);
+        }
+      }
+    }
+
+    function renderCrypto15m(summary, c15mControl, sonULive, highLive) {
       summary = summary || {};
       c15mControl = c15mControl || {};
+      sonULive = sonULive || {};
 
-      const mode = (c15mControl.mode || summary.mode || 'paper').toLowerCase();
-      const isLive = mode === 'live';
+      const liveActive = sonULive.live_active === true || c15mControl.live === true;
+      const execReal = sonULive.exec_is_real_live === true;
+      const armedPrep = sonULive.live_armed_prep === true || c15mControl.live_armed_prep === true;
+      const isLive = liveActive && execReal;
+      const mode = isLive ? 'live' : 'paper';
       const paused = !!(c15mControl.paused ?? summary.paused);
-      const armed = c15mControl.armed === true || c15mControl.live === true || isLive;
+      const armed = isLive || armedPrep;
       const gate = c15mControl.wallet_gate || {};
       const dc = summary.data_collection !== false && !isLive;
       const rules = summary.rules || {};
@@ -1454,8 +1511,8 @@
       const onAirText = $('c15m-on-air-text');
       const onAirLamp = $('c15m-on-air-lamp');
       onAir.className = 'on-air-row sonu-on-air-indicator ' + (isLive ? 'is-on' : 'is-off');
-      onAir.dataset.sonuOnAir = isLive ? 'live' : 'paper';
-      $('c15m-on-air-text').textContent = 'LIVE ON';
+      onAir.dataset.sonuOnAir = isLive ? 'live' : (armedPrep ? 'prep' : 'paper');
+      $('c15m-on-air-text').textContent = isLive ? 'LIVE ON' : (armedPrep ? 'PREP · PAPER' : 'LIVE OFF');
       if (isLive) {
         onAir.style.cssText =
           'opacity:1;filter:none;border-color:#ff0000;background:linear-gradient(180deg,#520000,#140000);box-shadow:0 0 14px rgba(255,0,0,.55);';
@@ -1508,14 +1565,16 @@
         }
       });
 
-      $('c15m-backend-pill').textContent = armed
-        ? (paused ? '後端 LIVE · 暫停' : '後端 LIVE · armed')
-        : '後端 PAPER';
-      $('c15m-backend-pill').className = 'pill ' + (armed ? (paused ? 'warn' : 'live') : 'warn');
+      $('c15m-backend-pill').textContent = isLive
+        ? (paused ? '後端 LIVE · 暫停' : '後端 LIVE · 真倉')
+        : (armedPrep ? 'PREP · 紙上 armed' : '後端 PAPER');
+      $('c15m-backend-pill').className = 'pill ' + (isLive ? (paused ? 'warn' : 'live') : (armedPrep ? 'warn' : ''));
 
       $('c15m-mode-sub').textContent = isLive
-        ? (paused ? '真實模式已上線 · 交易暫停中' : '真實 CLOB · observer armed')
-        : '模擬落單 · 唔會用真錢';
+        ? (paused ? '真實模式已上線 · 交易暫停中' : '真實 CLOB · 真倉 ON')
+        : (armedPrep
+          ? '紙上 armed · 真倉路徑未開（DRY_RUN placeholder）'
+          : (sonULive.label_tc || '模擬落單 · 唔會用真錢'));
 
       const lampLive = $('c15m-lamp-live');
       const lampPaper = $('c15m-lamp-paper');
@@ -1543,28 +1602,29 @@
 
       const modePill = $('c15m-mode-pill');
       if (modePill) {
-        modePill.textContent = mode.toUpperCase();
+        modePill.textContent = isLive ? 'LIVE' : (armedPrep ? 'PREP' : 'PAPER');
         modePill.className = 'pill ' + (isLive ? 'live' : 'warn');
       }
 
       const gateHint = gate.ok === false && gate.message ? ` · ${gate.message}` : '';
       $('c15m-control-hint').textContent = isLive
         ? (paused ? 'Live 已開 · 交易暫停（observer 仍跑）' : 'Live 模式 · 真實下單 · 獨立於 5m session')
-        : ('Paper 模式 · 撳 Live 實盤切換（需 wallet gate）' + gateHint);
+        : (armedPrep
+          ? 'PREP · 紙上 armed · 真倉未開 · 可切返 Paper'
+          : ('Paper · 撳 Live 實盤 → armed prep（placeholder 唔會假 真倉）' + gateHint));
 
       function c15mRequestLive() {
         if (isLive) return;
-        if (gate.ok === false && gate.min_wallet_usd != null) {
-          $('c15m-control-hint').textContent = gate.message || 'Wallet 未達標，未能 Live';
-          return;
-        }
-        if (!window.confirm('切換 Son U 去 LIVE？會重置 15m live log。')) return;
-        postCrypto15m('enable_live');
+        const msg = execReal
+          ? '確認切換 → Live（真倉）？需要銀包 ≥ $100。'
+          : '確認切換 → Live prep？\n真倉路徑未接好時只會 armed prep，唔會 LIVE ON／唔會動真錢。';
+        if (!window.confirm(msg)) return;
+        postSonULive('to_live');
       }
       function c15mRequestPaper() {
-        if (!isLive) return;
-        if (!window.confirm('切返 PAPER？observer 會 restart。')) return;
-        postCrypto15m('disable_live');
+        if (!isLive && !armedPrep) return;
+        if (!window.confirm('確認切換 → Paper？清除 armed prep · 真倉 OFF。')) return;
+        postSonULive('to_paper');
       }
       $('c15m-btn-live').onclick = c15mRequestLive;
       $('c15m-btn-paper').onclick = c15mRequestPaper;
@@ -1662,6 +1722,7 @@
         obs.textContent =
           `Observer · signals ${sig} · ${isLive ? 'CLOB live fills' : 'paper FOK sim'} · 日誌 → /logs`;
       }
+      renderHighLiveRows(highLive, sonULive);
     }
 
     function renderDualLeg(summary, trades) {
@@ -1717,13 +1778,14 @@
     }
 
     async function refresh() {
-      let [wallet, account, btc, eth, control, tier, trades, daily, stakePlan, timetable, c15m, c15mControl, dualLeg, dualLegTrades, services, allPaper] = await Promise.all([
+      let [wallet, account, btc, eth, control, tier, trades, daily, stakePlan, timetable, c15m, c15mControl, sonULive, dualLeg, dualLegTrades, services, allPaper] = await Promise.all([
         getJson('/api/wallet', {}), getJson('/api/account-pnl', {}), getJson('/api/summary', {}),
         getJson('/api/eth-summary', {}), getJson('/api/bot-control', {}), getJson('/api/tier-pause', {}),
         getJson('/api/overview-trades?limit=' + tradeLimit, []), getJson('/api/daily-pnl', { btc: [], eth: [], total: [] }),
         getJson('/api/stake-plan', {}), getJson('/api/timetable', {}),
         getJson('/api/crypto15m/summary', {}),
         getJson('/api/crypto15m/control', {}),
+        getJson('/api/son-u/live-control', {}),
         getJson('/api/dual-leg/summary', {}), getJson('/api/dual-leg/trades?limit=50', []),
         getJson('/api/services-status', {}),
         getJson('/api/all-paper-strategies', null),
@@ -1769,7 +1831,7 @@
       renderTrades(trades);
       renderDailyChart(daily);
       renderCumulChart(daily);
-      renderCrypto15m(c15m, c15mControl);
+      renderCrypto15m(c15m, c15mControl, sonULive, allPaper && allPaper.high_live_board);
       renderDualLeg(dualLeg, dualLegTrades);
     }
 

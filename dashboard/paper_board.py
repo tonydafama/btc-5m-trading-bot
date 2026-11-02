@@ -30,6 +30,8 @@ _ENV_KEYS = (
     "DUAL_LEG_ENABLED",
     "DUAL_LEG_PAPER",
     "ENABLE_DUAL_LEG",
+    "DUAL_LEG_LIVE_DRY_RUN",
+    "SONU_LIVE_ARMED_PREP",
 )
 
 _TS_KEYS = (
@@ -1061,6 +1063,151 @@ def _fair_value_experiment(root: Path) -> dict[str, Any]:
     }
 
 
+def _v2_golive_prep(root: Path, env: dict[str, str]) -> dict[str, Any]:
+    """Desk V2 live-prep snapshot (DRY_RUN placeholder — not go-live)."""
+    dry = _tri_flag(env.get("DUAL_LEG_LIVE_DRY_RUN"))
+    dry_run = True if dry is not False else False
+    meta = _read_json(root / "logs" / "dual_leg_v2_live_meta.json", {})
+    pnl = meta.get("realized_pnl_usd")
+    settled = meta.get("settled_trades")
+    if pnl is None:
+        logs = _named_logs(root, lambda n: "dual" in n and "leg" in n and "live" in n)
+        if logs:
+            stats = _ledger_stats(_file_rows(logs[0]))
+            pnl = stats.get("pnl")
+            settled = stats.get("trade_count")
+    return {
+        "ok": True,
+        "service": "dual-leg-live-v2",
+        "profile": "v2",
+        "dry_run": dry_run,
+        "DUAL_LEG_LIVE_DRY_RUN": "1" if dry_run else "0",
+        "live_enabled": False,
+        "armed": False,
+        "realized_pnl_usd": pnl,
+        "settled_trades": settled,
+        "status_zh": "真倉 OFF · DRY_RUN · 曾live rehearsal",
+        "note": meta.get("note") or "Parent V2 · DRY_RUN=1 · 唔會自動 go-live",
+        "waiting_for_command": "go_live",
+    }
+
+
+def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
+    from sonu_live_truth import SONU_BOT_ID, live_active, live_armed_prep
+
+    paths = [
+        root / "logs" / "sons" / f"{SONU_BOT_ID}_trades.json",
+        root / "logs" / f"{SONU_BOT_ID}_trades.json",
+    ]
+    son_path = next((p for p in paths if p.is_file()), None)
+    rows = _file_rows(son_path) if son_path else []
+    stats = _ledger_stats(rows) if rows else {"trade_count": 0, "scan_count": 0, "pnl": 0.0}
+    wins = sum(1 for r in rows if r.get("trade_result") == "WIN")
+    losses = sum(1 for r in rows if r.get("trade_result") == "LOSS")
+    settled = wins + losses
+    armed = live_armed_prep(root)
+    real_live = live_active(root)
+    if real_live:
+        status_label = "跑緊 · 真倉 ON"
+        change = "Live · 真倉 ON"
+    elif armed:
+        status_label = "跑緊 · 紙上 armed · 真倉未開"
+        change = "PREP · 紙上 armed · 真倉 OFF"
+    else:
+        status_label = "跑緊 · 紙上預備"
+        change = "Paper prep · 真倉 OFF"
+    trades = int(stats.get("trade_count") or 0)
+    considered = int(stats.get("scan_count") or trades)
+    filtered = max(0, considered - trades)
+    return {
+        "id": SONU_BOT_ID,
+        "display_name": "終極5m · Live預備",
+        "desk_section": "high_live",
+        "family": "Live",
+        "role": "son",
+        "son": "UL",
+        "launched": True,
+        "live_enabled": real_live,
+        "dry_run": not real_live,
+        "status": "RUNNING · paper",
+        "status_label": status_label,
+        "change": change,
+        "note": change,
+        "pnl": round(float(stats.get("pnl") or 0), 2),
+        "pnl_label": _money(float(stats.get("pnl") or 0)),
+        "trade_count": trades,
+        "count_label": f"{trades} 單 · {considered} 窗",
+        "scan_count": considered,
+        "settled_n": settled,
+        "wins": wins,
+        "losses": losses,
+        "wr_label": _fmt_wr(100.0 * wins / settled) if settled else "未有結算",
+        "stake_usd": "10",
+        "capital_usd": 100.0,
+        "trades_windows_line": f"Trades {trades} 單 · {considered} 窗 · 過濾 {filtered}",
+        "window_funnel": {
+            "considered": considered,
+            "filtered": filtered,
+            "entered": trades,
+            "trades": trades,
+            "ledger": "paper",
+        },
+        "unit": "btc-son-btc-5m-ultimate-live.service",
+        "live_unit": "btc-son-btc-5m-ultimate-live-exec.service",
+    }
+
+
+def _v2_high_live_row(prep: dict[str, Any]) -> dict[str, Any]:
+    pnl = prep.get("realized_pnl_usd")
+    settled = prep.get("settled_trades")
+    return {
+        "id": "dual-leg-live-v2",
+        "display_name": "BTC 2 legs V2",
+        "desk_section": "high_live",
+        "family": "BTC 2 legs V2",
+        "role": "parent",
+        "launched": False,
+        "live_enabled": False,
+        "had_live": True,
+        "live_tag": "曾live",
+        "dry_run": True,
+        "status": "STOPPED · paper",
+        "status_label": "曾live · 紙上 rehearsal · 真倉 OFF",
+        "change": "曾live · DRY_RUN=1 · 真倉 OFF",
+        "note": prep.get("note") or "V2 live prep · 唔會自動 start",
+        "pnl": pnl,
+        "pnl_label": _money(float(pnl or 0)),
+        "trade_count": settled,
+        "count_label": f"{settled or 0} 單" if settled is not None else "—",
+        "settled_n": settled,
+        "stake_usd": "1",
+        "capital_usd": 100.0,
+        "unit": "dual-leg-live-v2",
+    }
+
+
+def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | None = None) -> dict[str, Any]:
+    from sonu_live_truth import exec_is_real_live, live_active
+
+    prep = _v2_golive_prep(root, env)
+    rows = [_son_u_high_live_row(root, env), _v2_high_live_row(prep)]
+    any_live = exec_is_real_live(root) and live_active(root)
+    subtitle = (
+        "預備區 · 紙上 rehearsal · 真倉 OFF（要錢包≥$100 + Son U go live）"
+        if not any_live
+        else "真倉 ON"
+    )
+    return {
+        "ok": True,
+        "title": "Live",
+        "subtitle": subtitle,
+        "any_live": any_live,
+        "blocked": None if any_live or exec_is_real_live(root) else "live_exec_dry_run_placeholder",
+        "rows": rows,
+        "wallet_cash_usdc": wallet_cash_usdc,
+    }
+
+
 def build_all_paper_strategies(
     *,
     bot_root_path: Path | None = None,
@@ -1104,6 +1251,8 @@ def build_all_paper_strategies(
     ]
     running = sum(1 for row in bots if row["status"] == "running")
     any_live = any(row.get("mode") == "LIVE" for row in bots)
+    high_live = _high_live_board(root, modes, None)
+    v2_prep = _v2_golive_prep(root, modes)
     title = "全部 Paper · 冇 live 真下單" if not any_live else "有 LIVE 模式 · Paper 區只顯示模擬帳"
     line = f"{running} 個 bot 跑緊 / {len(paper)} 條 paper 策略 / {len(experiments)} 項實驗"
     return {
@@ -1120,6 +1269,8 @@ def build_all_paper_strategies(
         "bots": bots,
         "paper": paper,
         "experiments": experiments,
+        "high_live_board": high_live,
+        "v2_golive_prep": v2_prep,
         "debug": {
             "bot_root": str(root),
             "funding_root": str(funding),

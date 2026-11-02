@@ -272,6 +272,17 @@ class PaperBoardTests(unittest.TestCase):
         self.assertIn("text-align:left", fold_css)
         self.assertIn("#paper-run-fold details.fam-fold > summary", html)
         self.assertNotIn('data-tab="paper15"', html)
+        self.assertIn("postSonULive", html)
+        self.assertIn("high-live-rows", html)
+
+    def test_high_live_board_in_payload(self) -> None:
+        board = self._build()
+        hl = board.get("high_live_board") or {}
+        self.assertFalse(hl.get("any_live"))
+        rows = hl.get("rows") or []
+        self.assertGreaterEqual(len(rows), 2)
+        self.assertEqual(rows[0].get("id"), "son-btc-5m-ultimate-live")
+        self.assertEqual(rows[1].get("display_name"), "BTC 2 legs V2")
 
 
 if __name__ == "__main__":
