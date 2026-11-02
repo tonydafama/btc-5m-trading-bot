@@ -290,6 +290,29 @@
     }
     .mode-lamp.lamp-green { background:var(--green); box-shadow:0 0 0 3px rgba(52,211,153,.2); }
     .mode-lamp.lamp-yellow { background:var(--orange); box-shadow:0 0 0 3px rgba(251,191,36,.18); }
+    /* Live/Paper toggles — ON green as loud as LIVE ON red (#sonu-gold-box only) */
+    .sonu-gold-box .mode-lamp.lamp-green {
+      background:#00ff00 !important;
+      border:1px solid #7fff7f !important;
+      box-shadow:
+        0 0 6px #00ff00,
+        0 0 14px rgba(0,255,0,.78),
+        0 0 28px rgba(0,255,0,.38) !important;
+      filter:none !important;
+      opacity:1 !important;
+    }
+    .sonu-gold-box .mode-lamp.lamp-yellow {
+      background:#5c4d28 !important;
+      border:1px solid rgba(251,191,36,.22) !important;
+      box-shadow:none !important;
+      opacity:.42 !important;
+      filter:saturate(.55) brightness(.82) !important;
+    }
+    .sonu-gold-box .mode-toggle-btn.is-active {
+      border-color:rgba(0,255,0,.58) !important;
+      background:rgba(0,255,0,.07) !important;
+      box-shadow:0 0 14px rgba(0,255,0,.22), inset 0 0 12px rgba(0,255,0,.06) !important;
+    }
     .sonu-metrics {
       display:grid; grid-template-columns:repeat(auto-fit,minmax(7rem,1fr));
       gap:.55rem; margin-top:.65rem;
@@ -1372,6 +1395,23 @@
       lampPaper.className = 'mode-lamp ' + (isLive ? 'lamp-yellow' : 'lamp-green');
       $('c15m-btn-live').classList.toggle('is-active', isLive);
       $('c15m-btn-paper').classList.toggle('is-active', !isLive);
+      [lampLive, lampPaper].forEach((lamp) => {
+        if (!lamp) return;
+        const on = lamp.classList.contains('lamp-green');
+        if (on) {
+          lamp.style.background = '#00ff00';
+          lamp.style.border = '1px solid #7fff7f';
+          lamp.style.boxShadow = '0 0 6px #00ff00, 0 0 14px rgba(0,255,0,.78), 0 0 28px rgba(0,255,0,.38)';
+          lamp.style.opacity = '1';
+          lamp.style.filter = 'none';
+        } else {
+          lamp.style.background = '';
+          lamp.style.border = '';
+          lamp.style.boxShadow = '';
+          lamp.style.opacity = '';
+          lamp.style.filter = '';
+        }
+      });
 
       const modePill = $('c15m-mode-pill');
       if (modePill) {

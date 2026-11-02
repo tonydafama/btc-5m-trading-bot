@@ -2,7 +2,7 @@
 
 Production serves the V1 desk at **port 8082** (proxy) → Flask **8083** (`dashboard/app.py`). The home page is `dashboard/templates/v1_only.html`.
 
-**LIVE ON gold bug on droplet:** see [DROPLET_SONU_ONAIR_PATCH.md](./DROPLET_SONU_ONAIR_PATCH.md) and paste [sonu-on-air-red.snippet.css](./sonu-on-air-red.snippet.css) if LIVE ON shows amber/gold instead of `#ff0000`.
+**LIVE ON gold bug on droplet:** see [DROPLET_SONU_ONAIR_PATCH.md](./DROPLET_SONU_ONAIR_PATCH.md) and paste [sonu-on-air-red.snippet.css](./sonu-on-air-red.snippet.css) if LIVE ON shows amber/gold instead of `#ff0000`. For dim mode lamps, paste [sonu-mode-lamps-green.snippet.css](./sonu-mode-lamps-green.snippet.css) (§4).
 
 ## Production-safe update (droplet already has gold box / deposit / folds)
 

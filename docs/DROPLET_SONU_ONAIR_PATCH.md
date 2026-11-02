@@ -34,7 +34,19 @@ Minimal standalone snippet (works if your row id is `c15m-on-air`):
 
 See [docs/sonu-on-air-red.snippet.css](./sonu-on-air-red.snippet.css).
 
-## 4. Ensure LIVE toggles class `is-on` (not gold `pill warn`)
+## 4. Live / Paper mode lamps (green ON = vivid #00ff00)
+
+Paste into `v1_only.html` `<style>` (scoped to `#sonu-gold-box` only):
+
+[sonu-mode-lamps-green.snippet.css](./sonu-mode-lamps-green.snippet.css)
+
+- **ON (active mode):** `.mode-lamp.lamp-green` on the selected toggle — **#00ff00** + glow (match visual weight of red LIVE ON).
+- **Inactive:** `.lamp-yellow` stays dim/soft; no strong glow.
+- **JS (optional but recommended on Family Desk):** in `renderCrypto15m`, set inline `#00ff00` on lamps with class `lamp-green` (copy from PR `v1_only.html`).
+
+Verify: Paper mode → **Paper 模擬** green lamp blazing; Live mode → **Live 實盤** green lamp blazing; the other button’s yellow lamp stays muted.
+
+## 5. Ensure LIVE toggles class `is-on` (not gold `pill warn`)
 
 In the same file, search JS for `c15m-on-air` / `renderCrypto15m` / `Son U`. When backend mode is live, the row must get class **`is-on`** (not only a gold `.pill`).
 
@@ -43,7 +55,7 @@ If Family Desk uses `#sonu-live-on-pill`, add to that element when live:
 - classes: `is-on` (remove `warn` / `gold` / amber classes)
 - `data-sonu-on-air="live"`
 
-## 5. Reload dashboard (no full bot restart)
+## 6. Reload dashboard (no full bot restart)
 
 ```bash
 sudo systemctl restart btc-5m-dashboard
@@ -53,7 +65,7 @@ curl -sI http://127.0.0.1:8082/ | head -3
 
 Hard refresh browser (mobile: close tab, reopen).
 
-## 6. Window funnel row (考慮／過濾／入場) — gold Live card only
+## 7. Window funnel row (考慮／過濾／入場) — gold Live card only
 
 **Do not** move this into Paper run; it belongs **only** in the top `#sonu-gold-box`.
 
@@ -71,14 +83,15 @@ curl -s http://127.0.0.1:8082/api/crypto15m/summary | python3 -c "import sys,jso
 
 Mobile: gold box should show **考慮 / 過濾 / 入場** numbers and hint line `考慮 N 窗 · 過濾 M · 入場 K · PAPER|LIVE · …`.
 
-## 7. Verify
+## 8. Verify
 
 - **Live (真倉 ON):** LIVE ON = **#ff0000** glow, red lamp — **not** gold/amber.
 - **Paper:** LIVE ON area near-black / off.
+- **Mode toggles:** active **Live 實盤** or **Paper 模擬** shows **#00ff00** lamp glow; inactive yellow lamp stays soft.
 - Gold box shows **考慮 / 過濾 / 入場** counts for current ledger.
 - WR / deposit / fold sections unchanged.
 
-## 8. Paper run fold（全部紙上區預設摺起）
+## 9. Paper run fold（全部紙上區預設摺起）
 
 Surgical merge from PR `v1_only.html`:
 
