@@ -51,6 +51,17 @@ class BotLogTailTests(unittest.TestCase):
         self.assertIn("Live 席", label)
         self.assertNotEqual(label.lower(), "paper")
 
+    def test_sons_subdirectory_log(self) -> None:
+        log = Path(self.tmp) / "logs" / "sons"
+        log.mkdir(parents=True)
+        rows = [
+            {"timestamp_hkt": "2026-11-02 19:00:00 HKT", "trade_result": "SKIPPED", "slug": "btc-updown-5m-9", "entered": False},
+        ]
+        (log / "son-btc-5m-ultimate-live_trades.json").write_text(json.dumps(rows), encoding="utf-8")
+        out = blt.tail_bot_log("son-btc-5m-ultimate-live", mode="all", limit=10)
+        self.assertEqual(out["stats"]["skips"], 1)
+        self.assertEqual(len(out["lines"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

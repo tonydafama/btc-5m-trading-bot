@@ -29,12 +29,11 @@ def _resolve_log_path(bot_key: str) -> Path | None:
     if not key:
         return None
     candidates = [
+        _log_dir() / "sons" / f"{key}_trades.json",
         _log_dir() / f"{key}_trades.json",
         _log_dir() / f"{key}.json",
         _log_dir() / "bots" / f"{key}_trades.json",
     ]
-    if not key.endswith("_trades"):
-        candidates.insert(0, _log_dir() / f"{key}_trades.json")
     for path in candidates:
         if path.is_file():
             return path

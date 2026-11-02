@@ -3,143 +3,134 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Family Logs</title>
+  <title>Log · Son U</title>
   <style>
     :root {
-      --bg:#080b10; --panel:#121820; --panel2:#0c1018; --border:#2a3340;
-      --text:#eef4fb; --muted:#9aa8b8; --green:#34d399; --red:#f87171;
-      --blue:#60a5fa; --orange:#fbbf24; --live-red:#ff5555;
+      --bg:#06080c; --panel:#111820; --border:#2a3544;
+      --text:#f3f7fc; --muted:#8b9cb0; --green:#3ee88a; --red:#ff6b6b;
+      --blue:#5eb3ff; --orange:#ffb020; --skip-fg:#d0dae8; --skip-bg:#1a2433;
     }
     * { box-sizing:border-box; }
-    body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; line-height:1.5; }
-    .wrap { max-width:960px; margin:0 auto; padding:1rem 1.05rem 2rem; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif; line-height:1.45; }
+    .wrap { max-width:640px; margin:0 auto; padding:.85rem 1rem 2.5rem; }
     a { color:var(--blue); text-decoration:none; }
-    header { display:flex; flex-wrap:wrap; justify-content:space-between; gap:.75rem; margin-bottom:.85rem; }
-    h1 { margin:0; font-size:1.25rem; font-weight:800; }
-    .sub { color:var(--muted); font-size:.8rem; margin-top:.25rem; max-width:36rem; }
-    button {
-      border:1px solid var(--border); background:var(--panel2); color:var(--text);
-      border-radius:10px; padding:.45rem .7rem; font-size:.8rem; font-weight:650; cursor:pointer;
+    header { display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem; margin-bottom:1rem; }
+    h1 { margin:0; font-size:1.2rem; font-weight:800; letter-spacing:-.02em; }
+    .sub { color:var(--muted); font-size:.78rem; margin-top:.3rem; }
+    .desk-btn {
+      border:1px solid var(--border); background:#0c121a; color:var(--text);
+      border-radius:10px; padding:.45rem .75rem; font-size:.8rem; font-weight:650; cursor:pointer;
     }
-    button.active { border-color:rgba(96,165,250,.55); background:rgba(96,165,250,.14); color:#fff; }
-    .lock-banner {
-      border:1px solid rgba(255,85,85,.45); border-radius:12px; padding:.55rem .75rem;
-      margin-bottom:.75rem; background:rgba(80,0,0,.18); color:var(--live-red);
-      font-weight:800; font-size:.82rem; letter-spacing:.04em;
+    .hero {
+      border:1px solid rgba(255,80,80,.35); border-radius:16px;
+      background:linear-gradient(180deg,#141c28 0%,#0e141c 100%);
+      padding:.85rem .95rem 1rem; margin-bottom:.75rem;
     }
-    .section { border:1px solid var(--border); border-radius:14px; background:var(--panel); margin-bottom:.85rem; overflow:hidden; }
-    .section-head { padding:.7rem .9rem; border-bottom:1px solid var(--border); }
-    .section-head h2 { margin:0; font-size:.95rem; font-weight:750; }
-    .live-head { border-left:3px solid var(--live-red); }
-    .live-head h2 { color:#ff7777; }
-    .bot-pick { padding:.55rem .9rem .35rem; font-size:.78rem; color:var(--muted); }
-    .bot-pill {
-      display:inline-flex; align-items:center; gap:.35rem; margin-top:.35rem;
-      padding:.35rem .65rem; border-radius:999px; border:1px solid var(--border);
-      background:var(--panel2); font-weight:650; color:var(--text);
+    .hero-title { font-size:1.05rem; font-weight:800; margin:0 0 .35rem; color:#ff8a8a; }
+    .hero-status { font-size:.88rem; font-weight:650; color:var(--text); margin-bottom:.75rem; }
+    .hero-status.paused { color:var(--orange); }
+    .toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin-bottom:.55rem; }
+    .seg { display:inline-flex; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+    .seg button {
+      border:none; background:transparent; color:var(--muted); padding:.4rem .85rem;
+      font-size:.82rem; font-weight:700; cursor:pointer;
     }
-    .status-row { display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; padding:0 .9rem .55rem; }
-    .pill {
-      display:inline-flex; align-items:center; padding:.22rem .55rem; border-radius:999px;
-      font-size:.72rem; font-weight:700; border:1px solid var(--border); background:var(--panel2);
+    .seg button.active { background:rgba(94,179,255,.18); color:#fff; }
+    .stats-line { font-size:.82rem; color:var(--muted); flex:1; min-width:8rem; }
+    .stats-line strong { color:var(--green); font-weight:750; }
+    .reload {
+      border:1px solid var(--border); background:#0c121a; color:var(--muted);
+      border-radius:8px; padding:.35rem .55rem; font-size:.75rem; cursor:pointer;
     }
-    .pill.run { color:var(--green); border-color:rgba(52,211,153,.4); background:rgba(52,211,153,.1); }
-    .pill.seat { color:var(--orange); border-color:rgba(251,191,36,.4); }
-    .pill.mode-badge { color:var(--blue); border-color:rgba(96,165,250,.45); }
-    .log-toolbar { display:flex; flex-wrap:wrap; gap:.45rem; align-items:center; padding:.5rem .9rem; border-bottom:1px solid var(--border); }
-    .stat-pills { display:flex; flex-wrap:wrap; gap:.35rem; }
-    .stat-pills .pill.stat-fill { color:var(--green); border-color:rgba(52,211,153,.35); }
-    .stat-pills .pill.stat-skip { color:var(--muted); }
-    .stat-pills .pill.stat-total { color:var(--text); }
-    .stat-pills .pill.stat-ms { color:var(--muted); font-weight:600; }
-    .source-pill { font-size:.68rem; color:var(--muted); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .log-list { max-height:460px; overflow:auto; padding:.5rem .65rem .75rem; }
+    .log-list { max-height:min(70vh,520px); overflow:auto; margin:0 -.15rem; padding:.15rem 0; }
     .log-card {
-      border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:.55rem .65rem;
-      margin-bottom:.5rem; background:rgba(0,0,0,.22);
+      border:1px solid var(--border); border-radius:12px; padding:.6rem .7rem;
+      margin-bottom:.45rem; background:#0a0f16;
     }
-    .log-card:last-child { margin-bottom:0; }
-    .log-row1 { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin-bottom:.35rem; }
-    .log-ts { font-size:.8rem; font-weight:650; color:#c5d0dc; white-space:nowrap; }
-    .log-row2 { font-size:.82rem; color:var(--text); word-break:break-word; line-height:1.4; }
-    .log-detail { font-size:.74rem; color:var(--muted); margin-top:.25rem; }
+    .log-card.fill-card { border-color:rgba(62,232,138,.35); background:#0a1410; }
+    .log-line { display:flex; flex-wrap:wrap; align-items:flex-start; gap:.45rem .55rem; font-size:.86rem; }
+    .log-ts { font-variant-numeric:tabular-nums; font-weight:700; color:#b8c8dc; flex:0 0 auto; font-size:.8rem; }
     .tag {
-      display:inline-flex; align-items:center; padding:.2rem .55rem; border-radius:8px;
-      font-size:.74rem; font-weight:800; letter-spacing:.04em; min-width:3.1rem; justify-content:center;
+      display:inline-flex; align-items:center; padding:.15rem .5rem; border-radius:6px;
+      font-size:.72rem; font-weight:800; letter-spacing:.06em; flex:0 0 auto;
     }
-    .tag.skip { color:#8b949e; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); }
-    .tag.fill { color:#052e1a; background:var(--green); border:1px solid rgba(52,211,153,.65); }
-    .tag.loss { color:#fff; background:var(--red); border:1px solid rgba(248,113,113,.55); }
-    .tag.fail { color:#1a1200; background:var(--orange); border:1px solid rgba(251,191,36,.55); }
+    .tag.skip { color:var(--skip-fg); background:var(--skip-bg); border:1px solid #3a4a5e; }
+    .tag.fill { color:#042a18; background:var(--green); }
+    .tag.loss { color:#fff; background:var(--red); }
+    .tag.fail { color:#1a1000; background:var(--orange); }
+    .log-body { flex:1 1 12rem; min-width:0; color:var(--text); word-break:break-word; line-height:1.35; }
+    .log-body .slug { font-weight:650; }
+    .log-body .reason { color:#c5d2e0; }
     .empty {
-      color:#c5d0dc; padding:1rem .9rem; font-size:.88rem; line-height:1.55;
-      border:1px dashed rgba(255,255,255,.12); border-radius:12px; margin:.35rem .25rem;
-      background:rgba(0,0,0,.15);
+      padding:1.1rem .85rem; font-size:.9rem; color:#c8d4e4; text-align:center;
+      border:1px dashed rgba(94,179,255,.35); border-radius:12px; background:rgba(0,0,0,.25);
+    }
+    details.fold {
+      border:1px solid var(--border); border-radius:14px; background:var(--panel);
+      margin-bottom:.65rem; overflow:hidden;
     }
     details.fold summary {
-      cursor:pointer; padding:.7rem .9rem; font-weight:650; color:var(--orange); list-style:none;
+      cursor:pointer; padding:.65rem .9rem; font-weight:650; font-size:.85rem;
+      color:var(--orange); list-style:none;
     }
     details.fold summary::-webkit-details-marker { display:none; }
     details.fold[open] summary { border-bottom:1px solid var(--border); }
+    .fold-toolbar { display:flex; gap:.45rem; padding:.5rem .9rem; align-items:center; }
+    .fold-toolbar button {
+      border:1px solid var(--border); background:#0c121a; color:var(--muted);
+      border-radius:8px; padding:.35rem .6rem; font-size:.78rem; font-weight:650; cursor:pointer;
+    }
+    .fold-toolbar button.active { color:#fff; border-color:rgba(94,179,255,.45); background:rgba(94,179,255,.12); }
+    .fold-meta { font-size:.75rem; color:var(--muted); margin-left:auto; }
+    .page-foot { margin-top:1.25rem; font-size:.68rem; color:#5a6878; text-align:center; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <div>
-        <h1>Family Logs</h1>
-        <div class="sub">預設只顯示<strong style="color:var(--text);font-weight:700">成交</strong>（fill / WIN / LOSS）；skip 唔會混喺成交底下 — 撳「全部」先睇過濾。</div>
+        <h1>Log · Son U</h1>
+        <div class="sub">Live 終極5m 紀錄 · 預設睇全部（含 skip）</div>
       </div>
-      <div><a href="/"><button type="button">← Desk</button></a></div>
+      <a href="/"><button type="button" class="desk-btn">← Desk</button></a>
     </header>
 
-    <div class="lock-banner">LOCKED · Live · Son U only</div>
-
-    <div class="section" id="live-unit-section">
-      <div class="section-head live-head">
-        <h2>Live log · Son U only</h2>
-      </div>
-      <div class="bot-pick">揀 bot · <span class="bot-pill" id="active-bot-pill">終極5m · Live預備 · UL</span></div>
-      <div class="status-row">
-        <span class="pill run" id="bot-run-pill">RUNNING · —</span>
-        <span class="pill seat" id="bot-seat-pill">Live 席 · —</span>
-        <span class="pill mode-badge" id="bot-mode-badge" style="display:none">成交 only</span>
-      </div>
-      <div class="log-toolbar">
-        <button type="button" class="active" data-live-mode="trades" id="live-mode-trades">成交</button>
-        <button type="button" data-live-mode="all" id="live-mode-all">全部</button>
-        <div class="stat-pills" id="live-stat-pills">
-          <span class="pill stat-fill">成交 —</span>
-          <span class="pill stat-skip">skip —</span>
-          <span class="pill stat-total">總 —</span>
-          <span class="pill stat-ms">— ms</span>
+    <section class="hero" id="live-hero" aria-label="Live Son U">
+      <h2 class="hero-title">終極5m · Live</h2>
+      <div class="hero-status" id="live-status-line">載入中…</div>
+      <div class="toolbar">
+        <div class="seg" role="tablist">
+          <button type="button" class="active" data-live-mode="all" id="live-mode-all">全部</button>
+          <button type="button" data-live-mode="trades" id="live-mode-trades">成交</button>
         </div>
-      </div>
-      <div class="log-toolbar" style="border-bottom:none;padding-top:0">
-        <span class="pill source-pill" id="live-source-pill">—</span>
+        <span class="stats-line" id="live-stats-line">成交 — · skip —</span>
+        <button type="button" class="reload" id="live-reload">重新載入</button>
       </div>
       <div class="log-list" id="sonu-live-log-body"></div>
-    </div>
+    </section>
 
-    <details class="section fold" id="sonu-paper-fold">
-      <summary>Paper log · Son U（預設收起 · 撳開）</summary>
-      <div class="log-toolbar">
-        <button type="button" class="active" data-paper-mode="trades">成交</button>
-        <button type="button" data-paper-mode="all">全部</button>
-        <span class="pill stat-total" id="sonu-paper-meta">—</span>
+    <details class="fold" id="sonu-paper-fold">
+      <summary>Paper · Son U（預設收起）</summary>
+      <div class="fold-toolbar">
+        <button type="button" class="active" data-paper-mode="all">全部</button>
+        <button type="button" data-paper-mode="trades">成交</button>
+        <span class="fold-meta" id="sonu-paper-meta">—</span>
       </div>
-      <div class="log-list" id="sonu-paper-log-body"></div>
+      <div class="log-list" id="sonu-paper-log-body" style="padding:0 .75rem .75rem"></div>
     </details>
 
-    <details class="section fold" id="fleet-log-fold">
+    <details class="fold" id="fleet-log-fold">
       <summary id="fleet-fold-summary">其他機械人 · 預設收起</summary>
-      <div class="log-list" id="fleet-log-body"></div>
+      <div class="log-list" id="fleet-log-body" style="padding:.5rem .75rem .75rem"></div>
     </details>
+
+    <footer class="page-foot" id="page-foot">—</footer>
   </div>
 
   <script>
     /* CORE LOG HELPERS — Do NOT delete parseLine / statusTag / renderRows when patching Son U lock. */
     const DEFAULT_LIVE_BOT = 'son-btc-5m-ultimate-live';
+    const LIVE_TAIL_N = 40;
     const SONU_FLEET_TOKENS = ['V1', '5M', 'DUAL', 'FUNDING', 'MEME', 'SPORTS', 'GROK', 'NEWNEW'];
 
     function parseLine(raw) {
@@ -166,7 +157,7 @@
       else if (/\bLOSS\b/.test(upper)) trade_result = 'LOSS';
       else if (/\bFAIL/.test(upper)) trade_result = 'FAILED';
       const slugMatch = line.match(/btc-updown[^\s|]*/i) || line.match(/eth-updown[^\s|]*/i);
-      const row = {
+      return {
         timestamp_hkt: tsMatch ? tsMatch[1].trim() : '',
         slug: slugMatch ? slugMatch[0] : line.slice(0, 140),
         trade_result,
@@ -175,7 +166,6 @@
         reason: line,
         raw: line,
       };
-      return row;
     }
 
     function isSkipRow(p) {
@@ -212,20 +202,23 @@
       if (!el) return;
       const list = (Array.isArray(rows) ? rows : []).map(parseLine).filter(Boolean);
       if (!list.length) {
-        el.innerHTML = `<div class="empty">${emptyMsg || '尚無紀錄'}</div>`;
+        el.innerHTML = emptyMsg ? `<div class="empty">${emptyMsg}</div>` : '';
         return;
       }
       el.innerHTML = list.map((row) => {
         const tag = statusTag(row);
-        const ts = (row.timestamp_hkt || '').replace(' HKT', '').slice(0, 19);
+        const ts = (row.timestamp_hkt || '').replace(' HKT', '').slice(11, 19) || (row.timestamp_hkt || '').slice(0, 19);
         const slug = row.slug || '—';
-        const reason = row.reason && row.reason !== slug ? row.reason : (row.strategy_reason || '');
-        const stake = row.stake != null ? ` · stake $${Number(row.stake).toFixed(2)}` : '';
-        const pnl = row.pnl != null ? ` · PnL ${Number(row.pnl) >= 0 ? '+' : ''}$${Number(row.pnl).toFixed(2)}` : '';
-        return `<article class="log-card">
-          <div class="log-row1"><span class="log-ts">${ts || '—'}</span><span class="${tag.className}">${tag.label}</span></div>
-          <div class="log-row2">${slug}${stake}${pnl}</div>
-          ${reason ? `<div class="log-detail">${reason}</div>` : ''}
+        let reason = row.reason && String(row.reason) !== String(slug) ? String(row.reason) : '';
+        if (reason.length > 160) reason = reason.slice(0, 157) + '…';
+        const fillClass = tag.label === 'FILL' || tag.label === 'LOSS' ? ' fill-card' : '';
+        const reasonHtml = reason ? ` · <span class="reason">${reason}</span>` : '';
+        return `<article class="log-card${fillClass}">
+          <div class="log-line">
+            <span class="log-ts">${ts || '—'}</span>
+            <span class="${tag.className}">${tag.label}</span>
+            <span class="log-body"><span class="slug">${slug}</span>${reasonHtml}</span>
+          </div>
         </article>`;
       }).join('');
     }
@@ -236,10 +229,9 @@
       return parsed.filter(isFillRow);
     }
 
-    function emptyTradesMsg(stats, mode) {
+    function emptyTradesMsg(stats) {
       const skips = stats?.skips ?? 0;
-      if (mode !== 'trades') return '尚無紀錄';
-      return `暫無成交（${skips} 次 skip）· 撳「全部」睇過濾`;
+      return `暫無成交（${skips} skip）· 切去全部睇`;
     }
 
     function countStats(rows) {
@@ -267,53 +259,53 @@
       } catch (e) { return null; }
     }
 
-    let liveMode = 'trades';
-    let paperMode = 'trades';
+    let liveMode = 'all';
+    let paperMode = 'all';
     let liveAllRows = [];
     let liveStats = { fills: 0, skips: 0, total: 0 };
+    let liveSource = '';
     let paperRows = [];
     let fleetRows = [];
+    let familyBots = null;
 
-    function paintLiveUnit(payload) {
-      const seat = document.getElementById('bot-seat-pill');
-      const run = document.getElementById('bot-run-pill');
-      const badge = document.getElementById('bot-mode-badge');
-      const src = document.getElementById('live-source-pill');
-      const statsEl = document.getElementById('live-stat-pills');
-      if (payload && payload.stats) {
-        liveStats = payload.stats;
+    function paintLiveStatus() {
+      const lineEl = document.getElementById('live-status-line');
+      if (!lineEl) return;
+      const fb = familyBots?.son_u_live;
+      const text = fb?.status_line || '紙上預備 · 跑緊';
+      lineEl.textContent = text;
+      lineEl.classList.toggle('paused', !!fb?.paused);
+    }
+
+    function paintLiveUnit(tailPayload) {
+      if (tailPayload && tailPayload.stats) liveStats = tailPayload.stats;
+      const statsEl = document.getElementById('live-stats-line');
+      if (statsEl) {
+        statsEl.innerHTML = `成交 <strong>${liveStats.fills ?? 0}</strong> · skip ${liveStats.skips ?? 0}`;
       }
-      if (payload) {
-        if (seat) seat.textContent = payload.seat_label || 'Live 席 · 紙上預備';
-        if (run) {
-          const rl = payload.running_label || '';
-          run.textContent = rl.includes('paper') ? 'RUNNING · Live unit（紙上預備）' : (rl || 'RUNNING · —');
-        }
-        if (src) src.textContent = payload.source_file ? `${payload.source_file} · ${payload.elapsed_ms || '—'}ms` : '—';
-      }
+      if (tailPayload?.source_file) liveSource = tailPayload.source_file;
+      const foot = document.getElementById('page-foot');
+      if (foot && liveSource) foot.textContent = `source: ${liveSource}`;
+
       const view = rowsForMode(liveAllRows, liveMode);
       if (liveMode === 'trades' && !view.length) {
-        renderRows('sonu-live-log-body', [], emptyTradesMsg(liveStats, 'trades'));
+        renderRows('sonu-live-log-body', [], emptyTradesMsg(liveStats));
       } else {
-        renderRows('sonu-live-log-body', view, emptyTradesMsg(liveStats, liveMode));
-      }
-      if (badge) {
-        badge.style.display = liveMode === 'trades' ? '' : 'none';
-        badge.textContent = '成交 only';
-      }
-      if (statsEl) {
-        statsEl.innerHTML = `
-          <span class="pill stat-fill">成交 ${liveStats.fills ?? 0}</span>
-          <span class="pill stat-skip">skip ${liveStats.skips ?? 0}</span>
-          <span class="pill stat-total">總 ${liveStats.total ?? 0}</span>
-          <span class="pill stat-ms">${payload?.elapsed_ms ?? '—'}ms</span>`;
+        renderRows('sonu-live-log-body', view, liveMode === 'all' ? '尚無紀錄' : emptyTradesMsg(liveStats));
       }
     }
 
     async function refreshLiveUnit() {
-      const payload = await fetchJson(
-        `/api/bot-log-tail?bot=${encodeURIComponent(DEFAULT_LIVE_BOT)}&mode=all&limit=200`,
-      );
+      const [bots, payload] = await Promise.all([
+        fetchJson('/api/family-bots'),
+        fetchJson(
+          `/api/bot-log-tail?id=${encodeURIComponent(DEFAULT_LIVE_BOT)}&mode=all&n=${LIVE_TAIL_N}`,
+        ),
+      ]);
+      if (bots) {
+        familyBots = bots;
+        paintLiveStatus();
+      }
       if (payload && Array.isArray(payload.lines)) {
         liveAllRows = payload.lines;
         liveStats = payload.stats || countStats(liveAllRows);
@@ -324,14 +316,7 @@
       const rows = (Array.isArray(fallback) ? fallback : []).filter(isSonuTradeRow);
       liveStats = countStats(rows);
       liveAllRows = rows;
-      paintLiveUnit({
-        lines: rows,
-        stats: liveStats,
-        seat_label: 'Live 席 · Son U 15m',
-        running_label: 'RUNNING · Live unit（紙上預備）',
-        elapsed_ms: '—',
-        source_file: 'crypto_15m_trade_log_live.json',
-      });
+      paintLiveUnit({ stats: liveStats, source_file: 'crypto_15m_trade_log_live.json' });
     }
 
     function paintPaper() {
@@ -340,16 +325,17 @@
       const meta = document.getElementById('sonu-paper-meta');
       if (meta) meta.textContent = `成交 ${stats.fills} · skip ${stats.skips}`;
       if (paperMode === 'trades' && !view.length) {
-        renderRows('sonu-paper-log-body', [], emptyTradesMsg(stats, 'trades'));
+        renderRows('sonu-paper-log-body', [], emptyTradesMsg(stats));
       } else {
-        renderRows('sonu-paper-log-body', view, emptyTradesMsg(stats, paperMode));
+        renderRows('sonu-paper-log-body', view, paperMode === 'all' ? '尚無紀錄' : emptyTradesMsg(stats));
       }
     }
 
     function paintFleet() {
       renderRows('fleet-log-body', fleetRows.slice(0, 120), '其他 bot 尚無紀錄');
       const sum = document.getElementById('fleet-fold-summary');
-      if (sum) sum.textContent = `其他機械人 (${fleetRows.length}) · 預設收起`;
+      const n = familyBots?.fleet_count ?? fleetRows.length;
+      if (sum) sum.textContent = `其他機械人 (${n}) · 預設收起`;
     }
 
     async function refreshAll() {
@@ -364,18 +350,19 @@
 
     document.querySelectorAll('[data-live-mode]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        liveMode = btn.dataset.liveMode || 'trades';
+        liveMode = btn.dataset.liveMode || 'all';
         document.querySelectorAll('[data-live-mode]').forEach((b) => b.classList.toggle('active', b === btn));
-        refreshLiveUnit();
+        paintLiveUnit({ stats: liveStats, source_file: liveSource });
       });
     });
     document.querySelectorAll('[data-paper-mode]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        paperMode = btn.dataset.paperMode || 'trades';
+        paperMode = btn.dataset.paperMode || 'all';
         document.querySelectorAll('[data-paper-mode]').forEach((b) => b.classList.toggle('active', b === btn));
         paintPaper();
       });
     });
+    document.getElementById('live-reload')?.addEventListener('click', () => refreshLiveUnit());
 
     refreshAll();
     setInterval(refreshAll, 30000);

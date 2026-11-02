@@ -1020,9 +1020,15 @@ def _crypto15m_wallet_gate() -> dict[str, Any]:
 
 @app.route("/api/bot-log-tail")
 def api_bot_log_tail():
-    bot = request.args.get("bot") or request.args.get("key") or "son-btc-5m-ultimate-live"
+    bot = (
+        request.args.get("bot")
+        or request.args.get("id")
+        or request.args.get("key")
+        or "son-btc-5m-ultimate-live"
+    )
     mode = request.args.get("mode", "trades")
-    limit = min(int(request.args.get("limit", 40)), 200)
+    limit_raw = request.args.get("n") or request.args.get("limit") or "40"
+    limit = min(int(limit_raw), 200)
     try:
         from bot_log_tail import tail_bot_log
 
@@ -1072,6 +1078,40 @@ def _crypto15m_control_payload() -> dict[str, Any]:
         "wallet_gate": gate,
         "armed": mode == "live",
     }
+
+
+def _family_bots_payload() -> dict[str, Any]:
+    """Lightweight bot roster for /logs (Live Son U status line)."""
+    ctrl = _crypto15m_control_payload()
+    mode = str(ctrl.get("mode") or "paper").lower()
+    paused = bool(ctrl.get("paused"))
+    seat_short = "真倉 ON" if mode == "live" else "紙上預備"
+    run_short = "暫停" if paused else "跑緊"
+    son_u_live = {
+        "id": "son-btc-5m-ultimate-live",
+        "title": "終極5m · Live",
+        "mode": mode,
+        "paused": paused,
+        "status_line": f"{seat_short} · {run_short}",
+    }
+    fleet: list[dict[str, Any]] = []
+    try:
+        rows = _crypto15m_recent_trades(80, None, False, sonu_only=False)
+        seen: set[str] = set()
+        for r in rows:
+            bot = str(r.get("bot") or r.get("asset") or "").strip()
+            if not bot or bot in seen:
+                continue
+            seen.add(bot)
+            fleet.append({"name": bot})
+    except Exception:
+        pass
+    return {"son_u_live": son_u_live, "fleet_count": len(fleet), "fleet": fleet[:60]}
+
+
+@app.route("/api/family-bots")
+def api_family_bots():
+    return jsonify(_family_bots_payload())
 
 
 @app.route("/api/crypto15m/control", methods=["GET", "POST"])

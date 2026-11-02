@@ -17,15 +17,21 @@ class FamilyLogsTemplateTests(unittest.TestCase):
         self.assertIn("function renderRows(", html)
         self.assertIn("Do NOT delete parseLine / statusTag / renderRows", html)
 
-    def test_sonu_lock_sections(self) -> None:
+    def test_revamped_sonu_logs_ui(self) -> None:
         html = FAMILY.read_text(encoding="utf-8")
-        self.assertIn("Live log · Son U only", html)
+        self.assertIn("Log · Son U", html)
+        self.assertIn("終極5m · Live", html)
         self.assertIn("sonu-paper-fold", html)
         self.assertIn("sonu_only=1", html)
         self.assertIn("isSonuTradeRow", html)
         self.assertIn("暫無成交", html)
         self.assertIn("isFillRow", html)
-        self.assertIn("Live 席", html)
+        self.assertIn("/api/family-bots", html)
+        self.assertIn("data-live-mode=\"all\"", html)
+        self.assertIn("let liveMode = 'all'", html)
+        self.assertIn("/api/bot-log-tail?id=", html)
+        self.assertNotIn("LOCKED · Live", html)
+        self.assertNotIn("id=son-btc", html)
 
 
 if __name__ == "__main__":
