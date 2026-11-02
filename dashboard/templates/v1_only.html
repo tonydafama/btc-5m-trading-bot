@@ -151,20 +151,58 @@
       font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
       color:var(--orange); margin-bottom:.35rem;
     }
-    .sonu-mode-banner {
-      display:inline-flex; align-items:center; justify-content:center;
-      font-size:1.35rem; font-weight:800; letter-spacing:.12em;
-      padding:.35rem 1rem; border-radius:10px; margin:.25rem 0 .55rem;
-      border:2px solid transparent;
+    /* Radio-station ON-AIR: bright red when LIVE, near-black when off (Paper) */
+    @keyframes sonu-on-air-glow {
+      0%, 100% { box-shadow:0 0 6px 2px rgba(255,45,45,.95), 0 0 18px 4px rgba(255,0,0,.5); }
+      50% { box-shadow:0 0 10px 3px rgba(255,70,70,1), 0 0 28px 8px rgba(255,0,0,.65); }
     }
-    .sonu-mode-banner.is-live {
-      color:#ff6b6b; border-color:rgba(248,113,113,.55);
-      background:rgba(248,113,113,.12);
+    @keyframes sonu-on-air-panel {
+      0%, 100% { box-shadow:0 0 16px rgba(255,0,0,.35), inset 0 0 10px rgba(255,60,60,.12); }
+      50% { box-shadow:0 0 22px rgba(255,0,0,.5), inset 0 0 14px rgba(255,80,80,.18); }
     }
-    .sonu-mode-banner.is-paper {
-      color:#93c5fd; border-color:rgba(147,197,253,.35);
-      background:rgba(96,165,250,.08);
+    .on-air-row {
+      display:inline-flex; align-items:center; gap:.7rem;
+      padding:.5rem 1.15rem; border-radius:12px; margin:.3rem 0 .5rem;
+      border:2px solid #080a0d; background:#030405;
+      transition:opacity .2s ease, border-color .2s ease, box-shadow .2s ease;
     }
+    .on-air-row.is-on {
+      border-color:rgba(255,55,55,.9);
+      background:linear-gradient(180deg, rgba(90,8,8,.75) 0%, rgba(18,2,2,.95) 100%);
+      animation:sonu-on-air-panel 2s ease-in-out infinite;
+    }
+    .on-air-row.is-off {
+      border-color:#060809;
+      background:#020304;
+      opacity:.32;
+      filter:saturate(0.15);
+    }
+    .on-air-bulb {
+      width:.9rem; height:.9rem; border-radius:50%; flex-shrink:0;
+      border:1px solid rgba(0,0,0,.65);
+      background:#120808;
+    }
+    .on-air-row.is-on .on-air-bulb {
+      background:#ff2a2a;
+      animation:sonu-on-air-glow 1.6s ease-in-out infinite;
+    }
+    .on-air-row.is-off .on-air-bulb {
+      background:#0a0606;
+      box-shadow:none;
+    }
+    .on-air-sign {
+      font-size:1.25rem; font-weight:900; letter-spacing:.16em;
+      color:#0c0e10; text-shadow:none;
+    }
+    .on-air-row.is-on .on-air-sign {
+      color:#ff3b3b;
+      text-shadow:0 0 10px rgba(255,0,0,.95), 0 0 22px rgba(255,0,0,.55);
+    }
+    .sonu-paper-caption {
+      font-size:.72rem; font-weight:700; letter-spacing:.1em;
+      color:#3d4654; margin:-0.15rem 0 .35rem; text-transform:uppercase;
+    }
+    .sonu-paper-caption.hidden { display:none; }
     .sonu-mode-toggles { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:.45rem; }
     .mode-toggle-btn {
       display:inline-flex; align-items:center; gap:.45rem;
@@ -377,7 +415,11 @@
           <h2 style="font-size:1.05rem;margin:0">Live · Son U</h2>
           <span class="pill" id="c15m-backend-pill">後端 —</span>
         </div>
-        <div class="sonu-mode-banner is-paper" id="c15m-mode-banner">PAPER</div>
+        <div class="on-air-row is-off" id="c15m-on-air" aria-live="polite">
+          <span class="on-air-bulb" id="c15m-on-air-lamp" aria-hidden="true"></span>
+          <span class="on-air-sign" id="c15m-on-air-text">LIVE ON</span>
+        </div>
+        <div class="sonu-paper-caption hidden" id="c15m-paper-caption">PAPER · ON-AIR 熄咗</div>
         <div class="hint" id="c15m-mode-sub">讀緊後端模式…</div>
         <div class="sonu-mode-toggles">
           <button type="button" class="mode-toggle-btn" id="c15m-btn-live">
@@ -1090,9 +1132,11 @@
       $('c15m-hero-metric').className = 'metric m15' + (isLive && !paused ? ' live-on' : '');
       $('c15m-control-card').className = 'card bot-card m15' + (isLive && !paused ? ' live-on' : '');
 
-      const banner = $('c15m-mode-banner');
-      banner.textContent = isLive ? 'LIVE' : 'PAPER';
-      banner.className = 'sonu-mode-banner ' + (isLive ? 'is-live' : 'is-paper');
+      const onAir = $('c15m-on-air');
+      onAir.className = 'on-air-row ' + (isLive ? 'is-on' : 'is-off');
+      $('c15m-on-air-text').textContent = 'LIVE ON';
+      const paperCap = $('c15m-paper-caption');
+      if (paperCap) paperCap.classList.toggle('hidden', isLive);
 
       $('c15m-backend-pill').textContent = armed
         ? (paused ? '後端 LIVE · 暫停' : '後端 LIVE · armed')
