@@ -1018,6 +1018,29 @@ def _crypto15m_wallet_gate() -> dict[str, Any]:
         return {"ok": True, "message": "", "min_wallet_usd": None, "wallet_usd": None}
 
 
+@app.route("/api/bot-log-tail")
+def api_bot_log_tail():
+    bot = request.args.get("bot") or request.args.get("key") or "son-btc-5m-ultimate-live"
+    mode = request.args.get("mode", "trades")
+    limit = min(int(request.args.get("limit", 40)), 200)
+    try:
+        from bot_log_tail import tail_bot_log
+
+        return jsonify(tail_bot_log(bot, mode=mode, limit=limit))
+    except ImportError:
+        return jsonify(
+            {
+                "bot": bot,
+                "mode": mode,
+                "lines": [],
+                "stats": {"fills": 0, "skips": 0, "total": 0},
+                "source_file": None,
+                "elapsed_ms": 0,
+                "seat_label": "Live 席 · —",
+            }
+        )
+
+
 @app.route("/api/crypto15m/trades")
 def api_crypto15m_trades():
     limit = min(int(request.args.get("limit", 30)), 200)

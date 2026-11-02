@@ -38,7 +38,7 @@ grep -n "sonuDualLog\|renderHighLive\|Live log · Son U only\|Live log · Son U"
 1. In **`renderHighLive`** (or equivalent Son U card builder): **remove** the call to **`sonuDualLog(...)`** and any HTML string for live/paper log viewers under the stats grid.
 2. **Delete** markup matching user screenshot: red-bordered log container, `▾ Live · Son U (只呢隻…)`, Paper log `▸` fold **on the main page only**.
 3. **Do not edit** `/logs` template (`family_logs.html`) except to verify Son U lock still works there.
-4. Optional: add the same **`睇 Log → /logs`** link under the gold card.
+4. Ensure top bar **`Log → /logs`** remains; do **not** re-add inline log tail on the gold card.
 
 ## Verify
 

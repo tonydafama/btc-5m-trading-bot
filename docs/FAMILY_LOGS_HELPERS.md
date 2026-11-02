@@ -27,3 +27,5 @@ sudo systemctl restart btc-5m-dashboard
 ```
 
 Verify `/logs` loads with no console errors; Live Son U section renders lines.
+
+UX patch (成交 vs skip): [DROPLET_FAMILY_LOGS_UX.md](./DROPLET_FAMILY_LOGS_UX.md).

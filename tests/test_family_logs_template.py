@@ -23,6 +23,9 @@ class FamilyLogsTemplateTests(unittest.TestCase):
         self.assertIn("sonu-paper-fold", html)
         self.assertIn("sonu_only=1", html)
         self.assertIn("isSonuTradeRow", html)
+        self.assertIn("暫無成交", html)
+        self.assertIn("isFillRow", html)
+        self.assertIn("Live 席", html)
 
 
 if __name__ == "__main__":
