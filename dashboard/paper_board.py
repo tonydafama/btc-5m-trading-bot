@@ -1315,8 +1315,8 @@ def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | 
 
     pause = entry_pause_view()
     rows = [
-        _son_u_high_live_row(root, env),
         _v2_high_live_row(prep, root, env),
+        _son_u_high_live_row(root, env),
         _na_high_live_row(root, env),
     ]
     try:

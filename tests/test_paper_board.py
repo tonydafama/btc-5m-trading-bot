@@ -281,8 +281,8 @@ class PaperBoardTests(unittest.TestCase):
         self.assertFalse(hl.get("any_live"))
         rows = hl.get("rows") or []
         self.assertGreaterEqual(len(rows), 3)
-        self.assertEqual(rows[0].get("id"), "son-btc-5m-ultimate-live")
-        self.assertEqual(rows[1].get("display_name"), "BTC 2 legs V2")
+        self.assertEqual(rows[0].get("id"), "dual-leg-live-v2")
+        self.assertEqual(rows[1].get("id"), "son-btc-5m-ultimate-live")
 
     def test_high_live_wallet_from_status_cache(self) -> None:
         _write(

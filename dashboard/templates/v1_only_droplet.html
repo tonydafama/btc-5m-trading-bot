@@ -202,7 +202,7 @@ details.blog > summary:hover { color: var(--blue); }
 
 .hl-books {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: .45rem;
   margin-top: .4rem;
 }
@@ -1426,7 +1426,7 @@ summary.desk-fold-summary {
           ${lines}
         </div>`;
     };
-    return `<div class="hl-books" aria-label="Paper 同 Live 盈虧同勝率">${band('paper', 'is-paper')}${band('live', 'is-live')}</div>
+    return `<div class="hl-books" aria-label="Live 同 Paper 盈虧同勝率">${band('live', 'is-live')}${band('paper', 'is-paper')}</div>
           <div class="hl-stats hl-stats-mini">
             <div class="hl-stat"><div class="k">注碼</div><div class="v">${esc(stake)}</div></div>
             <div class="hl-stat"><div class="k">本金</div><div class="v">${esc(cap)}</div></div>
@@ -1463,7 +1463,7 @@ summary.desk-fold-summary {
     if (!rows.length) {
       body.innerHTML = '<div class="skel">未有 Live bot</div>';
     } else {
-      const sortOrder = ['son-btc-5m-ultimate-live', 'dual-leg-live-v2', 'son-btc-2legs-v2-newnew-a'];
+      const sortOrder = ['dual-leg-live-v2', 'son-btc-5m-ultimate-live', 'son-btc-2legs-v2-newnew-a'];
       const sortRows = [...rows].sort((a, b) => {
         const ai = sortOrder.indexOf(String(a.id || ''));
         const bi = sortOrder.indexOf(String(b.id || ''));

@@ -423,7 +423,7 @@
     }
     .desk-mode-books {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: .45rem;
       margin-top: .55rem;
     }
@@ -1770,7 +1770,7 @@
           </div>`;
       };
       host.hidden = false;
-      host.innerHTML = band('paper', 'is-paper') + band('live', 'is-live');
+      host.innerHTML = band('live', 'is-live') + band('paper', 'is-paper');
     }
 
     function hydrateDeskCard(card, row) {
