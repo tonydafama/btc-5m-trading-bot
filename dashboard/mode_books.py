@@ -560,6 +560,17 @@ def attach_mode_books(root: Path, rows: list[dict[str, Any]]) -> None:
         if not lines:
             continue
         head = lines[0]
+        for line in lines:
+            try:
+                settled = int(line.get("settled_n") or 0)
+            except (TypeError, ValueError):
+                settled = 0
+            try:
+                head_settled = int(head.get("settled_n") or 0)
+            except (TypeError, ValueError):
+                head_settled = 0
+            if settled > head_settled:
+                head = line
         row["pnl"] = head.get("pnl")
         row["pnl_label"] = head.get("pnl_label")
         row["wins"] = head.get("wins")
