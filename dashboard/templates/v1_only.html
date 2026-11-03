@@ -358,6 +358,14 @@
       grid-template-columns:repeat(2,minmax(0,1fr));
     }
     .desk-split-note { font-size:.75rem; color:var(--muted); margin-top:.35rem; }
+    .desk-pause-remark {
+      margin: .45rem 0 0;
+      font-size: .78rem;
+      line-height: 1.45;
+      font-weight: 650;
+      color: #e6c15a;
+    }
+    .desk-pause-remark.is-active { color: #ffb020; }
     .desk-bot {
       border-radius:16px; padding:.8rem .8rem .7rem; text-align:left;
       background:#0c1016; border:1px solid rgba(255,255,255,.08);
@@ -614,6 +622,7 @@
       <div class="sonu-paper-caption hidden" id="c15m-paper-caption">PAPER · ON-AIR 熄咗</div>
       <div class="hint" id="c15m-mode-sub">兩個 bot 各自有掣。轉一個，另一個唔會跟。</div>
       <p class="desk-split-note">注碼分開儲存。終極5m：bet size 10 = 每注 $10。V2 兩腿：bet size 10 = 每注 $20。</p>
+      <p class="desk-pause-remark" id="v2-entry-pause-remark">BTC 2 legs V2：香港時間 18:00–24:00 暫停開新倉，00:00 再開始。已開倉會自己行完。</p>
       <div class="desk-bot-grid high-live-rows" id="high-live-rows" aria-label="兩個 bot 獨立控制">
         <article class="desk-bot desk-bot-5m" data-bot-id="son-btc-5m-ultimate-live" data-multiplier="1" data-rule="v2 5m btc" data-display-name="終極5m" data-mode="paper">
           <div class="desk-bot-head">
@@ -1712,6 +1721,21 @@
       if (stakeEl && row.stake_usd != null) stakeEl.textContent = '$' + row.stake_usd;
     }
 
+    function paintEntryPauseRemark() {
+      const el = $('v2-entry-pause-remark');
+      if (!el) return;
+      const hour = Number(new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Hong_Kong',
+        hour: '2-digit',
+        hourCycle: 'h23',
+      }).format(new Date()));
+      const active = hour >= 18 && hour <= 23;
+      el.classList.toggle('is-active', active);
+      el.textContent = active
+        ? '而家暫停開新倉（香港時間 18:00–24:00），00:00 再開始。已開倉會自己行完。'
+        : 'BTC 2 legs V2：香港時間 18:00–24:00 暫停開新倉，00:00 再開始。已開倉會自己行完。';
+    }
+
     function hydrateDeskBots(hl, sonULive) {
       const rows = (hl && Array.isArray(hl.rows)) ? hl.rows : [];
       const byId = {};
@@ -1727,6 +1751,7 @@
       document.querySelectorAll('#high-live-rows article.desk-bot').forEach((card) => {
         hydrateDeskCard(card, byId[card.dataset.botId]);
       });
+      paintEntryPauseRemark();
       const walletLine = $('desk-wallet-line');
       if (walletLine) {
         const cash = ($('wallet-cash') && $('wallet-cash').textContent) || '—';

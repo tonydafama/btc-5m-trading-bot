@@ -6,7 +6,9 @@ import os
 import sys
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -37,6 +39,28 @@ class LiveUnitStakeTests(unittest.TestCase):
         else:
             stake = fresh
         self.assertEqual(stake, 1.0)
+
+
+class EntryPauseTests(unittest.TestCase):
+    def tearDown(self) -> None:
+        os.environ.pop("DUAL_LEG_LIVE_ENTRY_PAUSE", None)
+
+    def test_new_entries_pause_from_1800_until_midnight_hkt(self) -> None:
+        hkt = ZoneInfo("Asia/Hong_Kong")
+        os.environ["DUAL_LEG_LIVE_ENTRY_PAUSE"] = "1"
+        self.assertFalse(live.new_entry_paused(datetime(2026, 11, 3, 17, 59, tzinfo=hkt)))
+        self.assertTrue(live.new_entry_paused(datetime(2026, 11, 3, 18, 0, tzinfo=hkt)))
+        self.assertTrue(live.new_entry_paused(datetime(2026, 11, 3, 23, 59, tzinfo=hkt)))
+        self.assertFalse(live.new_entry_paused(datetime(2026, 11, 4, 0, 0, tzinfo=hkt)))
+        view = live.entry_pause_view(datetime(2026, 11, 3, 18, 30, tzinfo=hkt))
+        self.assertTrue(view["active"])
+        self.assertIn("00:00", view["remark_tc"])
+        self.assertIn("已開倉會自己行完", view["remark_tc"])
+
+    def test_pause_can_be_turned_off(self) -> None:
+        hkt = ZoneInfo("Asia/Hong_Kong")
+        os.environ["DUAL_LEG_LIVE_ENTRY_PAUSE"] = "0"
+        self.assertFalse(live.new_entry_paused(datetime(2026, 11, 3, 20, 0, tzinfo=hkt)))
 
 
 if __name__ == "__main__":

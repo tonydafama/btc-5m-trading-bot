@@ -31,9 +31,11 @@ from dual_leg_live import (  # noqa: E402
     build_fok_buy_intent,
     dry_run_enabled,
     evaluate_checkpoint,
+    entry_pause_view,
     execute_fok_intent,
     live_profile_name,
     live_unit_usd,
+    new_entry_paused,
     now_hkt,
     read_live_unit_usd,
     profile_to_dict,
@@ -307,6 +309,7 @@ def run_forever(poll_sec: float) -> int:
     errors = 0
     last_slug = None
     open_price = None
+    paused_logged: set[str] = set()
 
     _append_event(
         {
@@ -406,8 +409,32 @@ def run_forever(poll_sec: float) -> int:
             row = state.get(market.slug)
 
             # --- Entry: no open position ---
+            # 18:00–24:00 HKT blocks a new first leg only. A one-leg row still hedges.
+            _block_entry_pause = False
+            if row is None and new_entry_paused():
+                _block_entry_pause = True
+                if market.slug not in paused_logged:
+                    paused_logged.add(market.slug)
+                    _append_event(
+                        {
+                            "event": "skip_entry_hkt_pause",
+                            "timestamp_hkt": now_hkt(),
+                            "slug": market.slug,
+                            "window_hkt": "18:00-24:00",
+                            "resume_hkt": "00:00",
+                        }
+                    )
+                    print(
+                        f"[live] PAUSE no new entry {market.slug} HKT 18:00-24:00",
+                        flush=True,
+                    )
             _block_opp_before = False
-            if row is None and ev.get("would_enter_leg1") and ev.get("would_leg1"):
+            if (
+                row is None
+                and ev.get("would_enter_leg1")
+                and ev.get("would_leg1")
+                and not _block_entry_pause
+            ):
                 # live 影武者 / Son F: optional opp-before gate (default OFF → parent live unchanged)
                 _req_opp = (os.getenv("REQUIRE_OPP_BEFORE_LEG1") or "0").strip().lower() in {
                     "1", "true", "yes", "on"
@@ -436,6 +463,7 @@ def run_forever(poll_sec: float) -> int:
                 and ev.get("would_enter_leg1")
                 and ev.get("would_leg1")
                 and not _block_opp_before
+                and not _block_entry_pause
             ):
                 cash_now = _wallet_cash()
                 if cash_now is not None and cash_now < unit:
@@ -638,6 +666,7 @@ def run_forever(poll_sec: float) -> int:
                     "started_at_hkt": started,
                     "poll_sec": poll_sec,
                     "profile_params": profile_to_dict(profile),
+                    "entry_pause": entry_pause_view(),
                     "last_eval": {
                         "slug": ev.get("slug"),
                         "checkpoint": ev.get("checkpoint"),

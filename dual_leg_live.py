@@ -147,6 +147,42 @@ def now_hkt() -> str:
     return datetime.now(timezone.utc).astimezone(HKT).strftime("%Y-%m-%d %H:%M:%S HKT")
 
 
+# Fresh first legs stop at 18:00 and start again at 00:00. An open pair still hedges.
+ENTRY_PAUSE_REMARK_TC = (
+    "BTC 2 legs V2：香港時間 18:00–24:00 暫停開新倉，00:00 再開始。已開倉會自己行完。"
+)
+ENTRY_PAUSE_ACTIVE_REMARK_TC = (
+    "而家暫停開新倉（香港時間 18:00–24:00），00:00 再開始。已開倉會自己行完。"
+)
+
+
+def new_entry_paused(now: datetime | None = None) -> bool:
+    """True from 18:00 until 24:00 HKT. Set DUAL_LEG_LIVE_ENTRY_PAUSE=0 to disable."""
+    if os.getenv("DUAL_LEG_LIVE_ENTRY_PAUSE", "1").strip().lower() in (
+        "0",
+        "false",
+        "no",
+        "off",
+    ):
+        return False
+    moment = now or datetime.now(timezone.utc).astimezone(HKT)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=HKT)
+    else:
+        moment = moment.astimezone(HKT)
+    return 18 <= moment.hour <= 23
+
+
+def entry_pause_view(now: datetime | None = None) -> dict[str, Any]:
+    active = new_entry_paused(now)
+    return {
+        "active": active,
+        "window_hkt": "18:00-24:00",
+        "resume_hkt": "00:00",
+        "remark_tc": ENTRY_PAUSE_ACTIVE_REMARK_TC if active else ENTRY_PAUSE_REMARK_TC,
+    }
+
+
 def assert_btc_only(asset: str) -> str:
     a = (asset or "").strip().lower()
     if a != "btc":

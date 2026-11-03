@@ -1234,6 +1234,9 @@ def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | 
     from desk_bots import v2_mode_view
 
     v2_mode = v2_mode_view(root, env)
+    from dual_leg_live import entry_pause_view
+
+    pause = entry_pause_view()
     rows = [_son_u_high_live_row(root, env), _v2_high_live_row(prep, root, env)]
     any_live = (exec_is_real_live(root) and live_active(root)) or bool(v2_mode["live_active"])
     subtitle = (
@@ -1246,6 +1249,7 @@ def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | 
         "title": "Live",
         "subtitle": subtitle,
         "any_live": any_live,
+        "entry_pause": pause,
         "blocked": None if any_live or exec_is_real_live(root) else "live_exec_dry_run_placeholder",
         "rows": rows,
         "wallet_cash_usdc": wallet_cash_usdc,
