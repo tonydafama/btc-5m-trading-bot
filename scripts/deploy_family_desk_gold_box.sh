@@ -17,6 +17,7 @@ fi
 ssh "${SSH_OPTS[@]}" "$HOST" "mkdir -p $ROOT/bak-gold-box-$STAMP && cp $ROOT/dashboard/paper_board.py $ROOT/dashboard/templates/v1_only.html $ROOT/bak-gold-box-$STAMP/ 2>/dev/null || true"
 
 scp "${SCP_OPTS[@]}" "$REPO/dashboard/paper_board.py" "$HOST:$ROOT/dashboard/paper_board.py"
+scp "${SCP_OPTS[@]}" "$REPO/dashboard/mode_books.py" "$HOST:$ROOT/dashboard/mode_books.py"
 # Production uses v1_only.html; git source of truth is v1_only_droplet.html
 scp "${SCP_OPTS[@]}" "$REPO/dashboard/templates/v1_only_droplet.html" "$HOST:$ROOT/dashboard/templates/v1_only.html"
 
