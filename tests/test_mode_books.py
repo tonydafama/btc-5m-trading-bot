@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +25,12 @@ class ModeBookTests(unittest.TestCase):
     def setUp(self) -> None:
         self.root = Path(tempfile.mkdtemp(prefix="mode-books-"))
         mb._ROW_CACHE.clear()
+        os.environ["MODE_BOOKS_NO_SYSTEMD"] = "1"
+        self._now = mb._now_hkt
+        mb._now_hkt = lambda: datetime(2026, 11, 3, 16, 0)
+
+    def tearDown(self) -> None:
+        mb._now_hkt = self._now
 
     def test_skips_are_not_wins_and_modes_split(self) -> None:
         _dump(
@@ -127,6 +135,69 @@ class ModeBookTests(unittest.TestCase):
         self.assertEqual(row["wr_label"], "100%")
         self.assertEqual(row["pnl_label"], "+$1.50")
         self.assertEqual(row["mode_books"]["live"]["rows"][0]["pnl"], -4.0)
+
+    def test_live_duration_adds_separate_sessions(self) -> None:
+        rows = [
+            {
+                "slug": "a",
+                "mode": "LIVE",
+                "opened_at_hkt": "2026-10-24 13:27:33 HKT",
+                "settled_at_hkt": "2026-10-24 18:54:03 HKT",
+                "trade_result": "WIN",
+                "pnl": 1,
+            },
+            {
+                "slug": "b",
+                "mode": "LIVE",
+                "opened_at_hkt": "2026-11-01 17:30:28 HKT",
+                "settled_at_hkt": "2026-11-01 18:50:13 HKT",
+                "trade_result": "LOSS",
+                "pnl": -1,
+            },
+        ]
+        line = mb._line("歷史", rows, "note")
+        self.assertEqual(line["when_label"], "10/24 13:27 → 11/01 18:50")
+        self.assertLess(line["duration_min"], 24 * 60)
+        self.assertGreater(line["duration_min"], 6 * 60)
+        self.assertNotIn("日", line["duration_label"])
+
+    def test_open_book_runs_until_now(self) -> None:
+        line = mb._line(
+            "今次",
+            [{"slug": "a", "logged_at_hkt": "2026-11-03 10:44:00 HKT", "trade_result": "SKIP"}],
+            "note",
+            open_book=True,
+        )
+        self.assertEqual(line["when_label"], "11/03 10:44 → 而家")
+        self.assertEqual(line["duration_label"], "5小時16分")
+
+    def test_empty_live_section_has_no_fake_date(self) -> None:
+        books = mb.books_for_bot(self.root, mb.NA_ID)
+        self.assertEqual(books["live"]["when_label"], "未有真倉")
+        self.assertEqual(books["live"]["duration_label"], "—")
+
+    def test_section_duration_is_the_sum_of_its_books(self) -> None:
+        lines = [
+            mb._line(
+                "上次",
+                [{"slug": "old", "logged_at_hkt": "2026-11-02 18:00:00 HKT", "settled_at_hkt": "2026-11-03 07:30:00 HKT", "trade_result": "WIN", "pnl": 1}],
+                "prior",
+            ),
+            mb._line(
+                "今次",
+                [{"slug": "now", "logged_at_hkt": "2026-11-03 10:44:00 HKT", "trade_result": "SKIP"}],
+                "now",
+                open_book=True,
+            ),
+        ]
+        section = mb._section("Paper · 紙上", lines, empty_when="未有日期")
+        self.assertEqual(section["when_label"], "11/02 18:00 → 而家")
+        self.assertGreater(section["rows"][0]["duration_min"], 12 * 60)
+        self.assertEqual(section["rows"][1]["duration_label"], "5小時16分")
+        self.assertEqual(
+            section["duration_label"],
+            mb._dur_label(section["rows"][0]["duration_min"] + section["rows"][1]["duration_min"]),
+        )
 
 
 if __name__ == "__main__":

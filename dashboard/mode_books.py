@@ -8,6 +8,10 @@ added twice. Parent V2 live history is profile ``v2`` only.
 from __future__ import annotations
 
 import json
+import os
+import re
+import subprocess
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -18,8 +22,22 @@ GOLD_IDS = (SONU_ID, V2_ID, NA_ID)
 
 PARENT_LIVE_PROFILE = "v2"
 NEWNEW_LIVE_PROFILE = "v2_live_shadow"
+SONU_LIVE_UNIT = "btc-son-btc-5m-ultimate-live-exec.service"
+SONU_PAPER_UNIT = "btc-son-btc-5m-ultimate-live.service"
+NA_PAPER_UNIT = "btc-son-btc-2legs-v2-newnew-a.service"
+OBSERVER_UNIT = "btc-5m-observer.service"
 _SETTLED = {"WIN", "LOSS"}
 _BREAKEVEN = {"BREAKEVEN", "BE", "PUSH"}
+_GAP = timedelta(hours=6)
+_TIME_FIELDS = (
+    "logged_at_hkt",
+    "opened_at_hkt",
+    "settled_at_hkt",
+    "closed_at_hkt",
+    "timestamp_hkt",
+    "time_hkt",
+)
+_TS_RE = re.compile(r"(20\d{2}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2})?)")
 
 _ROW_CACHE: dict[str, tuple[float, int, list[dict[str, Any]]]] = {}
 
@@ -117,13 +135,162 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _line(scope: str, rows: list[dict[str, Any]], note: str) -> dict[str, Any]:
+def _now_hkt() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+
+
+def _parse_hkt(value: Any) -> datetime | None:
+    if not value:
+        return None
+    match = _TS_RE.search(str(value))
+    if not match:
+        return None
+    text = f"{match.group(1)} {match.group(2)}"
+    fmt = "%Y-%m-%d %H:%M:%S" if text.count(":") == 2 else "%Y-%m-%d %H:%M"
+    try:
+        return datetime.strptime(text, fmt)
+    except ValueError:
+        return None
+
+
+def _row_bounds(row: dict[str, Any]) -> tuple[datetime, datetime] | None:
+    times = [stamp for field in _TIME_FIELDS if (stamp := _parse_hkt(row.get(field)))]
+    if not times:
+        return None
+    return min(times), max(times)
+
+
+def _clusters(rows: list[dict[str, Any]]) -> list[tuple[datetime, datetime]]:
+    bounds = [bound for row in rows if isinstance(row, dict) and (bound := _row_bounds(row))]
+    bounds.sort()
+    if not bounds:
+        return []
+    segments = [bounds[0]]
+    for start, end in bounds[1:]:
+        prev_start, prev_end = segments[-1]
+        if start - prev_end > _GAP:
+            segments.append((start, end))
+        else:
+            segments[-1] = (prev_start, max(prev_end, end))
+    return segments
+
+
+def _dur_label(minutes: int) -> str:
+    if minutes <= 0:
+        return "少過 1 分"
+    days, rem = divmod(minutes, 24 * 60)
+    hours, mins = divmod(rem, 60)
+    parts: list[str] = []
+    if days:
+        parts.append(f"{days}日")
+    if hours:
+        parts.append(f"{hours}小時")
+    if mins and days < 3:
+        parts.append(f"{mins}分")
+    return "".join(parts) or "少過 1 分"
+
+
+def _when_label(start: datetime, end: datetime, open_book: bool) -> str:
+    left = start.strftime("%m/%d %H:%M")
+    if open_book:
+        right = "而家"
+    elif start.date() == end.date():
+        right = end.strftime("%H:%M")
+    else:
+        right = end.strftime("%m/%d %H:%M")
+    return f"{left} → {right}"
+
+
+def _span(
+    rows: list[dict[str, Any]],
+    *,
+    open_book: bool = False,
+    started_at: datetime | None = None,
+    empty_live: bool = False,
+) -> dict[str, Any]:
+    segments = _clusters(rows)
+    if started_at is not None:
+        if not segments:
+            segments = [(started_at, _now_hkt() if open_book else started_at)]
+        else:
+            first_start, first_end = segments[0]
+            if started_at < first_start and first_start - started_at <= _GAP:
+                segments[0] = (started_at, first_end)
+    if open_book and segments:
+        start, end = segments[-1]
+        segments[-1] = (start, max(end, _now_hkt()))
+    if not segments:
+        return {
+            "when_label": "未有真倉" if empty_live else "未有日期",
+            "duration_label": "—",
+            "duration_min": None,
+            "started_at": None,
+            "ended_at": None,
+            "open": False,
+        }
+    start = segments[0][0]
+    end = segments[-1][1]
+    minutes = int(round(sum((seg_end - seg_start).total_seconds() for seg_start, seg_end in segments) / 60))
+    return {
+        "when_label": _when_label(start, end, open_book),
+        "duration_label": _dur_label(minutes),
+        "duration_min": minutes,
+        "started_at": start.strftime("%Y-%m-%d %H:%M"),
+        "ended_at": end.strftime("%Y-%m-%d %H:%M"),
+        "open": bool(open_book),
+    }
+
+
+def _line(
+    scope: str,
+    rows: list[dict[str, Any]],
+    note: str,
+    *,
+    open_book: bool = False,
+    started_at: datetime | None = None,
+    empty_live: bool = False,
+) -> dict[str, Any]:
     stats = summarize(rows)
     return {
         "scope": scope,
         "note": note,
         **stats,
+        **_span(rows, open_book=open_book, started_at=started_at, empty_live=empty_live),
     }
+
+
+def _unit_active_since_hkt(unit: str) -> datetime | None:
+    """ActiveEnterTimestamp of a running unit, converted to Hong Kong time."""
+    if os.environ.get("MODE_BOOKS_NO_SYSTEMD") == "1":
+        return None
+    try:
+        raw = subprocess.check_output(
+            ["systemctl", "show", unit, "-p", "ActiveState", "-p", "ActiveEnterTimestamp", "--no-pager"],
+            text=True,
+            timeout=3,
+            stderr=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    state = ""
+    stamp = ""
+    for line in raw.splitlines():
+        if line.startswith("ActiveState="):
+            state = line.split("=", 1)[1].strip()
+        elif line.startswith("ActiveEnterTimestamp="):
+            stamp = line.split("=", 1)[1].strip()
+    if state != "active":
+        return None
+    match = re.search(r"(20\d{2}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", stamp)
+    if not match:
+        return None
+    try:
+        parsed = datetime.strptime(match.group(1), "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return None
+    if "UTC" in stamp:
+        return parsed + timedelta(hours=8)
+    return parsed
 
 
 def _read_rows(path: Path) -> list[dict[str, Any]]:
@@ -220,21 +387,34 @@ def _v2_paper(row: dict[str, Any]) -> bool:
     return (not session) or ("v2" in session)
 
 
-def _live_lines(current: list[dict[str, Any]], history: list[dict[str, Any]], segments: int) -> list[dict[str, Any]]:
+def _live_lines(
+    current: list[dict[str, Any]],
+    history: list[dict[str, Any]],
+    segments: int,
+    *,
+    current_open: bool = False,
+    current_started: datetime | None = None,
+) -> list[dict[str, Any]]:
     lines: list[dict[str, Any]] = []
     current_stats = summarize(current)
     history_stats = summarize(history)
     current_n = current_stats["settled_n"] + current_stats["breakeven"]
     history_n = history_stats["settled_n"] + history_stats["breakeven"]
-    if current_n:
-        be = f" · 打和 {current_stats['breakeven']} 唔計勝率" if current_stats["breakeven"] else ""
-        lines.append(_line("今次", current, f"今次真倉 · {current_stats['wl_label']}{be}"))
+    if current_n or current_open:
+        if current_n:
+            be = f" · 打和 {current_stats['breakeven']} 唔計勝率" if current_stats["breakeven"] else ""
+            note = f"今次真倉 · {current_stats['wl_label']}{be}"
+        else:
+            note = "今次未有真倉成交"
+        lines.append(
+            _line("今次", current, note, open_book=current_open, started_at=current_started, empty_live=not current_n)
+        )
     if history_n:
         be = f" · 打和 {history_stats['breakeven']} 唔計勝率" if history_stats["breakeven"] else ""
         now = " · 今次帳 0 單" if not current_n else ""
         lines.append(_line("歷史", history, f"歷史真倉 {segments} 段{now}{be}"))
     if not lines:
-        lines.append(_line("今次", [], "今次未有真倉成交"))
+        lines.append(_line("今次", [], "今次未有真倉成交", empty_live=True))
     return lines
 
 
@@ -246,10 +426,15 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
         paper = [row for row in current if is_paper_row(row)]
         live_now = [row for row in current if is_live_row(row)]
         prior = _prior_paper(root, name, paper, is_paper_row)
-        paper_lines = [_line("今次", paper, _paper_note(paper, prior=False))]
+        live_since = _unit_active_since_hkt(SONU_LIVE_UNIT)
+        paper_open = live_since is not None or _unit_active_since_hkt(SONU_PAPER_UNIT) is not None
+        paper_lines = [_line("今次", paper, _paper_note(paper, prior=False), open_book=paper_open)]
         if prior:
             paper_lines.append(_line("上次", prior, _paper_note(prior, prior=True)))
-        return _pack(paper_lines, _live_lines(live_now, [], 0))
+        return _pack(
+            paper_lines,
+            _live_lines(live_now, [], 0, current_open=live_since is not None, current_started=live_since),
+        )
 
     if bot_id == V2_ID:
         paper_path = root / "logs" / "dual_leg_btc_paper_trades.json"
@@ -258,7 +443,8 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
         seen: set[str] = set()
         live_now, _ = _take([root / "logs" / "dual_leg_live_trades.json"], _parent_live, seen)
         history, segments = _take(_archive_files(root, "dual_leg_live_trades.json"), _parent_live, seen)
-        paper_lines = [_line("今次", paper, _paper_note(paper, prior=False))]
+        paper_open = _unit_active_since_hkt(OBSERVER_UNIT) is not None
+        paper_lines = [_line("今次", paper, _paper_note(paper, prior=False), open_book=paper_open)]
         if prior:
             paper_lines.append(_line("上次", prior, _paper_note(prior, prior=True)))
         return _pack(paper_lines, _live_lines(live_now, history, segments))
@@ -270,20 +456,47 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
         live_now = [row for row in current if is_live_row(row)]
         seen = {row_key(row) for row in live_now}
         shared, _ = _take([root / "logs" / "dual_leg_live_trades.json"], _newnew_shared_live, seen)
-        archived, _ = _take(_archive_files(root, "dual_leg_live_trades.json"), _newnew_shared_live, seen)
+        archived, segments = _take(_archive_files(root, "dual_leg_live_trades.json"), _newnew_shared_live, seen)
         prior = _prior_paper(root, name, paper, is_paper_row)
-        paper_lines = [_line("今次", paper, _paper_note(paper, prior=False))]
+        paper_since = _unit_active_since_hkt(NA_PAPER_UNIT)
+        paper_lines = [
+            _line(
+                "今次",
+                paper,
+                _paper_note(paper, prior=False),
+                open_book=paper_since is not None,
+                started_at=paper_since,
+            )
+        ]
         if prior:
             paper_lines.append(_line("上次", prior, _paper_note(prior, prior=True)))
-        return _pack(paper_lines, _live_lines(live_now + shared, archived, _))
+        return _pack(paper_lines, _live_lines(live_now + shared, archived, segments))
 
     raise KeyError(bot_id)
 
 
+def _section(title: str, lines: list[dict[str, Any]], *, empty_when: str) -> dict[str, Any]:
+    usable = [line for line in lines if line.get("started_at") and line.get("ended_at")]
+    if not usable:
+        label = str(lines[0].get("when_label")) if lines else empty_when
+        return {"title": title, "when_label": label, "duration_label": "—", "open": False, "rows": lines}
+    starts = [datetime.strptime(str(line["started_at"]), "%Y-%m-%d %H:%M") for line in usable]
+    ends = [datetime.strptime(str(line["ended_at"]), "%Y-%m-%d %H:%M") for line in usable]
+    total = sum(int(line.get("duration_min") or 0) for line in usable)
+    open_book = any(bool(line.get("open")) for line in usable)
+    return {
+        "title": title,
+        "when_label": _when_label(min(starts), max(ends), open_book),
+        "duration_label": _dur_label(total) if total else "—",
+        "open": open_book,
+        "rows": lines,
+    }
+
+
 def _pack(paper_lines: list[dict[str, Any]], live_lines: list[dict[str, Any]]) -> dict[str, Any]:
     return {
-        "paper": {"title": "Paper · 紙上", "rows": paper_lines},
-        "live": {"title": "Live · 真倉", "rows": live_lines},
+        "paper": _section("Paper · 紙上", paper_lines, empty_when="未有日期"),
+        "live": _section("Live · 真倉", live_lines, empty_when="未有真倉"),
     }
 
 

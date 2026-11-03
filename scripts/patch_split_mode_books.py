@@ -43,6 +43,20 @@ CSS = """
 .hl-book-line .pos { color: #3ecf8e; }
 .hl-book-line .neg { color: #f07178; }
 .hl-book-line .mut { color: #9aa7b6; }
+.hl-book-when {
+  margin-top: .16rem;
+  font-family: var(--mono);
+  font-size: .68rem;
+  font-weight: 700;
+  color: #d5deea;
+  line-height: 1.35;
+}
+.hl-book-rowwhen {
+  margin-top: .22rem;
+  font-family: var(--mono);
+  font-size: .62rem;
+  color: #9eb0c4;
+}
 .hl-book-note { margin-top: .12rem; color: #8fa3ba; font-size: .62rem; line-height: 1.35; }
 .hl-stats-mini { grid-template-columns: repeat(2, minmax(96px, 1fr)); }
 @media (max-width: 720px) {
@@ -55,9 +69,13 @@ JS = r"""
     const band = (key, klass) => {
       const block = (books && books[key]) || {};
       const rows = Array.isArray(block.rows) ? block.rows : [];
+      const stamp = [block.when_label, block.duration_label].filter(Boolean).join(' · ');
       const lines = rows.map((b) => {
         const pnlCls = pnlClass(b.pnl);
-        return `<div class="hl-book-line">
+        const rowStamp = (rows.length > 1 && b.when_label)
+          ? `<div class="hl-book-rowwhen">${esc([b.when_label, b.duration_label].filter(Boolean).join(' · '))}</div>`
+          : '';
+        return `${rowStamp}<div class="hl-book-line">
             <span class="scope">${esc(b.scope || '')}</span>
             <span class="wr">${esc(String(b.wr_label || '未有結算'))}</span>
             <span class="${pnlCls}">${esc(String(b.pnl_label || money(b.pnl)))}</span>
@@ -67,6 +85,7 @@ JS = r"""
       }).join('');
       return `<div class="hl-book ${klass}">
           <div class="hl-book-k">${esc(block.title || key)}</div>
+          ${stamp ? `<div class="hl-book-when">${esc(stamp)}</div>` : ''}
           ${lines}
         </div>`;
     };
