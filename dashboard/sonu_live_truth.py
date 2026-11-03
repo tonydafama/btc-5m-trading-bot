@@ -199,6 +199,7 @@ def apply_live_control_action(root: Path, action: str, *, wallet_cash_usdc: floa
         _write_dotenv_key(root, "SONU_LIVE_ARMED_PREP", "0")
         try:
             subprocess.run(["systemctl", "disable", "--now", SONU_EXEC_UNIT], check=False, timeout=8)
+            subprocess.run(["systemctl", "enable", "--now", SONU_PAPER_UNIT], check=False, timeout=12)
         except (OSError, subprocess.SubprocessError):
             pass
         out = live_control_payload(root, wallet_cash_usdc=wallet_cash_usdc)

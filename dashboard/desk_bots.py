@@ -346,8 +346,8 @@ def v2_mode_view(root: Path, env: dict[str, str] | None = None) -> dict[str, Any
         label_tc = "PREP · 紙上 armed · 真倉未開"
     else:
         mode = "paper"
-        status_label = "曾live · 紙上 rehearsal · 真倉 OFF"
-        change = "Paper · DRY_RUN · 真倉 OFF"
+        status_label = "RUNNING · paper"
+        change = "Paper · 真倉 OFF"
         label_tc = "而家模式：Paper（紙上）"
     return {
         "mode": mode,
@@ -359,6 +359,41 @@ def v2_mode_view(root: Path, env: dict[str, str] | None = None) -> dict[str, Any
         "status_label": status_label,
         "change": change,
         "label_tc": label_tc,
+        "paper_ledger": {} if live_active else v2_paper_ledger(root),
+    }
+
+
+def v2_paper_ledger(root: Path) -> dict[str, Any]:
+    """Parent V2 paper book written by the observer. Empty when the file is missing."""
+    path = root / "logs" / "dual_leg_btc_paper_trades.json"
+    try:
+        import json
+
+        raw = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
+    except (OSError, json.JSONDecodeError):
+        raw = []
+    if not isinstance(raw, list):
+        raw = []
+    closed = [row for row in raw if isinstance(row, dict)]
+    pnl = 0.0
+    for row in closed:
+        try:
+            pnl += float(row.get("pnl") if row.get("pnl") is not None else row.get("pnl_usd") or 0)
+        except (TypeError, ValueError):
+            pass
+    session = ""
+    for row in reversed(closed):
+        session = str(row.get("session_id") or "")
+        if session:
+            break
+    count = len(closed)
+    return {
+        "trade_count": count,
+        "pnl": round(pnl, 2),
+        "session_id": session,
+        "count_label": f"{count} 單",
+        "trades_windows_line": f"Trades {count} 單 · paper",
+        "status_label": "RUNNING · paper",
     }
 
 
@@ -599,8 +634,6 @@ def desk_status(root: Path, *, wallet_cash_usdc: float | None = None, env: dict[
         na = {"mode": "paper", "live_active": False, "label_tc": "Live預備 · 真倉 OFF"}
     if na.get("live_active"):
         na_mode = "live"
-    elif na.get("live_armed_prep") or na.get("live_armed"):
-        na_mode = "prep"
     else:
         na_mode = "paper"
     bots = []
