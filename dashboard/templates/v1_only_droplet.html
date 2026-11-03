@@ -721,13 +721,7 @@ summary.desk-fold-summary {
     <div style="display:flex;justify-content:space-between;gap:.6rem;flex-wrap:wrap;align-items:flex-start">
       <div>
         <div class="hl-title">Live · Son U</div>
-        <div class="hl-sub" id="hl-sub">$10/注 · $100 · 真倉要錢包≥$100 先開 · 而家未真倉</div>
       </div>
-      <div class="hl-actions">
-        <span class="hl-badge is-off" id="hl-badge">PREP · PAPER</span>
-        <span class="chip" id="hl-run">—</span>
-      </div>
-      <p class="hl-split-note">兩個 bot 各自 Live / Paper 同 Bet size · 撳卡內掣 · 轉一個唔會跟另一個</p>
     </div>
     <div id="hl-body" style="margin-top:.55rem;display:grid;gap:.45rem;font-size:.78rem">
       <div class="skel">載入 Live…</div>
@@ -1273,25 +1267,11 @@ summary.desk-fold-summary {
 
   function renderHighLive(board) {
     const body = $('hl-body');
-    const sub = $('hl-sub');
-    const runEl = $('hl-run');
     const noteEl = $('hl-note');
-    const badge = $('hl-badge');
     if (!body) return;
     const hl = (board && board.high_live_board) || {};
     const rows = Array.isArray(hl.rows) ? hl.rows : [];
-    if (sub) sub.textContent = hl.subtitle || '預備區 · 真倉 OFF';
     const anyLive = !!hl.any_live;
-    const armedPrep = !anyLive && Array.isArray(rows) && rows.some(r => String(r.status_label || '').includes('armed'));
-    if (badge) {
-      badge.textContent = anyLive ? 'LIVE ON' : (armedPrep ? 'PREP · ARMED' : 'PREP · PAPER');
-      badge.className = 'hl-badge ' + (anyLive ? 'is-on' : 'is-off');
-      badge.setAttribute('aria-label', anyLive ? 'LIVE ON — on air' : (armedPrep ? 'PREP ARMED — paper' : 'PREP PAPER — off air'));
-    }
-    if (runEl) {
-      runEl.textContent = anyLive ? '真倉 RUNNING' : (rows.some(r => r.launched) ? '紙上預備 RUNNING' : 'READY');
-      runEl.className = 'chip' + (anyLive ? ' ok' : '');
-    }
     if (!rows.length) {
       body.innerHTML = '<div class="skel">未有 Live bot</div>';
     } else {
@@ -1306,10 +1286,8 @@ summary.desk-fold-summary {
         const livePill = r.live_enabled
           ? '<span class="pill live">LIVE</span>'
           : ((r.had_live || r.live_tag === '曾live')
-            ? '<span class="chip">曾live · PREP</span>'
-            : (String(r.status_label || '').includes('armed')
-              ? '<span class="chip">PREP · ARMED</span>'
-              : '<span class="chip">PAPER PREP</span>'));
+            ? '<span class="chip">曾live</span>'
+            : '');
         const pnl = r.pnl_label || money(r.pnl);
         const stake = r.stake_usd != null ? ('$'+r.stake_usd+'/注') : '$10/注';
         const cap = r.capital_usd != null
