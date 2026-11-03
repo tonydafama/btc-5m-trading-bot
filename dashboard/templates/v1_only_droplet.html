@@ -722,6 +722,9 @@ summary.desk-fold-summary {
       <div>
         <div class="hl-title">Live · Son U</div>
       </div>
+      <div class="hl-actions">
+        <span class="hl-badge is-on" id="hl-badge" hidden aria-label="LIVE ON — on air">LIVE ON</span>
+      </div>
     </div>
     <div id="hl-body" style="margin-top:.55rem;display:grid;gap:.45rem;font-size:.78rem">
       <div class="skel">載入 Live…</div>
@@ -1268,10 +1271,26 @@ summary.desk-fold-summary {
   function renderHighLive(board) {
     const body = $('hl-body');
     const noteEl = $('hl-note');
+    const badge = $('hl-badge');
     if (!body) return;
     const hl = (board && board.high_live_board) || {};
     const rows = Array.isArray(hl.rows) ? hl.rows : [];
-    const anyLive = !!hl.any_live;
+    const sonRowLive = rows.some((r) => (
+      String(r.id || '') === 'son-btc-5m-ultimate-live' && !!r.live_enabled
+    ));
+    const anyLive = !!(hl.any_live || sonRowLive);
+    if (badge) {
+      if (anyLive) {
+        badge.hidden = false;
+        badge.textContent = 'LIVE ON';
+        badge.className = 'hl-badge is-on';
+        badge.setAttribute('aria-label', 'LIVE ON — on air');
+      } else {
+        badge.hidden = true;
+        badge.className = 'hl-badge is-off';
+        badge.removeAttribute('aria-label');
+      }
+    }
     if (!rows.length) {
       body.innerHTML = '<div class="skel">未有 Live bot</div>';
     } else {
