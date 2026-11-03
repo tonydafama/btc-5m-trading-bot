@@ -199,57 +199,6 @@ details.blog > summary:hover { color: var(--blue); }
 .hl-stat .v.wr { color:#f0d9a8; font-size:.9rem; }
 .hl-stat .v.pos { color:#3ecf8e; }
 .hl-stat .v.neg { color:#f07178; }
-
-.hl-books {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: .45rem;
-  margin-top: .4rem;
-}
-.hl-book {
-  border-radius: 8px;
-  padding: .45rem .55rem .42rem;
-  background: #0d1522;
-  border: 1px solid #1c2b40;
-}
-.hl-book.is-paper { border-color: rgba(62,207,142,.38); }
-.hl-book.is-live { border-color: rgba(240,113,120,.42); }
-.hl-book-k { font-size: .68rem; font-weight: 800; letter-spacing: .02em; }
-.hl-book.is-paper .hl-book-k { color: #3ecf8e; }
-.hl-book.is-live .hl-book-k { color: #ff8d8d; }
-.hl-book-line {
-  display: grid;
-  grid-template-columns: 2.2rem minmax(2.6rem, .8fr) minmax(4.2rem, 1fr) minmax(4.6rem, 1.15fr);
-  gap: .25rem;
-  align-items: baseline;
-  margin-top: .28rem;
-  font-weight: 750;
-  font-size: .82rem;
-}
-.hl-book-line .scope { color: var(--dim); font-size: .66rem; font-weight: 700; }
-.hl-book-line .wr { color: #f0d9a8; }
-.hl-book-line .pos { color: #3ecf8e; }
-.hl-book-line .neg { color: #f07178; }
-.hl-book-line .mut { color: #9aa7b6; }
-.hl-book-when {
-  margin-top: .16rem;
-  font-family: var(--mono);
-  font-size: .68rem;
-  font-weight: 700;
-  color: #d5deea;
-  line-height: 1.35;
-}
-.hl-book-rowwhen {
-  margin-top: .22rem;
-  font-family: var(--mono);
-  font-size: .62rem;
-  color: #9eb0c4;
-}
-.hl-book-note { margin-top: .12rem; color: #8fa3ba; font-size: .62rem; line-height: 1.35; }
-.hl-stats-mini { grid-template-columns: repeat(2, minmax(96px, 1fr)); }
-@media (max-width: 720px) {
-  .hl-books { grid-template-columns: 1fr; }
-}
 .hl-card-log { margin-top: .35rem; }
 
 /* Son U log lock — Live always primary; Paper fold collapsed */
@@ -1364,37 +1313,6 @@ summary.desk-fold-summary {
     bindDeskSplitBots();
   }
 
-  function modeBooksHtml(books, stake, cap) {
-    const band = (key, klass) => {
-      const block = (books && books[key]) || {};
-      const rows = Array.isArray(block.rows) ? block.rows : [];
-      const stamp = [block.when_label, block.duration_label].filter(Boolean).join(' · ');
-      const lines = rows.map((b) => {
-        const pnlCls = pnlClass(b.pnl);
-        const rowStamp = (rows.length > 1 && b.when_label)
-          ? `<div class="hl-book-rowwhen">${esc([b.when_label, b.duration_label].filter(Boolean).join(' · '))}</div>`
-          : '';
-        return `${rowStamp}<div class="hl-book-line">
-            <span class="scope">${esc(b.scope || '')}</span>
-            <span class="wr">${esc(String(b.wr_label || '未有結算'))}</span>
-            <span class="${pnlCls}">${esc(String(b.pnl_label || money(b.pnl)))}</span>
-            <span>${esc(String(b.wl_label || '0W/0L'))}</span>
-          </div>
-          <div class="hl-book-note">${esc(String(b.note || ''))}</div>`;
-      }).join('');
-      return `<div class="hl-book ${klass}">
-          <div class="hl-book-k">${esc(block.title || key)}</div>
-          ${stamp ? `<div class="hl-book-when">${esc(stamp)}</div>` : ''}
-          ${lines}
-        </div>`;
-    };
-    return `<div class="hl-books" aria-label="Paper 同 Live 盈虧同勝率">${band('paper', 'is-paper')}${band('live', 'is-live')}</div>
-          <div class="hl-stats hl-stats-mini">
-            <div class="hl-stat"><div class="k">注碼</div><div class="v">${esc(stake)}</div></div>
-            <div class="hl-stat"><div class="k">本金</div><div class="v">${esc(cap)}</div></div>
-          </div>`;
-  }
-
   function renderHighLive(board) {
     const body = $('hl-body');
     const noteEl = $('hl-note');
@@ -1480,14 +1398,14 @@ summary.desk-fold-summary {
             <div class="cell"><div class="k">過濾</div><div class="v filt">${esc(String(winF))}</div></div>
             <div class="cell"><div class="k">入場</div><div class="v ent">${esc(String(winE))}</div></div>
           </div>
-          ${(r.mode_books && r.mode_books.paper && r.mode_books.live) ? modeBooksHtml(r.mode_books, stake, cap) : `<div class="hl-stats">
+          <div class="hl-stats">
             <div class="hl-stat"><div class="k">WR</div><div class="v wr">${esc(String(wr))}</div></div>
             <div class="hl-stat"><div class="k">PnL</div><div class="v ${pnlCls}">${esc(pnl)}</div></div>
             <div class="hl-stat"><div class="k">結算</div><div class="v">${esc(settled)}</div></div>
             <div class="hl-stat"><div class="k">單數</div><div class="v">${esc(String(r.count_label || ((r.trade_count != null ? r.trade_count : 0) + ' 單')))}</div></div>
             <div class="hl-stat"><div class="k">注碼</div><div class="v">${esc(stake)}</div></div>
             <div class="hl-stat"><div class="k">本金</div><div class="v">${esc(cap)}</div></div>
-          </div>`}
+          </div>
         </div>`;
         if (String(r.id || '') === 'dual-leg-live-v2') {
           const v2Title = esc(r.display_name || 'BTC 2 legs V2 · 曾live');

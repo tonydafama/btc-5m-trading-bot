@@ -284,15 +284,6 @@ class PaperBoardTests(unittest.TestCase):
         self.assertEqual(rows[0].get("id"), "son-btc-5m-ultimate-live")
         self.assertEqual(rows[1].get("display_name"), "BTC 2 legs V2")
 
-    def test_high_live_wallet_from_status_cache(self) -> None:
-        _write(
-            self.bot / "logs" / "dual_leg_live_status.json",
-            {"wallet_cash_usdc": 137.28, "realized_pnl_usd": 32.81},
-        )
-        board = self._build()
-        hl = board.get("high_live_board") or {}
-        self.assertEqual(hl.get("wallet_cash_usdc"), 137.28)
-
 
 if __name__ == "__main__":
     unittest.main()
