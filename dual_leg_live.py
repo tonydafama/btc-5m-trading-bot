@@ -192,6 +192,95 @@ def assert_btc_only(asset: str) -> str:
     return a
 
 
+def leg_taker_fee_usd(leg: dict[str, Any]) -> float:
+    """Polymarket crypto taker fee for one filled leg (shares × price × fee curve)."""
+    if not isinstance(leg, dict):
+        return 0.0
+    for key in ("estimated_taker_fee", "fee"):
+        raw = leg.get(key)
+        if raw not in (None, ""):
+            try:
+                return float(raw)
+            except (TypeError, ValueError):
+                pass
+    price = leg.get("ask")
+    if price in (None, ""):
+        price = leg.get("fill_price") or leg.get("price")
+    try:
+        px = float(price or 0)
+    except (TypeError, ValueError):
+        px = 0.0
+    if px <= 0:
+        return 0.0
+    shares = leg.get("shares")
+    try:
+        sh = float(shares or 0)
+    except (TypeError, ValueError):
+        sh = 0.0
+    if sh <= 0:
+        try:
+            stake = float(leg.get("stake") or 0)
+        except (TypeError, ValueError):
+            stake = 0.0
+        if stake > 0:
+            sh = stake / px
+    if sh <= 0:
+        return 0.0
+    return float(estimate_taker_fee(sh, px))
+
+
+def enrich_row_leg_fees(row: dict[str, Any]) -> dict[str, Any]:
+    """Attach estimated_taker_fee on each leg from fill price/shares."""
+    out = dict(row)
+    for key in ("first_leg", "second_leg"):
+        leg = out.get(key)
+        if not isinstance(leg, dict):
+            continue
+        leg = dict(leg)
+        leg["estimated_taker_fee"] = round(leg_taker_fee_usd(leg), 4)
+        out[key] = leg
+    return out
+
+
+def account_live_trade_pnl(row: dict[str, Any], outcome: str) -> dict[str, Any]:
+    """Settle PnL: payout on winning shares minus stake and taker fees on all legs."""
+    normalized = str(outcome or "").lower()
+    if normalized not in ("up", "down"):
+        return row
+    row = enrich_row_leg_fees(dict(row))
+    legs: list[dict[str, Any]] = []
+    for key in ("first_leg", "second_leg"):
+        leg = row.get(key)
+        if isinstance(leg, dict):
+            legs.append(leg)
+    total_stake = sum(float(leg.get("stake") or 0) for leg in legs)
+    total_fee = sum(float(leg.get("estimated_taker_fee") or 0) for leg in legs)
+    winner = next(
+        (leg for leg in legs if str(leg.get("side") or "").lower() == normalized),
+        None,
+    )
+    payout = float(winner.get("shares") or 0) if winner else 0.0
+    gross = payout - total_stake
+    net = gross - total_fee
+    row.update(
+        {
+            "status": "closed",
+            "trade_result": "WIN" if net > 0.01 else ("BREAKEVEN" if abs(net) < 0.01 else "LOSS"),
+            "outcome": normalized.upper(),
+            "legs_filled": len(legs),
+            "total_stake": round(total_stake, 2),
+            "total_estimated_fee": round(total_fee, 4),
+            "gross_pnl": round(gross, 2),
+            "pnl": round(net, 2),
+            "pnl_usd": round(net, 2),
+            "close_reason": row.get("close_reason") or "settled_official_outcome",
+        }
+    )
+    if not row.get("settled_at_hkt"):
+        row["settled_at_hkt"] = now_hkt()
+    return row
+
+
 def dry_run_enabled() -> bool:
     return _env_bool("DUAL_LEG_LIVE_DRY_RUN", "1")
 

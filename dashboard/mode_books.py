@@ -396,6 +396,7 @@ def _live_lines(
     *,
     current_open: bool = False,
     current_started: datetime | None = None,
+    pnl_net_of_fees: bool = False,
 ) -> list[dict[str, Any]]:
     lines: list[dict[str, Any]] = []
     current_stats = summarize(current)
@@ -406,6 +407,8 @@ def _live_lines(
         if current_n:
             be = f" · 打和 {current_stats['breakeven']} 唔計勝率" if current_stats["breakeven"] else ""
             note = f"今次真倉 · {current_stats['wl_label']}{be}"
+            if pnl_net_of_fees:
+                note += " · PnL 已扣 taker 手續費"
         else:
             note = "今次未有真倉成交"
         lines.append(
@@ -457,6 +460,7 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
                 segments,
                 current_open=live_since is not None,
                 current_started=live_since,
+                pnl_net_of_fees=True,
             ),
         )
 
@@ -490,6 +494,7 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
                 segments,
                 current_open=live_since is not None,
                 current_started=live_since,
+                pnl_net_of_fees=True,
             ),
         )
 

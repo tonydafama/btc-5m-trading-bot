@@ -39,7 +39,9 @@ from dual_leg_live import (  # noqa: E402
     now_hkt,
     read_live_unit_usd,
     profile_to_dict,
+    account_live_trade_pnl,
 )
+from polymarket_fees import estimate_taker_fee  # noqa: E402
 
 LOG_DIR = ROOT / "logs"
 # Paths overridable so live-shadow can isolate from parent live files.
@@ -92,45 +94,34 @@ def _leg_list(row: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _settle_trade_row(row: dict[str, Any], outcome: str) -> dict[str, Any]:
-    """Mark a live trade closed from official Up/Down outcome (accounting PnL)."""
-    normalized = str(outcome or "").lower()
-    if normalized not in ("up", "down"):
-        return row
-    if row.get("settled_at_hkt") and row.get("pnl") is not None:
-        return row
-    legs = _leg_list(row)
-    total_stake = sum(float(leg.get("stake") or 0) for leg in legs)
-    total_fee = sum(
-        float(leg.get("estimated_taker_fee") or leg.get("fee") or 0) for leg in legs
-    )
-    winner = next((leg for leg in legs if str(leg.get("side") or "").lower() == normalized), None)
-    payout = float(winner.get("shares") or 0) if winner else 0.0
-    gross = payout - total_stake
-    net = gross - total_fee
-    row = dict(row)
-    row.update(
-        {
-            "status": "closed",
-            "trade_result": "WIN" if net > 0.01 else ("BREAKEVEN" if abs(net) < 0.01 else "LOSS"),
-            "outcome": normalized.upper(),
-            "legs_filled": len(legs),
-            "total_stake": round(total_stake, 2),
-            "total_estimated_fee": round(total_fee, 4),
-            "gross_pnl": round(gross, 2),
-            "pnl": round(net, 2),
-            "pnl_usd": round(net, 2),
-            "settled_at_hkt": now_hkt(),
-            "close_reason": "settled_official_outcome",
-        }
-    )
-    return row
+    """Mark a live trade closed from official Up/Down outcome (net of taker fees)."""
+    return account_live_trade_pnl(row, outcome)
+
+
+def _refresh_settled_fees(trades: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
+    """Re-account closed rows that were settled before per-leg fees were stored."""
+    changed = 0
+    out: list[dict[str, Any]] = []
+    for row in trades:
+        if row.get("pnl") is None or not row.get("outcome"):
+            out.append(row)
+            continue
+        old_pnl = row.get("pnl")
+        old_fee = float(row.get("total_estimated_fee") or 0)
+        refreshed = account_live_trade_pnl(dict(row), str(row["outcome"]).lower())
+        new_fee = float(refreshed.get("total_estimated_fee") or 0)
+        if abs(new_fee - old_fee) > 1e-6 or refreshed.get("pnl") != old_pnl:
+            changed += 1
+        out.append(refreshed)
+    return out, changed
 
 
 def settle_pending_live_trades(trades: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int, float]:
     """Resolve window_rolled / open-ended live rows once Polymarket publishes outcome."""
     from polymarket_window import fetch_market_outcome
 
-    changed = 0
+    trades, fee_refresh = _refresh_settled_fees(trades)
+    changed = fee_refresh
     out: list[dict[str, Any]] = []
     for row in trades:
         already = row.get("settled_at_hkt") and row.get("pnl") is not None
@@ -170,7 +161,8 @@ def settle_pending_live_trades(trades: list[dict[str, Any]]) -> tuple[list[dict[
         if settled.get("settled_at_hkt") and settled.get("pnl") is not None and not already:
             changed += 1
             print(
-                f"[live] SETTLED {slug} outcome={settled.get('outcome')} pnl=${settled.get('pnl')}",
+                f"[live] SETTLED {slug} outcome={settled.get('outcome')} "
+                f"pnl=${settled.get('pnl')} fee=${settled.get('total_estimated_fee')}",
                 flush=True,
             )
             _append_event(
@@ -241,11 +233,13 @@ def _leg_from_fill(
         or intent.decision_ask
     )
     shares = stake / price if price > 0 else 0.0
+    fee = estimate_taker_fee(shares, price) if shares > 0 and price > 0 else 0.0
     return {
         "side": side,
         "ask": round(price, 4),
         "stake": round(stake, 2),
         "shares": round(shares, 6),
+        "estimated_taker_fee": round(fee, 4),
         "checkpoint": checkpoint,
         "t_remaining": t_remaining,
         "posted_at_hkt": now_hkt(),
