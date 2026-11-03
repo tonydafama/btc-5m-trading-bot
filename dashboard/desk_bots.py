@@ -20,6 +20,7 @@ HKT = ZoneInfo("Asia/Hong_Kong")
 
 SONU_ID = "son-btc-5m-ultimate-live"
 V2_ID = "dual-leg-live-v2"
+NA_ID = "son-btc-2legs-v2-newnew-a"
 
 MIN_BET = 0.5
 MAX_BET = 500.0
@@ -45,6 +46,16 @@ BOT_SPECS: dict[str, dict[str, Any]] = {
         "capital_usd": 100.0,
         "bet_env": "V2_BET_SIZE",
         "stake_env": "V2_STAKE_USD",
+    },
+    NA_ID: {
+        "id": NA_ID,
+        "display_name": "V2 newnew A · abort",
+        "rule_label": "v2 newnew",
+        "multiplier": 2,
+        "default_bet_size": 6.0,
+        "capital_usd": 100.0,
+        "bet_env": "V2_NEWNEW_BET_SIZE",
+        "stake_env": "V2_NEWNEW_STAKE_USD",
     },
 }
 
@@ -366,6 +377,28 @@ def _apply_sonu_mode(root: Path, action: str, *, wallet_cash_usdc: float | None)
     return out
 
 
+def _apply_na_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -> dict[str, Any]:
+    """Newnew A: Desk only arms paper prep. Never enables the live unit."""
+    from v2_newnew_live_truth import apply_live_control_action
+
+    mapped = "to_live" if action == "to_live" else "to_paper"
+    out = apply_live_control_action(root, mapped, wallet_cash_usdc=wallet_cash_usdc)
+    desk_mode = "prep" if (out.get("live_armed") or out.get("live_armed_prep")) else "paper"
+    if out.get("live_active"):
+        desk_mode = "live"
+    out["bot_id"] = NA_ID
+    out["desk_mode"] = desk_mode
+    out["mode"] = desk_mode
+    out["display_name"] = BOT_SPECS[NA_ID]["display_name"]
+    out["live_active"] = False
+    out["exec_dry_run_placeholder"] = True
+    if out.get("ok") and action == "to_paper":
+        out["message_tc"] = "V2 newnew A 已切換 → Paper（真倉 OFF）"
+    elif out.get("ok") and action == "to_live":
+        out["message_tc"] = "V2 newnew A 已 armed prep（紙上）· 真倉 OFF · 唔會 enable live unit"
+    return out
+
+
 def apply_mode(root: Path, bot_id: str, action: str, *, wallet_cash_usdc: float | None = None) -> dict[str, Any]:
     action = (action or "").strip().lower()
     if bot_id not in BOT_SPECS:
@@ -379,6 +412,8 @@ def apply_mode(root: Path, bot_id: str, action: str, *, wallet_cash_usdc: float 
         }
     if bot_id == V2_ID:
         return _apply_v2_mode(root, action, wallet_cash_usdc=wallet_cash_usdc)
+    if bot_id == NA_ID:
+        return _apply_na_mode(root, action, wallet_cash_usdc=wallet_cash_usdc)
     return _apply_sonu_mode(root, action, wallet_cash_usdc=wallet_cash_usdc)
 
 
@@ -412,10 +447,23 @@ def desk_status(root: Path, *, wallet_cash_usdc: float | None = None, env: dict[
     else:
         sonu_mode = "paper"
     v2 = v2_mode_view(root, env)
+    try:
+        from v2_newnew_live_truth import live_control_payload as na_payload
+
+        na = na_payload(root, wallet_cash_usdc=wallet_cash_usdc)
+    except Exception:
+        na = {"mode": "paper", "live_active": False, "label_tc": "Live預備 · 真倉 OFF"}
+    if na.get("live_active"):
+        na_mode = "live"
+    elif na.get("live_armed_prep") or na.get("live_armed"):
+        na_mode = "prep"
+    else:
+        na_mode = "paper"
     bots = []
     for bot_id, mode, extra in (
         (SONU_ID, sonu_mode, sonu),
         (V2_ID, v2["mode"], v2),
+        (NA_ID, na_mode, na),
     ):
         spec = BOT_SPECS[bot_id]
         bots.append(
