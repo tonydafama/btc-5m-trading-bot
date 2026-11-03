@@ -1080,9 +1080,14 @@ def _v2_golive_prep(root: Path, env: dict[str, str]) -> dict[str, Any]:
     pnl = meta.get("realized_pnl_usd")
     settled = meta.get("settled_trades")
     if pnl is None:
-        logs = _named_logs(root, lambda n: "dual" in n and "leg" in n and "live" in n)
-        if logs:
-            stats = _ledger_stats(_file_rows(logs[0]))
+        status = _read_json(root / "logs" / "dual_leg_live_status.json", {})
+        if status.get("realized_pnl_usd") is not None:
+            pnl = status.get("realized_pnl_usd")
+            settled = status.get("settled_trades")
+    if pnl is None:
+        trades_path = root / "logs" / "dual_leg_live_trades.json"
+        if trades_path.is_file():
+            stats = _ledger_stats(_file_rows(trades_path))
             pnl = stats.get("pnl")
             settled = stats.get("trade_count")
     return {
