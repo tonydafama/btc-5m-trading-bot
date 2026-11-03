@@ -559,18 +559,23 @@ def attach_mode_books(root: Path, rows: list[dict[str, Any]]) -> None:
         lines = ((books.get(active) or {}).get("rows") or [])
         if not lines:
             continue
-        head = lines[0]
-        for line in lines:
+        head = next((line for line in lines if str(line.get("scope") or "") == "今次"), lines[0])
+
+        def _settled_n(line: dict[str, Any]) -> int:
             try:
-                settled = int(line.get("settled_n") or 0)
+                return int(line.get("settled_n") or 0)
             except (TypeError, ValueError):
-                settled = 0
-            try:
-                head_settled = int(head.get("settled_n") or 0)
-            except (TypeError, ValueError):
-                head_settled = 0
-            if settled > head_settled:
-                head = line
+                return 0
+
+        head_settled = _settled_n(head)
+        if head_settled == 0:
+            for line in lines:
+                if line is head:
+                    continue
+                settled = _settled_n(line)
+                if settled > head_settled:
+                    head = line
+                    head_settled = settled
         row["pnl"] = head.get("pnl")
         row["pnl_label"] = head.get("pnl_label")
         row["wins"] = head.get("wins")
