@@ -247,6 +247,49 @@ def _ledger_stats(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _gold_box_window_funnel(
+    root: Path,
+    *,
+    bot_id: str,
+    live_active: bool,
+    ledger_rows: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Window funnel for gold-box cards. 考慮 equals 過濾 (same window count); UI shows 過濾 + 入場 only."""
+    from desk_bots import V2_ID
+
+    if bot_id == V2_ID and live_active:
+        st = _read_json(root / "logs" / "dual_leg_live_status.json", {})
+        windows = st.get("samples_total")
+        entered = st.get("settled_trades")
+        if entered is None:
+            entered = st.get("posted_live_orders")
+        if windows is not None:
+            w = int(windows)
+            e = int(entered or 0)
+            return {
+                "considered": w,
+                "filtered": w,
+                "entered": e,
+                "trades": e,
+                "ledger": "live",
+            }
+
+    rows = list(ledger_rows or [])
+    if not rows and bot_id == V2_ID:
+        path = root / "logs" / ("dual_leg_live_trades.json" if live_active else "dual_leg_btc_paper_trades.json")
+        rows = _file_rows(path) if path.is_file() else []
+    stats = _ledger_stats(rows) if rows else {"trade_count": 0, "scan_count": 0}
+    windows = int(stats.get("scan_count") or len(rows))
+    entered = int(stats.get("trade_count") or 0)
+    return {
+        "considered": windows,
+        "filtered": windows,
+        "entered": entered,
+        "trades": entered,
+        "ledger": "live" if live_active else "paper",
+    }
+
+
 def _count_label(stats: dict[str, Any]) -> str:
     trades = int(stats.get("trade_count") or 0)
     scans = int(stats.get("scan_count") or 0)
@@ -1162,7 +1205,7 @@ def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
         change = "Paper prep · 真倉 OFF"
     trades = int(stats.get("trade_count") or 0)
     considered = int(stats.get("scan_count") or trades)
-    filtered = max(0, considered - trades)
+    filtered = considered
     row = {
         "id": SONU_BOT_ID,
         "display_name": "終極5m" if real_live else "終極5m · Live預備",
@@ -1210,6 +1253,10 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
     pnl = prep.get("realized_pnl_usd")
     settled = prep.get("settled_trades")
     mode = v2_mode_view(root, env)
+    live_on = bool(mode["live_active"])
+    wf = _gold_box_window_funnel(root, bot_id="dual-leg-live-v2", live_active=live_on)
+    entered = int(wf.get("entered") or settled or 0)
+    windows = int(wf.get("filtered") or 0)
     row = {
         "id": "dual-leg-live-v2",
         "display_name": "BTC 2 legs V2",
@@ -1230,20 +1277,15 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
         "label_tc": mode["label_tc"],
         "pnl": pnl,
         "pnl_label": _money(float(pnl or 0)),
-        "trade_count": settled,
-        "count_label": f"{settled or 0} 單" if settled is not None else "—",
+        "trade_count": entered,
+        "count_label": f"{entered} 單 · {windows} 窗" if windows else f"{entered} 單",
         "settled_n": settled,
         "wins": None,
         "losses": None,
         "wr_label": "曾live",
         "capital_usd": 100.0,
-        "window_funnel": {
-            "considered": 0,
-            "filtered": 0,
-            "entered": 0,
-            "trades": 0,
-            "ledger": "live" if mode["live_active"] else "paper",
-        },
+        "trades_windows_line": f"Trades {entered} 單 · {windows} 窗 · 過濾 {windows}",
+        "window_funnel": wf,
         "unit": "dual-leg-live-v2",
     }
     return decorate_bet(root, row, env)
@@ -1268,6 +1310,9 @@ def _na_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
     rows = _file_rows(son_path) if son_path else []
     stats = _ledger_stats(rows) if rows else {"trade_count": 0, "scan_count": 0, "pnl": 0.0}
     active = na_live_active(root)
+    wf = _gold_box_window_funnel(root, bot_id=NA_ID, live_active=active, ledger_rows=rows)
+    entered = int(wf.get("entered") or 0)
+    windows = int(wf.get("filtered") or 0)
     row = {
         "id": NA_ID,
         "display_name": na.get("display_name") or "V2 newnew A · abort",
@@ -1285,16 +1330,11 @@ def _na_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
         "note": na.get("note_tc") or "",
         "pnl": round(float(stats.get("pnl") or 0), 2),
         "pnl_label": _money(float(stats.get("pnl") or 0)),
-        "trade_count": int(stats.get("trade_count") or 0),
-        "count_label": f"{int(stats.get('trade_count') or 0)} 單",
+        "trade_count": entered,
+        "count_label": f"{entered} 單 · {windows} 窗" if windows else f"{entered} 單",
         "capital_usd": 100.0,
-        "window_funnel": {
-            "considered": int(stats.get("scan_count") or 0),
-            "filtered": 0,
-            "entered": int(stats.get("trade_count") or 0),
-            "trades": int(stats.get("trade_count") or 0),
-            "ledger": "live" if active else "paper",
-        },
+        "trades_windows_line": f"Trades {entered} 單 · {windows} 窗 · 過濾 {windows}",
+        "window_funnel": wf,
         "unit": "btc-son-btc-2legs-v2-newnew-a.service",
     }
     return decorate_bet(root, row, env)

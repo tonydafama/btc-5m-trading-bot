@@ -290,7 +290,7 @@ details.sonu-paper-log-fold[open] > summary {
   color:rgba(240,217,168,.95); font-weight:700; margin-right:.4rem;
 }
 .hl-window-funnel {
-  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.4rem;
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.4rem;
   margin:.35rem 0 .15rem;
 }
 .hl-window-funnel .cell {
@@ -1493,8 +1493,7 @@ summary.desk-fold-summary {
           return 'Trades ' + n + ' 單 · ' + m + ' 窗 · 過濾 ' + k;
         })();
         const wf = r.window_funnel || {};
-        const winC = (wf.considered != null ? wf.considered : (r.scan_count != null ? r.scan_count : '—'));
-        const winF = (wf.filtered != null ? wf.filtered : '—');
+        const winF = (wf.filtered != null ? wf.filtered : (wf.considered != null ? wf.considered : (r.scan_count != null ? r.scan_count : '—')));
         const winE = (wf.entered != null ? wf.entered : (r.trade_count != null ? r.trade_count : '—'));
         const _dm = deskBotMeta(r);
         const _mode = deskBotMode(r);
@@ -1512,8 +1511,7 @@ summary.desk-fold-summary {
           </div>
           ${_dm ? deskToggleButtons(r, _mode) + deskBetBox(r) : ""}
           <div class="hl-trades-line" aria-live="polite"><span class="label-tag">Trades</span>${esc(String(twLine).replace(/^Trades\s*/, ''))}</div>
-          <div class="hl-window-funnel" aria-label="窗口考慮／過濾／入場">
-            <div class="cell"><div class="k">考慮</div><div class="v">${esc(String(winC))}</div></div>
+          <div class="hl-window-funnel" aria-label="窗口過濾／入場">
             <div class="cell"><div class="k">過濾</div><div class="v filt">${esc(String(winF))}</div></div>
             <div class="cell"><div class="k">入場</div><div class="v ent">${esc(String(winE))}</div></div>
           </div>
