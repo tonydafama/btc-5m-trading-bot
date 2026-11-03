@@ -1072,6 +1072,25 @@ def _fair_value_experiment(root: Path) -> dict[str, Any]:
     }
 
 
+def _wallet_cash_for_high_live(root: Path) -> float | None:
+    """Prefer live daemon status / on-disk cache so the gold box matches the bot ledger."""
+    status = _read_json(root / "logs" / "dual_leg_live_status.json", {})
+    raw = status.get("wallet_cash_usdc")
+    if raw is not None:
+        try:
+            return round(float(raw), 2)
+        except (TypeError, ValueError):
+            pass
+    cache = _read_json(root / "logs" / "wallet_cache.json", {})
+    raw = cache.get("cash_usdc") or cache.get("available_usdc")
+    if raw is not None:
+        try:
+            return round(float(raw), 2)
+        except (TypeError, ValueError):
+            pass
+    return None
+
+
 def _v2_golive_prep(root: Path, env: dict[str, str]) -> dict[str, Any]:
     """Desk V2 live-prep snapshot (DRY_RUN placeholder — not go-live)."""
     dry = _tri_flag(env.get("DUAL_LEG_LIVE_DRY_RUN"))
@@ -1243,6 +1262,15 @@ def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | 
 
     pause = entry_pause_view()
     rows = [_son_u_high_live_row(root, env), _v2_high_live_row(prep, root, env)]
+    try:
+        try:
+            from mode_books import attach_mode_books
+        except ImportError:
+            from dashboard.mode_books import attach_mode_books
+
+        attach_mode_books(root, rows)
+    except Exception:
+        pass
     any_live = (exec_is_real_live(root) and live_active(root)) or bool(v2_mode["live_active"])
     subtitle = (
         "預備區 · 紙上 rehearsal · 真倉 OFF（要錢包≥$100 + Son U go live）"
@@ -1304,7 +1332,7 @@ def build_all_paper_strategies(
     ]
     running = sum(1 for row in bots if row["status"] == "running")
     any_live = any(row.get("mode") == "LIVE" for row in bots)
-    high_live = _high_live_board(root, modes, None)
+    high_live = _high_live_board(root, modes, _wallet_cash_for_high_live(root))
     v2_prep = _v2_golive_prep(root, modes)
     title = "全部 Paper · 冇 live 真下單" if not any_live else "有 LIVE 模式 · Paper 區只顯示模擬帳"
     line = f"{running} 個 bot 跑緊 / {len(paper)} 條 paper 策略 / {len(experiments)} 項實驗"
