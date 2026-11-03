@@ -704,7 +704,6 @@ summary.desk-fold-summary {
   <header class="top">
     <div>
       <h1>Family Desk</h1>
-      <div class="sub" id="sub">3 Parent 紙上跑緊 · Sons 紙上跑緊 · 真倉 OFF</div>
     </div>
     <div class="top-actions">
       <span class="chip ok" id="mode-chip">PAPER</span>
@@ -713,22 +712,6 @@ summary.desk-fold-summary {
       <button type="button" class="chip btn" id="btn-refresh">刷新</button>
     </div>
   </header>
-
-  <div class="strip" id="strip">
-    <span>Parent <b id="p-run">—</b> RUNNING</span>
-    <span class="sep">·</span>
-    <span>Son <b id="s-ready">15</b> READY</span>
-    <span class="sep">·</span>
-    <span>合計 PnL <b id="sum-pnl" class="mut">—</b></span>
-    <span class="sep">·</span>
-    <span>真倉 <b>OFF</b></span>
-    <span class="sep">·</span>
-    <span>Son 未 launch</span>
-    <span class="sep">·</span>
-    <a class="logs-link" href="/logs">打開 Logs 頁 →</a>
-  </div>
-
-
 
 
 
@@ -1643,36 +1626,6 @@ summary.desk-fold-summary {
     Object.keys(byFam).forEach((f) => {
       byFam[f].sons.sort((a, b) => String(a.son||'').localeCompare(String(b.son||'')));
     });
-
-    let parentRun = 0;
-    let sumPnl = 0;
-    let sumN = 0;
-    FAM_ORDER.forEach((f) => {
-      const p = byFam[f].parent;
-      if (p && isRunning(p)) parentRun += 1;
-      if (p && p.pnl != null) { sumPnl += Number(p.pnl) || 0; sumN += 1; }
-    });
-
-    let sonRun = 0;
-    let sonReady = 0;
-    let sonPnl = 0;
-    FAM_ORDER.forEach((f) => {
-      (byFam[f].sons || []).forEach((s) => {
-        if (isRunning(s)) {
-          sonRun += 1;
-          if (s.pnl != null) sonPnl += Number(s.pnl) || 0;
-        } else if (isReady(s)) sonReady += 1;
-      });
-    });
-    $('p-run').textContent = String(parentRun);
-    $('s-ready').textContent = String(sonRun || sonReady || ((fb.sons_n != null) ? fb.sons_n : 15));
-    const labelEl = document.querySelector('#s-ready') && document.querySelector('#s-ready').previousElementSibling;
-    // strip header chip label stays; subtitle carries meaning
-    const sp = $('sum-pnl');
-    const totalPnl = sumPnl + sonPnl;
-    sp.textContent = money(totalPnl);
-    sp.className = pnlClass(totalPnl);
-    $('sub').textContent = parentRun + ' Parent RUNNING · ' + sonRun + ' Son RUNNING · ' + sonReady + ' READY · 真倉 OFF';
 
     const foldHint = {
       'BTC 5m new new': '（newnew 家族 · 預設摺起）',
