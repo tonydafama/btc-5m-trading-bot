@@ -1249,6 +1249,57 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
     return decorate_bet(root, row, env)
 
 
+def _na_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
+    from desk_bots import NA_ID, decorate_bet
+
+    try:
+        from v2_newnew_live_truth import live_active as na_live_active
+        from v2_newnew_live_truth import live_control_payload
+    except ImportError:
+        from dashboard.v2_newnew_live_truth import live_active as na_live_active
+        from dashboard.v2_newnew_live_truth import live_control_payload
+
+    na = live_control_payload(root)
+    paths = [
+        root / "logs" / "sons" / f"{NA_ID}_trades.json",
+        root / "logs" / f"{NA_ID}_trades.json",
+    ]
+    son_path = next((p for p in paths if p.is_file()), None)
+    rows = _file_rows(son_path) if son_path else []
+    stats = _ledger_stats(rows) if rows else {"trade_count": 0, "scan_count": 0, "pnl": 0.0}
+    active = na_live_active(root)
+    row = {
+        "id": NA_ID,
+        "display_name": na.get("display_name") or "V2 newnew A · abort",
+        "desk_section": "high_live",
+        "family": "BTC 5m new new",
+        "role": "son",
+        "launched": True,
+        "live_enabled": active,
+        "live_armed": bool(na.get("live_armed") or na.get("live_armed_prep")),
+        "dry_run": not bool(na.get("exec_is_real_live")),
+        "mode": "live" if active else "paper",
+        "status": na.get("status") or "RUNNING · paper",
+        "status_label": na.get("label_tc") or "Live預備 · 紙上",
+        "change": na.get("label_tc") or "Paper",
+        "note": na.get("note_tc") or "",
+        "pnl": round(float(stats.get("pnl") or 0), 2),
+        "pnl_label": _money(float(stats.get("pnl") or 0)),
+        "trade_count": int(stats.get("trade_count") or 0),
+        "count_label": f"{int(stats.get('trade_count') or 0)} 單",
+        "capital_usd": 100.0,
+        "window_funnel": {
+            "considered": int(stats.get("scan_count") or 0),
+            "filtered": 0,
+            "entered": int(stats.get("trade_count") or 0),
+            "trades": int(stats.get("trade_count") or 0),
+            "ledger": "live" if active else "paper",
+        },
+        "unit": "btc-son-btc-2legs-v2-newnew-a.service",
+    }
+    return decorate_bet(root, row, env)
+
+
 def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | None = None) -> dict[str, Any]:
     mod = _sonu_live_truth_module()
     exec_is_real_live = mod.exec_is_real_live
@@ -1261,7 +1312,11 @@ def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | 
     from dual_leg_live import entry_pause_view
 
     pause = entry_pause_view()
-    rows = [_son_u_high_live_row(root, env), _v2_high_live_row(prep, root, env)]
+    rows = [
+        _son_u_high_live_row(root, env),
+        _v2_high_live_row(prep, root, env),
+        _na_high_live_row(root, env),
+    ]
     try:
         try:
             from mode_books import attach_mode_books

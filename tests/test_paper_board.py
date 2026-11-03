@@ -280,7 +280,7 @@ class PaperBoardTests(unittest.TestCase):
         hl = board.get("high_live_board") or {}
         self.assertFalse(hl.get("any_live"))
         rows = hl.get("rows") or []
-        self.assertGreaterEqual(len(rows), 2)
+        self.assertGreaterEqual(len(rows), 3)
         self.assertEqual(rows[0].get("id"), "son-btc-5m-ultimate-live")
         self.assertEqual(rows[1].get("display_name"), "BTC 2 legs V2")
 
