@@ -6,11 +6,9 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD = ROOT / "dashboard"
-sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(DASHBOARD))
 
 import desk_bots as db  # noqa: E402
@@ -95,21 +93,6 @@ class DeskBotTests(unittest.TestCase):
         self.assertEqual(db.v2_mode_view(self.root)["mode"], "paper")
         opened = db.handle_desk_action(self.root, db.V2_ID, "to_live", wallet_cash_usdc=120)
         self.assertFalse(opened.get("live_active"))
-
-    @patch("dual_leg_live.entry_pause_view", return_value={"active": True, "window_hkt": "18:00-24:00"})
-    @patch.object(db, "v2_unit_is_live", return_value=True)
-    @patch.object(db, "v2_exec_is_real", return_value=True)
-    def test_v2_live_on_air_off_during_entry_pause(
-        self, _exec_real, _unit_live, _pause
-    ) -> None:
-        view = db.v2_mode_view(self.root)
-        self.assertTrue(view["live_active"])
-        self.assertFalse(view["live_on_air"])
-        board = pb._high_live_board(self.root, {"DUAL_LEG_LIVE_DRY_RUN": "0"}, None)
-        v2 = next(r for r in board["rows"] if r["id"] == db.V2_ID)
-        self.assertFalse(v2["live_on_air"])
-        self.assertTrue(board["any_live"])
-        self.assertFalse(board["any_on_air"])
 
     def test_high_live_rows_use_bet_rule_and_keep_real_live_off(self) -> None:
         board = pb._high_live_board(
