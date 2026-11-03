@@ -54,7 +54,8 @@ def patch_template() -> None:
           : ((r.had_live || r.live_tag === '曾live')
             ? '<span class="chip">曾live</span>'
             : '');"""
-    new_pill = """        const livePill = '<span class="hl-badge is-on" aria-label="LIVE ON">LIVE ON</span>';"""
+    new_pill = """        const lampOn = deskBotMode(r) === 'live' && !!r.live_enabled;
+        const livePill = lampOn ? '<span class="hl-badge is-on" aria-label="LIVE ON">LIVE ON</span>' : '';"""
     if old_pill not in text:
         raise SystemExit("livePill block missing")
     text = text.replace(old_pill, new_pill)
