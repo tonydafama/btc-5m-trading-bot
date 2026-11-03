@@ -67,6 +67,25 @@ def patch_template() -> None:
     if old_fold not in text:
         raise SystemExit("v2 fold missing")
     text = text.replace(old_fold, "        return card;")
+    old_prep = ".desk-bot-actions .hl-toggle.is-prep { border-color:rgba(251,191,36,.75); background:rgba(120,70,20,.55); }"
+    new_prep = """/* Active mode on all 3 Live-box bots: same green lamp as V2 newnew A */
+.desk-bot-actions button.hl-toggle.is-active,
+.desk-bot-actions button.hl-toggle.is-prep {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  border-color: #39ff7a;
+  background: radial-gradient(circle at 16% 50%, rgba(210,255,225,.55), rgba(0,204,68,.15) 36%), #00b83c;
+  text-shadow: 0 0 2px #b6ffd0, 0 0 8px #00ff66, 0 0 16px #00ff66;
+  box-shadow: 0 0 8px rgba(0,255,102,.75), 0 0 18px rgba(0,255,102,.45), inset 0 0 10px rgba(190,255,210,.35);
+}
+.desk-bot-actions button.hl-toggle.is-active::before,
+.desk-bot-actions button.hl-toggle.is-prep::before {
+  border-color: #eafff3;
+  background: #ffffff;
+  box-shadow: 0 0 4px #ffffff, 0 0 8px #00ff66, 0 0 16px #00ff00;
+}"""
+    if old_prep in text and "same green lamp as V2 newnew A" not in text:
+        text = text.replace(old_prep, new_prep, 1)
     path.write_text(text, encoding="utf-8")
 
 
