@@ -1313,6 +1313,13 @@ summary.desk-fold-summary {
     bindDeskSplitBots();
   }
 
+  function rowLiveOnAir(r) {
+    if (!r) return false;
+    if (r.live_on_air === false) return false;
+    if (r.live_on_air === true) return true;
+    return !!r.live_enabled;
+  }
+
   function renderHighLive(board) {
     const body = $('hl-body');
     const noteEl = $('hl-note');
@@ -1328,8 +1335,9 @@ summary.desk-fold-summary {
       || hl.any_live
       || sonRowLive
     );
+    const anyOnAir = hl.any_on_air === true || rows.some((r) => rowLiveOnAir(r));
     if (badge) {
-      if (anyLive) {
+      if (anyOnAir) {
         badge.hidden = false;
         badge.textContent = 'LIVE ON';
         badge.className = 'hl-badge is-on';
@@ -1351,11 +1359,13 @@ summary.desk-fold-summary {
         return 0;
       });
       body.innerHTML = sortRows.map((r) => {
-        const livePill = r.live_enabled
+        const livePill = rowLiveOnAir(r)
           ? '<span class="pill live">LIVE</span>'
-          : ((r.had_live || r.live_tag === '曾live')
-            ? '<span class="chip">曾live</span>'
-            : '');
+          : (r.live_enabled
+            ? '<span class="chip">暫停開新倉</span>'
+            : ((r.had_live || r.live_tag === '曾live')
+              ? '<span class="chip">曾live</span>'
+              : ''));
         const pnl = r.pnl_label || money(r.pnl);
         const stake = r.stake_usd != null ? ('$'+r.stake_usd+'/注') : '$10/注';
         const cap = r.capital_usd != null
@@ -1418,7 +1428,9 @@ summary.desk-fold-summary {
     const bits = [];
     if (hl.wallet_cash_usdc != null) bits.push('真錢包 $' + Number(hl.wallet_cash_usdc).toFixed(2));
     if (hl.blocked) bits.push('阻擋：' + hl.blocked);
-    bits.push(anyLive ? '真倉已開' : '真倉未開');
+    if (anyOnAir) bits.push('真倉 ON-AIR');
+    else if (anyLive) bits.push('真倉暫停開新倉');
+    else bits.push('真倉未開');
     if (noteEl) noteEl.textContent = bits.join(' ｜ ');
     wireDeskCards(rows);
   }

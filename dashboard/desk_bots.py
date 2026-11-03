@@ -331,14 +331,24 @@ def live_conflict_message(root: Path, bot_id: str) -> str | None:
 
 
 def v2_mode_view(root: Path, env: dict[str, str] | None = None) -> dict[str, Any]:
+    from dual_leg_live import entry_pause_view
+
     exec_real = v2_exec_is_real(root, env)
     armed = _truthy(_env_get(root, env, "V2_LIVE_ARMED_PREP", "0"))
     live_active = bool(v2_unit_is_live(root))
+    pause = entry_pause_view()
+    pause_active = bool(pause.get("active")) and live_active
+    live_on_air = live_active and not pause_active
     if live_active:
         mode = "live"
-        status_label = "跑緊 · 真倉 ON"
-        change = "Live · 真倉 ON"
-        label_tc = "而家模式：Live（真倉 ON）"
+        if pause_active:
+            status_label = "跑緊 · 真倉 · 18:00-24:00 暫停開新倉"
+            change = "Live · 暫停開新倉 · 00:00 再開"
+            label_tc = "而家模式：Live（暫停開新倉 · 00:00 再開）"
+        else:
+            status_label = "跑緊 · 真倉 ON"
+            change = "Live · 真倉 ON"
+            label_tc = "而家模式：Live（真倉 ON）"
     elif armed:
         mode = "prep"
         status_label = "紙上 armed · 真倉 OFF"
@@ -352,6 +362,8 @@ def v2_mode_view(root: Path, env: dict[str, str] | None = None) -> dict[str, Any
     return {
         "mode": mode,
         "live_active": live_active,
+        "live_on_air": live_on_air,
+        "entry_pause": pause,
         "live_armed": armed and not live_active,
         "live_armed_prep": armed and not exec_real,
         "exec_is_real_live": exec_real,
