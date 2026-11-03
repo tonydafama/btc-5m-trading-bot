@@ -1174,10 +1174,10 @@ summary.desk-fold-summary {
     const paperCls = 'hl-toggle' + (paperActive ? ' is-active' : '');
     return `<div class="desk-bot-actions" data-desk-actions="1">
       <button type="button" class="${paperCls}" data-bot-action="to_paper" data-bot-id="${esc(r.id)}">
-        <span class="mode-label">${paperActive ? '模式：Paper（紙上）' : '切換 → Paper'}</span>
+        <span class="mode-label">模式：Paper（紙上）</span>
       </button>
       <button type="button" class="${liveCls}" data-bot-action="to_live" data-bot-id="${esc(r.id)}">
-        <span class="mode-label">${mode === 'live' ? '模式：Live（真倉）' : (mode === 'prep' ? '模式：Live prep' : '切換 → Live')}</span>
+        <span class="mode-label">模式：Live（真倉）</span>
       </button>
     </div>`;
   }
@@ -1208,12 +1208,12 @@ summary.desk-fold-summary {
       liveBtn.classList.toggle('is-active', mode === 'live' || mode === 'prep');
       liveBtn.classList.toggle('is-prep', mode === 'prep');
       const label = liveBtn.querySelector('.mode-label');
-      if (label) label.textContent = mode === 'live' ? '模式：Live（真倉）' : (mode === 'prep' ? '模式：Live prep' : '切換 → Live');
+      if (label) label.textContent = '模式：Live（真倉）';
     }
     if (paperBtn) {
       paperBtn.classList.toggle('is-active', mode === 'paper');
       const label = paperBtn.querySelector('.mode-label');
-      if (label) label.textContent = mode === 'paper' ? '模式：Paper（紙上）' : '切換 → Paper';
+      if (label) label.textContent = '模式：Paper（紙上）';
     }
   }
   async function postDeskBot(botId, action, betSize) {
