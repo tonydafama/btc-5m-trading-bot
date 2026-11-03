@@ -22,8 +22,10 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
 
-ROOT = Path("/root/btc-5m-bot")
-sys.path.insert(0, str(ROOT))
+ROOT = Path("/root/btc-5m-bot").resolve()
+sys.path[:] = [str(ROOT)] + [
+    p for p in sys.path if p and "weather-bot" not in p and Path(p).resolve() != ROOT
+]
 
 
 def _live_exec_mode() -> bool:

@@ -25,7 +25,26 @@ def _parse_systemd_environment(raw: str) -> dict[str, str]:
     return out
 
 
+def _read_env_file(path: Path, into: dict[str, str]) -> None:
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        into[k.strip()] = v.strip().strip('"').strip("'")
+
+
 def read_exec_unit_environment(root: Path) -> dict[str, str]:
+    """Merge live-exec unit EnvironmentFiles (later wins) + inline Environment=."""
+    found: dict[str, str] = {}
+    for path in (
+        root / ".env",
+        root / "configs" / "sons" / "son-btc-5m-ultimate-live.env",
+        root / "config" / "sonu_live_exec.env",
+    ):
+        _read_env_file(path, found)
     try:
         proc = subprocess.run(
             ["systemctl", "show", SONU_EXEC_UNIT, "-p", "Environment", "--value"],
@@ -35,18 +54,10 @@ def read_exec_unit_environment(root: Path) -> dict[str, str]:
             check=False,
         )
         if proc.returncode == 0 and proc.stdout.strip():
-            return _parse_systemd_environment(proc.stdout)
+            found.update(_parse_systemd_environment(proc.stdout))
     except (OSError, subprocess.SubprocessError):
         pass
-    cfg = root / "config" / "sonu_live_exec.env"
-    if cfg.is_file():
-        found: dict[str, str] = {}
-        for line in cfg.read_text(encoding="utf-8", errors="ignore").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            k, v = line.split("=", 1)
-            found[k.strip()] = v.strip()
+    if found:
         return found
     return {
         "DRY_RUN": os.getenv("SONU_LIVE_EXEC_DRY_RUN", "1"),
@@ -63,6 +74,8 @@ def exec_is_real_live(root: Path) -> bool:
     """True only when live-exec would post real FOK (not DRY_RUN placeholder)."""
     env = read_exec_unit_environment(root)
     if _truthy(env.get("DRY_RUN")):
+        return False
+    if _truthy(env.get("DUAL_LEG_LIVE_DRY_RUN", "1")):
         return False
     if not _truthy(env.get("REAL_MONEY")):
         return False
