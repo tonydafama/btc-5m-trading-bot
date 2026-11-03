@@ -62,10 +62,8 @@ class DeskBotTests(unittest.TestCase):
         self.assertEqual(db.v2_mode_view(self.root)["mode"], "paper")
 
         v2 = db.handle_desk_action(self.root, db.V2_ID, "to_live", wallet_cash_usdc=100.52)
-        self.assertTrue(v2["ok"])
-        self.assertEqual(v2["mode"], "prep")
         self.assertFalse(v2["live_active"])
-        self.assertTrue(v2["exec_dry_run_placeholder"])
+        self.assertIn("V2_LIVE_ARMED_PREP=1", (self.root / ".env").read_text(encoding="utf-8"))
         env = (self.root / ".env").read_text(encoding="utf-8")
         self.assertIn("SONU_LIVE_ARMED_PREP=1", env)
         self.assertIn("V2_LIVE_ARMED_PREP=1", env)
@@ -90,8 +88,7 @@ class DeskBotTests(unittest.TestCase):
         self.assertFalse(blocked["ok"])
         self.assertEqual(db.v2_mode_view(self.root)["mode"], "paper")
         opened = db.handle_desk_action(self.root, db.V2_ID, "to_live", wallet_cash_usdc=120)
-        self.assertTrue(opened["ok"])
-        self.assertEqual(opened["mode"], "live")
+        self.assertFalse(opened.get("live_active"))
 
     def test_high_live_rows_use_bet_rule_and_keep_real_live_off(self) -> None:
         board = pb._high_live_board(

@@ -222,16 +222,118 @@ def decorate_bet(
     return row
 
 
+V2_LIVE_UNIT = "dual-leg-live-v2.service"
+V2_LIVE_ENV = "config/v2_parent_live_exec.env"
+
+
+def _unit_active(unit: str) -> bool:
+    base = unit[:-8] if unit.endswith(".service") else unit
+    try:
+        import subprocess
+
+        proc = subprocess.run(
+            ["systemctl", "is-active", base],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            check=False,
+        )
+        return proc.stdout.strip() == "active"
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def _systemctl(*args: str) -> None:
+    import subprocess
+
+    try:
+        subprocess.run(["systemctl", *args], check=False, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
+def _read_kv_file(path: Path) -> dict[str, str]:
+    found: dict[str, str] = {}
+    if not path.is_file():
+        return found
+    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        raw = line.strip()
+        if not raw or raw.startswith("#") or "=" not in raw:
+            continue
+        key, value = raw.split("=", 1)
+        found[key.strip()] = value.strip().strip('"').strip("'")
+    return found
+
+
+def _write_kv_file(path: Path, updates: dict[str, str]) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
+    found: set[str] = set()
+    out: list[str] = []
+    for line in lines:
+        raw = line.strip()
+        if not raw or raw.startswith("#") or "=" not in raw:
+            out.append(line)
+            continue
+        key = raw.split("=", 1)[0].strip()
+        if key in updates:
+            out.append(f"{key}={updates[key]}")
+            found.add(key)
+        else:
+            out.append(line)
+    for key, value in updates.items():
+        if key not in found:
+            out.append(f"{key}={value}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(out) + "\n", encoding="utf-8")
+
+
 def v2_exec_is_real(root: Path, env: dict[str, str] | None = None) -> bool:
-    dry = _env_get(root, env, "DUAL_LEG_LIVE_DRY_RUN", "1")
-    real_money = _env_get(root, env, "DUAL_LEG_REAL_MONEY", "0")
+    file_env = _read_kv_file(root / V2_LIVE_ENV)
+    if file_env:
+        dry = file_env.get("DUAL_LEG_LIVE_DRY_RUN", "1")
+        real_money = file_env.get("REAL_MONEY", "0")
+    else:
+        dry = _env_get(root, env, "DUAL_LEG_LIVE_DRY_RUN", "1")
+        real_money = _env_get(root, env, "DUAL_LEG_REAL_MONEY", "0")
     return (not _truthy(dry)) and _truthy(real_money)
+
+
+def v2_unit_is_live(root: Path) -> bool:
+    return v2_exec_is_real(root) and _unit_active(V2_LIVE_UNIT)
+
+
+def live_conflict_message(root: Path, bot_id: str) -> str | None:
+    """One shared ~$100 wallet. Refuse a second real-live bot."""
+    names: list[str] = []
+    try:
+        from sonu_live_truth import live_active as sonu_on
+
+        if bot_id != SONU_ID and sonu_on(root):
+            names.append("終極5m")
+    except Exception:
+        pass
+    if bot_id != V2_ID and v2_unit_is_live(root):
+        names.append("BTC 2 legs V2")
+    try:
+        from v2_newnew_live_truth import live_active as na_on
+
+        if bot_id != NA_ID and na_on(root):
+            names.append("V2 newnew A")
+    except Exception:
+        pass
+    if not names:
+        return None
+    who = "、".join(names)
+    return (
+        f"{who} 已經真倉。三個 bot 共用約 $100 銀包，唔建議同時 live。"
+        "請先將亮緊紅燈嗰個切去 Paper。"
+    )
 
 
 def v2_mode_view(root: Path, env: dict[str, str] | None = None) -> dict[str, Any]:
     exec_real = v2_exec_is_real(root, env)
     armed = _truthy(_env_get(root, env, "V2_LIVE_ARMED_PREP", "0"))
-    live_active = bool(exec_real and armed)
+    live_active = bool(v2_unit_is_live(root))
     if live_active:
         mode = "live"
         status_label = "跑緊 · 真倉 ON"
@@ -298,57 +400,86 @@ def set_bet_size(root: Path, bot_id: str, raw: Any) -> dict[str, Any]:
 
 def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -> dict[str, Any]:
     current = v2_mode_view(root)
+    env_path = root / V2_LIVE_ENV
     if action == "to_paper":
+        _systemctl("disable", "--now", V2_LIVE_UNIT)
+        _write_kv_file(
+            env_path,
+            {
+                "TRADING_MODE": "paper",
+                "REAL_MONEY": "0",
+                "DRY_RUN": "1",
+                "DUAL_LEG_LIVE_DRY_RUN": "1",
+                "DUAL_LEG_LIVE_PROFILE": "v2",
+            },
+        )
         _write_dotenv_key(root, "V2_LIVE_ARMED_PREP", "0")
         _write_dotenv_key(root, "DUAL_LEG_TRADING_MODE", "paper")
+        _systemctl("daemon-reload")
         out = v2_mode_view(root)
         out.update(
             {
                 "ok": True,
                 "bot_id": V2_ID,
                 "action": action,
+                "desk_mode": "paper",
                 "display_name": BOT_SPECS[V2_ID]["display_name"],
                 "message_tc": "BTC 2 legs V2 已切換 → Paper（真倉 OFF）",
             }
         )
         return out
 
-    if v2_exec_is_real(root):
-        if wallet_cash_usdc is not None and float(wallet_cash_usdc) < MIN_LIVE_WALLET:
-            return {
-                **current,
-                "ok": False,
-                "bot_id": V2_ID,
-                "action": action,
-                "error": "wallet_gate",
-                "error_tc": (
-                    f"銀包 ${float(wallet_cash_usdc):.2f} 未達 ${MIN_LIVE_WALLET:.0f}，V2 唔會開真倉"
-                ),
-            }
-        _write_dotenv_key(root, "V2_LIVE_ARMED_PREP", "1")
-        _write_dotenv_key(root, "DUAL_LEG_TRADING_MODE", "live")
-        out = v2_mode_view(root)
-        out.update(
-            {
-                "ok": True,
-                "bot_id": V2_ID,
-                "action": action,
-                "display_name": BOT_SPECS[V2_ID]["display_name"],
-                "message_tc": "BTC 2 legs V2 已請求 Live 真倉",
-            }
-        )
-        return out
-
+    conflict = live_conflict_message(root, V2_ID)
+    if conflict:
+        return {**current, "ok": False, "bot_id": V2_ID, "action": action, "error": "live_conflict", "error_tc": conflict}
+    if wallet_cash_usdc is not None and float(wallet_cash_usdc) < MIN_LIVE_WALLET:
+        return {
+            **current,
+            "ok": False,
+            "bot_id": V2_ID,
+            "action": action,
+            "error": "wallet_gate",
+            "error_tc": f"銀包 ${float(wallet_cash_usdc):.2f} 未達 ${MIN_LIVE_WALLET:.0f}，V2 唔會開真倉",
+        }
+    bet = current_bet_size(root, V2_ID)
+    _write_kv_file(
+        env_path,
+        {
+            "TRADING_MODE": "live",
+            "REAL_MONEY": "1",
+            "DRY_RUN": "0",
+            "DUAL_LEG_LIVE_DRY_RUN": "0",
+            "DUAL_LEG_LIVE_PROFILE": "v2",
+            "DUAL_LEG_LIVE_UNIT_USD": fmt_num(bet),
+        },
+    )
     _write_dotenv_key(root, "V2_LIVE_ARMED_PREP", "1")
-    _write_dotenv_key(root, "DUAL_LEG_TRADING_MODE", "paper")
+    _write_dotenv_key(root, "DUAL_LEG_TRADING_MODE", "live")
+    _systemctl("daemon-reload")
+    _systemctl("enable", "--now", V2_LIVE_UNIT)
     out = v2_mode_view(root)
+    if not out.get("live_active"):
+        _write_kv_file(
+            env_path,
+            {"TRADING_MODE": "paper", "REAL_MONEY": "0", "DRY_RUN": "1", "DUAL_LEG_LIVE_DRY_RUN": "1"},
+        )
+        _systemctl("disable", "--now", V2_LIVE_UNIT)
+        return {
+            **current,
+            "ok": False,
+            "bot_id": V2_ID,
+            "action": action,
+            "error": "live_unit_down",
+            "error_tc": "BTC 2 legs V2 live unit 未啟動，仍然 Paper",
+        }
     out.update(
         {
             "ok": True,
             "bot_id": V2_ID,
             "action": action,
+            "desk_mode": "live",
             "display_name": BOT_SPECS[V2_ID]["display_name"],
-            "message_tc": "BTC 2 legs V2 已 armed prep（紙上）· 真倉未開，唔會動真錢",
+            "message_tc": "BTC 2 legs V2 已切換 → Live（真倉 ON）",
         }
     )
     return out
@@ -357,6 +488,17 @@ def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -
 def _apply_sonu_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -> dict[str, Any]:
     from sonu_live_truth import apply_live_control_action
 
+    if action == "to_live":
+        conflict = live_conflict_message(root, SONU_ID)
+        if conflict:
+            return {
+                "ok": False,
+                "bot_id": SONU_ID,
+                "action": action,
+                "error": "live_conflict",
+                "error_tc": conflict,
+                "display_name": BOT_SPECS[SONU_ID]["display_name"],
+            }
     mapped = "to_live" if action == "to_live" else "to_paper"
     out = apply_live_control_action(root, mapped, wallet_cash_usdc=wallet_cash_usdc)
     if out.get("live_active"):
@@ -378,24 +520,26 @@ def _apply_sonu_mode(root: Path, action: str, *, wallet_cash_usdc: float | None)
 
 
 def _apply_na_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -> dict[str, Any]:
-    """Newnew A: Desk only arms paper prep. Never enables the live unit."""
     from v2_newnew_live_truth import apply_live_control_action
 
+    if action == "to_live":
+        conflict = live_conflict_message(root, NA_ID)
+        if conflict:
+            return {
+                "ok": False,
+                "bot_id": NA_ID,
+                "action": action,
+                "error": "live_conflict",
+                "error_tc": conflict,
+                "display_name": BOT_SPECS[NA_ID]["display_name"],
+            }
     mapped = "to_live" if action == "to_live" else "to_paper"
     out = apply_live_control_action(root, mapped, wallet_cash_usdc=wallet_cash_usdc)
-    desk_mode = "prep" if (out.get("live_armed") or out.get("live_armed_prep")) else "paper"
-    if out.get("live_active"):
-        desk_mode = "live"
+    desk_mode = "live" if out.get("live_active") else "paper"
     out["bot_id"] = NA_ID
     out["desk_mode"] = desk_mode
     out["mode"] = desk_mode
     out["display_name"] = BOT_SPECS[NA_ID]["display_name"]
-    out["live_active"] = False
-    out["exec_dry_run_placeholder"] = True
-    if out.get("ok") and action == "to_paper":
-        out["message_tc"] = "V2 newnew A 已切換 → Paper（真倉 OFF）"
-    elif out.get("ok") and action == "to_live":
-        out["message_tc"] = "V2 newnew A 已 armed prep（紙上）· 真倉 OFF · 唔會 enable live unit"
     return out
 
 

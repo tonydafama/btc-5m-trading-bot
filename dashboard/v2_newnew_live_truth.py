@@ -12,6 +12,7 @@ NA_DISPLAY = "V2 newnew A · abort"
 NA_PAPER_UNIT = "btc-son-btc-2legs-v2-newnew-a.service"
 NA_LIVE_UNIT = "dual-leg-live-v2-newnew-a.service"
 NA_LIVE_PREP_ENV = "V2_NEWNEW_LIVE_ARMED_PREP"
+NA_LIVE_ENV = "config/v2_newnew_live_exec.env"
 
 
 def _truthy(val: str | None) -> bool:
@@ -74,22 +75,47 @@ def _unit_state(unit: str) -> tuple[str, bool]:
         return "unknown", False
 
 
-def live_exec_is_real(root: Path) -> bool:
-    """NA live path is prep-only until explicit go-live checklist — always False for Desk."""
-    state, enabled = _unit_state(NA_LIVE_UNIT)
-    if state != "active" or not enabled:
-        return False
-    env_path = root / "config" / "v2_newnew_live_exec.env"
-    if not env_path.is_file():
-        return False
+def _live_env(root: Path) -> dict[str, str]:
     env: dict[str, str] = {}
+    env_path = root / NA_LIVE_ENV
+    if not env_path.is_file():
+        return env
     for line in env_path.read_text(encoding="utf-8", errors="ignore").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
-        k, v = line.split("=", 1)
-        env[k.strip()] = v.strip()
-    if _truthy(env.get("DRY_RUN")) or _truthy(env.get("DUAL_LEG_LIVE_DRY_RUN", "1")):
+        key, value = line.split("=", 1)
+        env[key.strip()] = value.strip()
+    return env
+
+
+def _write_live_env_keys(root: Path, updates: dict[str, str]) -> None:
+    path = root / NA_LIVE_ENV
+    lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
+    found: set[str] = set()
+    out: list[str] = []
+    for line in lines:
+        raw = line.strip()
+        if not raw or raw.startswith("#") or "=" not in raw:
+            out.append(line)
+            continue
+        key = raw.split("=", 1)[0].strip()
+        if key in updates:
+            out.append(f"{key}={updates[key]}")
+            found.add(key)
+        else:
+            out.append(line)
+    for key, value in updates.items():
+        if key not in found:
+            out.append(f"{key}={value}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(out) + "\n", encoding="utf-8")
+
+
+def live_exec_is_real(root: Path) -> bool:
+    """True when the NA live env would post real FOK orders."""
+    env = _live_env(root)
+    if _truthy(env.get("DRY_RUN", "1")) or _truthy(env.get("DUAL_LEG_LIVE_DRY_RUN", "1")):
         return False
     if not _truthy(env.get("REAL_MONEY")):
         return False
@@ -147,7 +173,7 @@ def live_control_payload(root: Path, *, wallet_cash_usdc: float | None = None) -
         "live_armed": armed and not active,
         "live_armed_prep": armed and placeholder,
         "exec_is_real_live": live_exec_is_real(root),
-        "exec_dry_run_placeholder": True,
+        "exec_dry_run_placeholder": not live_exec_is_real(root),
         "live_unit": NA_LIVE_UNIT,
         "live_unit_state": live_state,
         "live_unit_enabled": live_enabled,
@@ -161,40 +187,105 @@ def live_control_payload(root: Path, *, wallet_cash_usdc: float | None = None) -
         "wallet_min_usdc": min_wallet,
         "wallet_ok_for_live": wallet_ok,
         "wallet_shared_with_son_u": True,
-        "to_live_blocked_reason": "desk_prep_only",
+        "to_live_blocked_reason": None if active or live_exec_is_real(root) else None,
         "label_tc": label_tc,
         "note_tc": shared_wallet_note,
         "knobs": meta.get("knobs") or {},
     }
 
 
+def _systemctl(*args: str) -> None:
+    try:
+        subprocess.run(["systemctl", *args], check=False, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
 def apply_live_control_action(root: Path, action: str, *, wallet_cash_usdc: float | None = None) -> dict[str, Any]:
+    """Dashboard switch. Paper stops the live unit. Live starts it and posts FOK."""
     action = (action or "").strip().lower()
     base = live_control_payload(root, wallet_cash_usdc=wallet_cash_usdc)
     if action == "to_paper":
+        _systemctl("disable", "--now", NA_LIVE_UNIT)
+        _write_live_env_keys(
+            root,
+            {
+                "TRADING_MODE": "paper",
+                "REAL_MONEY": "0",
+                "DRY_RUN": "1",
+                "DUAL_LEG_LIVE_DRY_RUN": "1",
+            },
+        )
         _write_dotenv_key(root, NA_LIVE_PREP_ENV, "0")
+        _systemctl("daemon-reload")
+        _systemctl("enable", "--now", NA_PAPER_UNIT)
         out = live_control_payload(root, wallet_cash_usdc=wallet_cash_usdc)
         out.update(
             {
                 "ok": True,
                 "action": action,
-                "message_tc": "已清除 NA Live prep armed · 紙上 son 繼續跑 · 真倉 OFF",
+                "desk_mode": "paper",
+                "mode": "paper",
+                "message_tc": "V2 newnew A 已切換 → Paper（真倉 OFF）",
             }
         )
         return out
     if action == "to_live":
+        if wallet_cash_usdc is not None and float(wallet_cash_usdc) < 100.0:
+            return {
+                **base,
+                "ok": False,
+                "action": action,
+                "error": "wallet_gate",
+                "error_tc": f"銀包 ${float(wallet_cash_usdc):.2f} 未達 $100，唔會開真倉",
+            }
+        _write_live_env_keys(
+            root,
+            {
+                "TRADING_MODE": "live",
+                "REAL_MONEY": "1",
+                "DRY_RUN": "0",
+                "DUAL_LEG_LIVE_DRY_RUN": "0",
+                "DUAL_LEG_LIVE_PROFILE": "v2_live_shadow",
+                "DUAL_LEG_LIVE_UNIT_USD": "6",
+                "REQUIRE_OPP_BEFORE_LEG1": "1",
+                "OPP_BEFORE_LEG1_MAX": "0.50",
+            },
+        )
         _write_dotenv_key(root, NA_LIVE_PREP_ENV, "1")
+        _systemctl("daemon-reload")
+        _systemctl("stop", NA_PAPER_UNIT)
+        _systemctl("enable", "--now", NA_LIVE_UNIT)
         out = live_control_payload(root, wallet_cash_usdc=wallet_cash_usdc)
+        if not out.get("live_active"):
+            _write_live_env_keys(
+                root,
+                {
+                    "TRADING_MODE": "paper",
+                    "REAL_MONEY": "0",
+                    "DRY_RUN": "1",
+                    "DUAL_LEG_LIVE_DRY_RUN": "1",
+                },
+            )
+            _systemctl("disable", "--now", NA_LIVE_UNIT)
+            _systemctl("enable", "--now", NA_PAPER_UNIT)
+            failed = live_control_payload(root, wallet_cash_usdc=wallet_cash_usdc)
+            failed.update(
+                {
+                    "ok": False,
+                    "action": action,
+                    "error": "live_unit_down",
+                    "error_tc": "V2 newnew A live unit 未啟動，已返回 Paper",
+                }
+            )
+            return failed
         out.update(
             {
                 "ok": True,
                 "action": action,
-                "message_tc": (
-                    "已標記 Live prep armed（紙上）· 唔會 enable live unit／唔會落 CLOB。"
-                    " 真 go-live 要 checklist + 解決與 Son U 共用錢包。"
-                ),
-                "error_tc": None,
-                "blocked": True,
+                "desk_mode": "live",
+                "mode": "live",
+                "message_tc": "V2 newnew A 已切換 → Live（真倉 ON）",
             }
         )
         return out
