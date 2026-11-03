@@ -1215,6 +1215,7 @@ def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
         "son": "UL",
         "launched": True,
         "live_enabled": real_live,
+        "live_on_air": real_live,
         "dry_run": not real_live,
         "mode": "live" if real_live else ("prep" if armed else "paper"),
         "status": "RUNNING · paper",
@@ -1265,6 +1266,8 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
         "role": "parent",
         "launched": bool(mode["live_active"] or mode["live_armed"]),
         "live_enabled": bool(mode["live_active"]),
+        "live_on_air": bool(mode.get("live_on_air")),
+        "entry_pause": mode.get("entry_pause"),
         "live_armed": bool(mode["live_armed"] or mode["live_armed_prep"]),
         "had_live": True,
         "live_tag": "曾live",
@@ -1321,6 +1324,7 @@ def _na_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
         "role": "son",
         "launched": True,
         "live_enabled": active,
+        "live_on_air": active,
         "live_armed": bool(na.get("live_armed") or na.get("live_armed_prep")),
         "dry_run": not bool(na.get("exec_is_real_live")),
         "mode": "live" if active else "paper",
@@ -1351,9 +1355,6 @@ def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | 
     from desk_bots import v2_mode_view
 
     v2_mode = v2_mode_view(root, env)
-    from dual_leg_live import entry_pause_view
-
-    pause = entry_pause_view()
     rows = [
         _v2_high_live_row(prep, root, env),
         _son_u_high_live_row(root, env),
@@ -1369,16 +1370,19 @@ def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | 
     except Exception:
         pass
     any_live = (exec_is_real_live(root) and live_active(root)) or bool(v2_mode["live_active"])
+    any_on_air = any(bool(r.get("live_on_air")) for r in rows)
+    pause = v2_mode.get("entry_pause") or {}
     subtitle = (
         "預備區 · 紙上 rehearsal · 真倉 OFF（要錢包≥$100 + Son U go live）"
         if not any_live
-        else "真倉 ON"
+        else ("真倉暫停開新倉 · 00:00 再開" if any_live and not any_on_air else "真倉 ON")
     )
     return {
         "ok": True,
         "title": "Live",
         "subtitle": subtitle,
         "any_live": any_live,
+        "any_on_air": any_on_air,
         "entry_pause": pause,
         "blocked": None if any_live or exec_is_real_live(root) else "live_exec_dry_run_placeholder",
         "rows": rows,

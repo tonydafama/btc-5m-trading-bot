@@ -127,6 +127,15 @@ class DeskBotTests(unittest.TestCase):
         self.assertIn("bindDeskControls", html)
         self.assertNotIn("el.innerHTML = extra.map", html)
 
+    def test_v2_live_on_air_off_during_entry_pause(self) -> None:
+        from unittest.mock import patch
+
+        with patch.object(db, "v2_unit_is_live", return_value=True):
+            with patch("dual_leg_live.entry_pause_view", return_value={"active": True}):
+                view = db.v2_mode_view(self.root)
+        self.assertTrue(view["live_active"])
+        self.assertFalse(view["live_on_air"])
+
 
 if __name__ == "__main__":
     unittest.main()
