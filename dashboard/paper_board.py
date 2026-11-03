@@ -1301,6 +1301,8 @@ def _na_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
 
 
 def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | None = None) -> dict[str, Any]:
+    if wallet_cash_usdc is None:
+        wallet_cash_usdc = _wallet_cash_for_high_live(root)
     mod = _sonu_live_truth_module()
     exec_is_real_live = mod.exec_is_real_live
     live_active = mod.live_active

@@ -293,6 +293,15 @@ class PaperBoardTests(unittest.TestCase):
         hl = board.get("high_live_board") or {}
         self.assertEqual(hl.get("wallet_cash_usdc"), 137.28)
 
+    def test_high_live_board_fills_wallet_when_arg_none(self) -> None:
+        _write(self.bot / "logs" / "wallet_cache.json", {"cash_usdc": 99.5})
+        board = paper_board._high_live_board(
+            self.bot,
+            {"DUAL_LEG_LIVE_DRY_RUN": "1"},
+            None,
+        )
+        self.assertEqual(board.get("wallet_cash_usdc"), 99.5)
+
 
 if __name__ == "__main__":
     unittest.main()

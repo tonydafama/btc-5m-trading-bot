@@ -1150,10 +1150,27 @@ summary.desk-fold-summary {
   const DESK_BOT_IDS = ['son-btc-5m-ultimate-live', 'dual-leg-live-v2', 'son-btc-2legs-v2-newnew-a'];
   let _sonuLiveTruth = null;
   let _deskBotsById = {};
+  let _deskWalletCash = null;
+
+  function resolveHlWalletCash(hl) {
+    if (hl && hl.wallet_cash_usdc != null && hl.wallet_cash_usdc !== '') {
+      return Number(hl.wallet_cash_usdc);
+    }
+    if (_deskWalletCash != null && _deskWalletCash !== '') {
+      return Number(_deskWalletCash);
+    }
+    if (_sonuLiveTruth && _sonuLiveTruth.wallet_cash_usdc != null) {
+      return Number(_sonuLiveTruth.wallet_cash_usdc);
+    }
+    return null;
+  }
 
   function applyLiveTruthFromApis(liveCtrl, deskPayload) {
     _sonuLiveTruth = liveCtrl && liveCtrl.ok !== false ? liveCtrl : null;
     _deskBotsById = {};
+    _deskWalletCash = (deskPayload && deskPayload.wallet_cash_usdc != null)
+      ? deskPayload.wallet_cash_usdc
+      : null;
     const bots = (deskPayload && deskPayload.bots) || [];
     bots.forEach((b) => { if (b && b.id) _deskBotsById[b.id] = b; });
     const chip = $('mode-chip');
@@ -1515,8 +1532,9 @@ summary.desk-fold-summary {
     wireLogFolds();
     const walletEl = $('hl-wallet');
     if (walletEl) {
-      walletEl.textContent = hl.wallet_cash_usdc != null
-        ? ('真錢包 $' + Number(hl.wallet_cash_usdc).toFixed(2))
+      const cash = resolveHlWalletCash(hl);
+      walletEl.textContent = (cash != null && Number.isFinite(cash))
+        ? ('真錢包 $' + cash.toFixed(2))
         : '';
     }
     const bits = [];
