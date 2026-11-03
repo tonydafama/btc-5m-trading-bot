@@ -1101,8 +1101,19 @@ def _v2_golive_prep(root: Path, env: dict[str, str]) -> dict[str, Any]:
     }
 
 
+def _sonu_live_truth_module():
+    try:
+        import sonu_live_truth as mod
+    except ImportError:
+        import dashboard.sonu_live_truth as mod
+    return mod
+
+
 def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
-    from sonu_live_truth import SONU_BOT_ID, live_active, live_armed_prep
+    mod = _sonu_live_truth_module()
+    SONU_BOT_ID = mod.SONU_BOT_ID
+    live_active = mod.live_active
+    live_armed_prep = mod.live_armed_prep
 
     paths = [
         root / "logs" / "sons" / f"{SONU_BOT_ID}_trades.json",
@@ -1118,7 +1129,7 @@ def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
     real_live = live_active(root)
     if real_live:
         status_label = "跑緊 · 真倉 ON"
-        change = "Live · 真倉 ON"
+        change = "Live · 真倉 ON · $10/注"
     elif armed:
         status_label = "跑緊 · 紙上 armed · 真倉未開"
         change = "PREP · 紙上 armed · 真倉 OFF"
@@ -1130,7 +1141,7 @@ def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
     filtered = max(0, considered - trades)
     row = {
         "id": SONU_BOT_ID,
-        "display_name": "終極5m · Live預備",
+        "display_name": "終極5m" if real_live else "終極5m · Live預備",
         "desk_section": "high_live",
         "family": "Live",
         "role": "son",
@@ -1215,7 +1226,9 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
 
 
 def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | None = None) -> dict[str, Any]:
-    from sonu_live_truth import exec_is_real_live, live_active
+    mod = _sonu_live_truth_module()
+    exec_is_real_live = mod.exec_is_real_live
+    live_active = mod.live_active
 
     prep = _v2_golive_prep(root, env)
     from desk_bots import v2_mode_view
