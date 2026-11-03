@@ -31,6 +31,8 @@ class ModeBookTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         mb._now_hkt = self._now
+        if hasattr(self, "_unit_since"):
+            mb._unit_active_since_hkt = self._unit_since
 
     def test_skips_are_not_wins_and_modes_split(self) -> None:
         _dump(
@@ -81,21 +83,21 @@ class ModeBookTests(unittest.TestCase):
         )
         books = mb.books_for_bot(self.root, mb.V2_ID)
         paper = books["paper"]["rows"][0]
-        live = books["live"]["rows"][0]
+        live = next(row for row in books["live"]["rows"] if row["scope"] == "歷史")
+        self.assertEqual(books["live"]["rows"][0]["scope"], "今次")
+        self.assertEqual(books["live"]["when_label"], "今次未開始")
         self.assertEqual(paper["wr_label"], "50%")
         self.assertEqual(paper["pnl"], 2.0)
-        self.assertEqual(live["scope"], "歷史")
         self.assertEqual((live["wins"], live["losses"], live["breakeven"]), (1, 0, 1))
         self.assertEqual(live["pnl"], 2.0)
         self.assertEqual(live["wr_label"], "100%")
         self.assertIn("1 段", live["note"])
-        self.assertIn("今次帳 0 單", live["note"])
 
         na = mb.books_for_bot(self.root, mb.NA_ID)
-        na_live = na["live"]["rows"][0]
+        na_live = next(row for row in na["live"]["rows"] if row["scope"] == "歷史")
         self.assertEqual(na_live["wins"], 1)
         self.assertEqual(na_live["pnl"], 9.0)
-        self.assertEqual(na_live["scope"], "歷史")
+        self.assertEqual(na["live"]["when_label"], "今次未開始")
 
     def test_prior_paper_skips_a_newer_skip_only_reset(self) -> None:
         _dump(
@@ -134,7 +136,9 @@ class ModeBookTests(unittest.TestCase):
         mb.attach_mode_books(self.root, [row])
         self.assertEqual(row["wr_label"], "100%")
         self.assertEqual(row["pnl_label"], "+$1.50")
-        self.assertEqual(row["mode_books"]["live"]["rows"][0]["pnl"], -4.0)
+        hist = next(item for item in row["mode_books"]["live"]["rows"] if item["scope"] == "歷史")
+        self.assertEqual(hist["pnl"], -4.0)
+        self.assertEqual(row["mode_books"]["live"]["when_label"], "今次未開始")
 
     def test_live_duration_adds_separate_sessions(self) -> None:
         rows = [
@@ -161,6 +165,21 @@ class ModeBookTests(unittest.TestCase):
         self.assertGreater(line["duration_min"], 6 * 60)
         self.assertNotIn("日", line["duration_label"])
 
+    def test_a_running_live_unit_opens_a_new_session_above_history(self) -> None:
+        _dump(self.root / "logs" / "dual_leg_live_trades.json", [])
+        _dump(
+            self.root / "logs" / "archive" / "old" / "dual_leg_live_trades.json",
+            [{"slug": "old", "mode": "LIVE", "profile": "v2", "trade_result": "LOSS", "pnl": -1, "opened_at_hkt": "2026-10-24 13:27:00 HKT", "settled_at_hkt": "2026-10-24 14:00:00 HKT"}],
+        )
+        self._unit_since = mb._unit_active_since_hkt
+        mb._unit_active_since_hkt = lambda unit: datetime(2026, 11, 3, 15, 54) if unit == mb.V2_LIVE_UNIT else None
+        books = mb.books_for_bot(self.root, mb.V2_ID)
+        self.assertEqual(books["live"]["when_label"], "11/03 15:54 → 而家")
+        self.assertEqual(books["live"]["rows"][0]["scope"], "今次")
+        self.assertEqual(books["live"]["rows"][0]["pnl"], 0.0)
+        self.assertEqual(books["live"]["rows"][1]["scope"], "歷史")
+        self.assertEqual(books["live"]["rows"][1]["pnl"], -1.0)
+
     def test_open_book_runs_until_now(self) -> None:
         line = mb._line(
             "今次",
@@ -173,8 +192,9 @@ class ModeBookTests(unittest.TestCase):
 
     def test_empty_live_section_has_no_fake_date(self) -> None:
         books = mb.books_for_bot(self.root, mb.NA_ID)
-        self.assertEqual(books["live"]["when_label"], "未有真倉")
+        self.assertEqual(books["live"]["when_label"], "今次未開始")
         self.assertEqual(books["live"]["duration_label"], "—")
+        self.assertEqual(books["live"]["rows"][0]["scope"], "今次")
 
     def test_section_duration_is_the_sum_of_its_books(self) -> None:
         lines = [

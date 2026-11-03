@@ -24,7 +24,9 @@ PARENT_LIVE_PROFILE = "v2"
 NEWNEW_LIVE_PROFILE = "v2_live_shadow"
 SONU_LIVE_UNIT = "btc-son-btc-5m-ultimate-live-exec.service"
 SONU_PAPER_UNIT = "btc-son-btc-5m-ultimate-live.service"
+V2_LIVE_UNIT = "dual-leg-live-v2.service"
 NA_PAPER_UNIT = "btc-son-btc-2legs-v2-newnew-a.service"
+NA_LIVE_UNIT = "dual-leg-live-v2-newnew-a.service"
 OBSERVER_UNIT = "btc-5m-observer.service"
 _SETTLED = {"WIN", "LOSS"}
 _BREAKEVEN = {"BREAKEVEN", "BE", "PUSH"}
@@ -221,7 +223,7 @@ def _span(
         segments[-1] = (start, max(end, _now_hkt()))
     if not segments:
         return {
-            "when_label": "未有真倉" if empty_live else "未有日期",
+            "when_label": "今次未開始" if empty_live else "未有日期",
             "duration_label": "—",
             "duration_min": None,
             "started_at": None,
@@ -409,12 +411,11 @@ def _live_lines(
         lines.append(
             _line("今次", current, note, open_book=current_open, started_at=current_started, empty_live=not current_n)
         )
+    else:
+        lines.append(_line("今次", [], "今次未開始。Live 掣成功開真倉之後，呢度先會有新時段。", empty_live=True))
     if history_n:
         be = f" · 打和 {history_stats['breakeven']} 唔計勝率" if history_stats["breakeven"] else ""
-        now = " · 今次帳 0 單" if not current_n else ""
-        lines.append(_line("歷史", history, f"歷史真倉 {segments} 段{now}{be}"))
-    if not lines:
-        lines.append(_line("今次", [], "今次未有真倉成交", empty_live=True))
+        lines.append(_line("歷史", history, f"歷史真倉 {segments} 段{be}"))
     return lines
 
 
@@ -447,7 +448,17 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
         paper_lines = [_line("今次", paper, _paper_note(paper, prior=False), open_book=paper_open)]
         if prior:
             paper_lines.append(_line("上次", prior, _paper_note(prior, prior=True)))
-        return _pack(paper_lines, _live_lines(live_now, history, segments))
+        live_since = _unit_active_since_hkt(V2_LIVE_UNIT)
+        return _pack(
+            paper_lines,
+            _live_lines(
+                live_now,
+                history,
+                segments,
+                current_open=live_since is not None,
+                current_started=live_since,
+            ),
+        )
 
     if bot_id == NA_ID:
         name = "son-btc-2legs-v2-newnew-a_trades.json"
@@ -470,12 +481,38 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
         ]
         if prior:
             paper_lines.append(_line("上次", prior, _paper_note(prior, prior=True)))
-        return _pack(paper_lines, _live_lines(live_now + shared, archived, segments))
+        live_since = _unit_active_since_hkt(NA_LIVE_UNIT)
+        return _pack(
+            paper_lines,
+            _live_lines(
+                live_now + shared,
+                archived,
+                segments,
+                current_open=live_since is not None,
+                current_started=live_since,
+            ),
+        )
 
     raise KeyError(bot_id)
 
 
-def _section(title: str, lines: list[dict[str, Any]], *, empty_when: str) -> dict[str, Any]:
+def _section(
+    title: str,
+    lines: list[dict[str, Any]],
+    *,
+    empty_when: str,
+    headline_scope: str | None = None,
+) -> dict[str, Any]:
+    if headline_scope:
+        head = next((line for line in lines if line.get("scope") == headline_scope), None)
+        if head is not None:
+            return {
+                "title": title,
+                "when_label": head.get("when_label") or empty_when,
+                "duration_label": head.get("duration_label") or "—",
+                "open": bool(head.get("open")),
+                "rows": lines,
+            }
     usable = [line for line in lines if line.get("started_at") and line.get("ended_at")]
     if not usable:
         label = str(lines[0].get("when_label")) if lines else empty_when
@@ -496,7 +533,7 @@ def _section(title: str, lines: list[dict[str, Any]], *, empty_when: str) -> dic
 def _pack(paper_lines: list[dict[str, Any]], live_lines: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "paper": _section("Paper · 紙上", paper_lines, empty_when="未有日期"),
-        "live": _section("Live · 真倉", live_lines, empty_when="未有真倉"),
+        "live": _section("Live · 真倉", live_lines, empty_when="今次未開始", headline_scope="今次"),
     }
 
 
