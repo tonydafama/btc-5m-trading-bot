@@ -39,7 +39,11 @@ class DeskBotTests(unittest.TestCase):
         self.assertIn("SONU_STAKE_USD=10", env)
         self.assertIn("V2_STAKE_USD=20", env)
         self.assertIn("DUAL_LEG_UNIT_USD=10", env)
+        self.assertIn("DUAL_LEG_LIVE_UNIT_USD=10", env)
         self.assertIn("DUAL_LEG_TOTAL_STAKE_USD=20", env)
+        exec_env = (self.root / "config" / "v2_parent_live_exec.env").read_text(encoding="utf-8")
+        self.assertIn("DUAL_LEG_LIVE_UNIT_USD=10", exec_env)
+        self.assertNotIn("REAL_MONEY", exec_env)
 
     def test_bet_sizes_do_not_overwrite_each_other(self) -> None:
         db.set_bet_size(self.root, db.SONU_ID, 10)

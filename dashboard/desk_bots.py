@@ -403,8 +403,13 @@ def _persist_bet_env(root: Path, bot_id: str, bet: float) -> None:
     _write_dotenv_key(root, spec["bet_env"], fmt_num(bet))
     _write_dotenv_key(root, spec["stake_env"], fmt_num(stake))
     if bot_id == V2_ID:
-        _write_dotenv_key(root, "DUAL_LEG_UNIT_USD", fmt_num(bet))
+        per_leg = fmt_num(bet)
+        _write_dotenv_key(root, "DUAL_LEG_UNIT_USD", per_leg)
+        _write_dotenv_key(root, "DUAL_LEG_LIVE_UNIT_USD", per_leg)
         _write_dotenv_key(root, "DUAL_LEG_TOTAL_STAKE_USD", fmt_num(stake))
+        # The live unit re-reads this file each new window. The systemd unit
+        # must not pin DUAL_LEG_LIVE_UNIT_USD, or that pin beats the file.
+        _write_kv_file(root / V2_LIVE_ENV, {"DUAL_LEG_LIVE_UNIT_USD": per_leg})
 
 
 def set_bet_size(root: Path, bot_id: str, raw: Any) -> dict[str, Any]:

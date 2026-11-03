@@ -735,6 +735,38 @@ def live_unit_usd(default: float = 6.0) -> float:
     return float(default)
 
 
+def _env_file_value(path: Path, key: str) -> str | None:
+    if not path.is_file():
+        return None
+    prefix = f"{key}="
+    found: str | None = None
+    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        raw = line.strip()
+        if not raw or raw.startswith("#") or not raw.startswith(prefix):
+            continue
+        found = raw.split("=", 1)[1].strip().strip('"').strip("'")
+    return found
+
+
+def read_live_unit_usd(default: float = 6.0) -> float:
+    """Per-leg stake for the next live entry.
+
+    Re-reads ``DUAL_LEG_LIVE_ENV_FILE`` so a desk bet-size save applies on the
+    next window. The process environment is only the fallback from startup.
+    """
+    explicit = (os.getenv("DUAL_LEG_LIVE_ENV_FILE") or "").strip()
+    if explicit:
+        raw = _env_file_value(Path(explicit), "DUAL_LEG_LIVE_UNIT_USD")
+        if raw:
+            try:
+                value = float(raw)
+            except ValueError:
+                value = 0.0
+            if value > 0:
+                return value
+    return live_unit_usd(default)
+
+
 def live_profile_name(default: str = "v1") -> str:
     name = (os.getenv("DUAL_LEG_LIVE_PROFILE", default) or default).strip().lower()
     return name if name in PROFILES else default
