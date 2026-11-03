@@ -409,6 +409,10 @@ def run_forever(poll_sec: float) -> int:
                 _block_entry_pause = True
                 if market.slug not in paused_logged:
                     paused_logged.add(market.slug)
+                    regime = ev.get("binance_regime") or ev.get("entry_regime") or {}
+                    if not isinstance(regime, dict):
+                        regime = {}
+                    leg1 = ev.get("would_leg1") if isinstance(ev.get("would_leg1"), dict) else None
                     _append_event(
                         {
                             "event": "skip_entry_hkt_pause",
@@ -416,6 +420,11 @@ def run_forever(poll_sec: float) -> int:
                             "slug": market.slug,
                             "window_hkt": "18:00-24:00",
                             "resume_hkt": "00:00",
+                            "would_enter_leg1": bool(ev.get("would_enter_leg1")),
+                            "would_leg1_side": leg1.get("side") if leg1 else None,
+                            "regime": regime.get("regime"),
+                            "skip_reasons": ev.get("skip_reasons") or [],
+                            "study": "v2_hkt_pause",
                         }
                     )
                     print(
