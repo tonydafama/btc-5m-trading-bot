@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache">
+<title>Family Desk · Grok Newborn + 舊家族</title>
+<style>
+:root {
+  --bg: #0b0e13;
+  --panel: #12161d;
+  --panel2: #0e1218;
+  --line: #1e2630;
+  --line2: #2a3340;
+  --text: #e7ecf3;
+  --muted: #8b95a5;
+  --dim: #5c6675;
+  --green: #3ecf8e;
+  --green-bg: rgba(62,207,142,.10);
+  --red: #f07178;
+  --blue: #6eb6ff;
+  --amber: #e0b567;
+  --tag: #2a3340;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); }
+a { color: var(--blue); text-decoration: none; }
+button { font: inherit; cursor: pointer; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 1rem 1rem 2.5rem; }
+
+/* header */
+.top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: .75rem; margin-bottom: .85rem; padding-bottom: .75rem;
+  border-bottom: 1px solid var(--line);
+}
+.top h1 { margin: 0; font-size: 1.15rem; font-weight: 650; letter-spacing: .01em; }
+.top .sub { margin-top: .25rem; color: var(--muted); font-size: .78rem; line-height: 1.4; }
+.top-actions { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
+.chip {
+  display: inline-flex; align-items: center; gap: .3rem;
+  border: 1px solid var(--line2); background: var(--panel2);
+  color: var(--muted); border-radius: 999px; padding: .28rem .65rem;
+  font-size: .74rem; white-space: nowrap;
+}
+.chip.btn { color: var(--text); }
+.chip.btn:hover { border-color: var(--blue); color: var(--blue); }
+.chip.ok { color: var(--green); border-color: rgba(62,207,142,.35); background: var(--green-bg); }
+.chip.warn { color: var(--amber); border-color: rgba(224,181,103,.35); }
+
+.strip {
+  display: flex; flex-wrap: wrap; gap: .45rem .7rem; align-items: center;
+  margin-bottom: .9rem; padding: .55rem .7rem;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+  font-size: .76rem; color: var(--muted);
+}
+.strip b { color: var(--text); font-weight: 600; }
+.strip .sep { color: var(--dim); }
+
+/* family grid */
+.families {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem;
+}
+@media (max-width: 980px) { .families { grid-template-columns: 1fr; } }
+
+.fam {
+  border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
+  display: flex; flex-direction: column; min-height: 100%; overflow: hidden;
+}
+.fam-head {
+  padding: .65rem .75rem .55rem; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(110,182,255,.06), transparent);
+}
+.fam-head .fname { font-size: .92rem; font-weight: 650; display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.fam-head .fmeta { margin-top: .2rem; font-size: .72rem; color: var(--muted); }
+
+.pill {
+  display: inline-flex; align-items: center; border-radius: 999px;
+  padding: .12rem .45rem; font-size: .66rem; font-weight: 650;
+  letter-spacing: .02em; border: 1px solid transparent;
+}
+.pill.run { color: var(--green); background: var(--green-bg); border-color: rgba(62,207,142,.3); }
+.pill.ready { color: var(--dim); background: rgba(255,255,255,.03); border-color: var(--line2); }
+.pill.live { color: var(--amber); background: rgba(224,181,103,.1); border-color: rgba(224,181,103,.35); }
+
+/* parent card */
+.parent {
+  margin: .65rem .65rem .35rem; padding: .65rem .7rem;
+  border: 1px solid var(--line2); border-radius: 10px; background: var(--panel2);
+}
+.parent .row1 {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem;
+}
+.parent .pname { font-size: .84rem; font-weight: 650; }
+.parent .metrics {
+  display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: .35rem;
+  margin-top: .55rem;
+}
+@media (max-width: 420px) { .parent .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+.metric { min-width: 0; }
+.metric .lab { font-size: .62rem; color: var(--dim); text-transform: uppercase; letter-spacing: .04em; }
+.metric .val { font-family: var(--mono); font-size: .88rem; font-weight: 650; margin-top: .1rem; }
+.metric .val.pos { color: var(--green); }
+.metric .val.neg { color: var(--red); }
+.metric .val.mut { color: var(--muted); font-weight: 500; }
+
+/* sons */
+.sons { padding: .15rem .55rem .65rem; display: flex; flex-direction: column; gap: .3rem; }
+.son {
+  border: 1px solid var(--line); border-radius: 8px; background: rgba(0,0,0,.15);
+  padding: .4rem .5rem;
+}
+.son .srow {
+  display: grid; grid-template-columns: 52px 1fr auto; gap: .4rem; align-items: center;
+}
+.son .sletter {
+  font-family: var(--mono); font-weight: 700; font-size: .78rem; color: var(--blue);
+}
+.son .sname { font-size: .76rem; color: var(--text); line-height: 1.25; }
+.son .schange { font-size: .68rem; color: var(--muted); margin-top: .1rem; line-height: 1.3; }
+.son .sright { text-align: right; font-size: .68rem; color: var(--muted); white-space: nowrap; }
+.son .sright .cap { font-family: var(--mono); color: var(--text); }
+
+/* fold log */
+details.blog { margin-top: .35rem; }
+details.blog > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  font-size: .68rem; color: var(--dim); padding: .15rem 0;
+  display: flex; align-items: center; gap: .35rem;
+}
+details.blog > summary::-webkit-details-marker { display: none; }
+details.blog > summary::before { content: "▸"; color: var(--dim); font-size: .65rem; }
+details.blog[open] > summary::before { content: "▾"; }
+details.blog > summary:hover { color: var(--blue); }
+.logbox {
+  margin-top: .25rem; padding: .4rem .45rem .55rem;
+  border: 1px solid #24384f; border-radius: 10px; background: #070b12;
+  max-height: 320px; overflow: auto;
+  font-size: .72rem; line-height: 1.4; color: #c9d3e0;
+  word-break: break-word;
+}
+.logbox .hint { color: var(--dim); display:block; padding:.55rem .2rem; text-align:center; }
+.logbox .err { color: var(--red); display:block; padding:.55rem .2rem; text-align:center; }
+.logbox .log-head {
+  display:flex; flex-wrap:wrap; gap:.3rem; align-items:center;
+  margin-bottom: .4rem; padding-bottom: .35rem; border-bottom: 1px solid #1c2b40;
+}
+.logbox .log-pill {
+  font-size: .62rem; font-weight: 700; border-radius: 999px;
+  padding: .12rem .42rem; border: 1px solid #2a3d55; color: #9eb2c8; background: #0d1522;
+}
+.logbox .log-modes { margin-left: auto; display:flex; gap:.25rem; }
+.logbox .log-modes button {
+  cursor:pointer; font-size:.62rem; font-weight:700; border-radius:6px;
+  padding:.18rem .45rem; border:1px solid #2a3d55; background:#0d1522; color:#9eb2c8;
+}
+.logbox .log-modes button.active {
+  border-color: rgba(110,182,255,.55); color:#cfe6ff; background:rgba(40,90,140,.35);
+}
+.logbox .log-list { display:flex; flex-direction:column; gap:.32rem; }
+.logbox .log-row {
+  border: 1px solid #1c2b40; border-radius: 8px; background: #0a1018;
+  padding: .4rem .5rem;
+}
+.logbox .log-row.skip { opacity: .62; }
+.logbox .log-ts {
+  font-family: var(--mono); font-size: .66rem; color: #7f93ab; letter-spacing: .01em;
+}
+.logbox .log-main { margin-top: .12rem; display:flex; flex-wrap:wrap; gap:.3rem; align-items:center; }
+.logbox .log-tag {
+  display:inline-block; font-size:.62rem; font-weight:750; border-radius:4px;
+  padding:.05rem .35rem;
+}
+.logbox .log-tag.win { background:rgba(62,207,142,.16); color:#3ecf8e; }
+.logbox .log-tag.loss { background:rgba(240,113,120,.16); color:#f07178; }
+.logbox .log-tag.entered { background:rgba(110,182,255,.14); color:#6eb6ff; }
+.logbox .log-tag.skip { background:rgba(92,102,117,.22); color:#9aa7b6; }
+.logbox .log-tag.open { background:rgba(224,181,103,.16); color:#e0b567; }
+.logbox .log-pnl { font-family: var(--mono); font-weight:700; }
+.logbox .log-pnl.pos { color: #3ecf8e; }
+.logbox .log-pnl.neg { color: #f07178; }
+.logbox .log-meta { color: #8fa3ba; font-size: .68rem; }
+.logbox .log-slug { margin-top: .15rem; font-family: var(--mono); font-size: .62rem; color: #66788c; }
+.logbox .log-empty {
+  padding: .75rem .4rem; text-align:center; color: var(--muted);
+  border: 1px dashed #2a3d55; border-radius: 8px; font-size: .74rem; line-height: 1.45;
+}
+.hl-stats {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr));
+  gap:.4rem; margin-top:.15rem;
+}
+.hl-stat {
+  background:#0d1522; border:1px solid #1c2b40; border-radius:8px; padding:.4rem .5rem;
+}
+.hl-stat .k { color:var(--dim); font-size:.66rem; }
+.hl-stat .v { font-weight:700; margin-top:.12rem; font-size:.82rem; color:var(--text); }
+.hl-stat .v.wr { color:#f0d9a8; font-size:.9rem; }
+.hl-stat .v.pos { color:#3ecf8e; }
+.hl-stat .v.neg { color:#f07178; }
+.hl-card-log { margin-top: .35rem; }
+
+/* Son U log lock — Live always primary; Paper fold collapsed */
+.sonu-live-log-block {
+  margin-top: .4rem; padding: .45rem .5rem .55rem;
+  border: 1px solid rgba(240,80,80,.35); border-radius: 10px;
+  background: rgba(40,8,8,.28);
+}
+.sonu-live-log-kicker {
+  font-size: .68rem; font-weight: 800; letter-spacing: .04em;
+  color: #ff6b6b; margin-bottom: .3rem;
+}
+details.sonu-paper-log-fold {
+  margin-top: .4rem; border: 1px solid #24384f; border-radius: 10px;
+  background: #07101c;
+}
+details.sonu-paper-log-fold > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  font-size: .72rem; font-weight: 700; color: #9eb2c8;
+  padding: .45rem .55rem;
+}
+details.sonu-paper-log-fold > summary::-webkit-details-marker { display: none; }
+details.sonu-paper-log-fold > summary::before { content: "▸ "; color: var(--dim); }
+details.sonu-paper-log-fold[open] > summary::before { content: "▾ "; }
+details.sonu-paper-log-fold[open] > summary {
+  border-bottom: 1px solid #1c2b40; color: #cfe6ff;
+}
+.sonu-paper-log-body { padding: .35rem .5rem .55rem; }
+
+
+.hl-trades-line {
+  font-size:.9rem; font-weight:800; letter-spacing:.02em;
+  margin:.45rem 0 .15rem; padding:.45rem .55rem;
+  border-radius:10px; border:1px solid rgba(240,217,168,.28);
+  background:rgba(0,0,0,.22); color:var(--text);
+}
+.hl-trades-line .label-tag {
+  color:rgba(240,217,168,.95); font-weight:700; margin-right:.4rem;
+}
+.hl-window-funnel {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.4rem;
+  margin:.35rem 0 .15rem;
+}
+.hl-window-funnel .cell {
+  background:#0d1522; border:1px solid #1c2b40; border-radius:8px; padding:.4rem .45rem;
+}
+.hl-window-funnel .k { color:var(--dim); font-size:.62rem; font-weight:700; }
+.hl-window-funnel .v { font-weight:800; font-size:1.05rem; margin-top:.1rem; color:var(--text); }
+.hl-window-funnel .v.filt { color:#f0a35a; }
+.hl-window-funnel .v.ent { color:#3ecf8e; }
+
+
+/* other noise */
+
+
+/* Grok Newborn section */
+.newborn-wrap {
+  margin: 1rem 0 1.1rem; padding: .85rem .85rem .95rem;
+  border: 1px solid rgba(110,182,255,.35); border-radius: 14px;
+  background: linear-gradient(180deg, rgba(110,182,255,.08), rgba(18,22,29,.95));
+}
+.newborn-wrap .nb-head {
+  display: flex; justify-content: space-between; gap: .75rem; align-items: flex-start;
+  margin-bottom: .65rem; flex-wrap: wrap;
+}
+.newborn-wrap .nb-title { font-size: 1.02rem; font-weight: 700; letter-spacing: .01em; }
+.newborn-wrap .nb-sub { margin-top: .2rem; font-size: .74rem; color: var(--muted); line-height: 1.4; }
+.newborn-wrap .nb-badge {
+  display: inline-flex; align-items: center; gap: .3rem;
+  border-radius: 999px; padding: .22rem .6rem; font-size: .68rem; font-weight: 700;
+  color: var(--blue); border: 1px solid rgba(110,182,255,.4); background: rgba(110,182,255,.1);
+}
+.families.nb-grid { margin: 0; }
+.fam.nb-fam .fam-head {
+  background: linear-gradient(180deg, rgba(62,207,142,.08), transparent);
+}
+
+/* Live — go-live staging / live unit */
+.hl-wrap {
+  margin: .35rem 0 .9rem; padding: .75rem .9rem .9rem;
+  border: 2px solid #e0b567; border-radius: 12px;
+  box-shadow: 0 0 0 1px rgba(224,181,103,.35), 0 0 18px rgba(224,181,103,.18);
+  background: linear-gradient(180deg, rgba(224,181,103,.16), #0a1018 60%);
+}
+.hl-wrap .hl-title { font-size: 1.02rem; font-weight: 750; color: #f0d9a8; }
+.hl-wrap .hl-sub { margin-top: .2rem; font-size: .74rem; color: var(--muted); line-height: 1.4; }
+/* Radio-station LIVE ON: vivid #ff0000 when live; dim near-black when paper — beats gold theme */
+@keyframes hl-on-air-glow {
+  0%, 100% {
+    background-color:#ff0000;
+    box-shadow:0 0 6px #ff0000, 0 0 14px #ff0000, 0 0 28px rgba(255,0,0,.85);
+  }
+  50% {
+    background-color:#ff1a1a;
+    box-shadow:0 0 10px #ff0000, 0 0 22px #ff0000, 0 0 40px rgba(255,0,0,1);
+  }
+}
+.hl-badge {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .68rem; font-weight: 800; letter-spacing: .08em;
+  border-radius: 999px; padding: .18rem .55rem .18rem .42rem;
+  border: 1px solid rgba(224,181,103,.4); color: #e0b567;
+  background: rgba(20,16,8,.55);
+  text-transform: uppercase;
+}
+.hl-badge::before {
+  content: ""; width: .55rem; height: .55rem; border-radius: 50%;
+  border: 1px solid currentColor; background: currentColor; flex-shrink: 0;
+}
+.hl-badge.is-on {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  border-color: #ff0000;
+  background-color: #ff0000;
+  text-shadow: 0 0 2px #ff0000, 0 0 8px #ff0000, 0 0 16px #ff0000;
+  animation: hl-on-air-glow 1.4s ease-in-out infinite;
+  filter: none;
+}
+.hl-badge.is-on::before {
+  border-color: #ff6666;
+  background: #ffffff;
+  box-shadow: 0 0 6px #ff0000, 0 0 12px #ff0000;
+}
+.hl-badge.is-off {
+  color: #2a2a2a;
+  -webkit-text-fill-color: #2a2a2a;
+  border-color: #111;
+  background: #0a0a0a;
+  text-shadow: none;
+  box-shadow: none;
+  animation: none;
+  filter: brightness(0.55);
+}
+.hl-badge.is-off::before {
+  border-color: #1a1a1a;
+  background: #151515;
+  box-shadow: none;
+}
+
+/* Sports FV fold — default collapsed; compact header when folded */
+details.nb-fold {
+  margin: .55rem 0 .85rem; border: 1px solid #1c2b40; border-radius: 12px; background: #07101c;
+}
+details.nb-fold > summary {
+  cursor: pointer; list-style: none; user-select: none;
+  padding: .55rem .75rem; display: flex; justify-content: space-between; gap: .6rem; flex-wrap: wrap; align-items: center;
+}
+details.nb-fold > summary::-webkit-details-marker { display: none; }
+details.nb-fold > summary::before { content: "▸ "; color: #6a8aaa; font-size: .7rem; }
+details.nb-fold[open] > summary::before { content: "▾ "; }
+details.nb-fold .nb-fold-inner { padding: .15rem .55rem .55rem; }
+details.fam-fold {
+  margin: 0 0 .7rem; border: 1px solid #1c2b40; border-radius: 10px;
+  background: rgba(40,70,110,.08);
+}
+details.fam-fold > summary {
+  cursor: pointer; list-style: none; padding: .42rem .7rem;
+  display: flex; justify-content: space-between; gap: .65rem; align-items: center; flex-wrap: wrap;
+}
+details.fam-fold > summary::-webkit-details-marker { display: none; }
+details.fam-fold > summary::before { content: "▸ "; color: #6a8aaa; font-size: .7rem; }
+details.fam-fold[open] > summary::before { content: "▾ "; }
+details.fam-fold > summary .fam-fold-title { font-weight: 650; color: #b8c9dc; }
+details.fam-fold > summary .fam-fold-hint { color: var(--dim); font-weight: 500; font-size: .68rem; }
+details.fam-fold .fam-fold-inner { padding: .15rem .55rem .55rem; }
+.hl-actions { display:flex; gap:.4rem; flex-wrap:wrap; align-items:center; }
+/* Active Live/Paper green lamp: same intensity as LIVE ON red */
+@keyframes hl-green-on-glow {
+  0%, 100% {
+    background-color:#00cc44;
+    box-shadow:0 0 6px #00ff66, 0 0 14px #00ff00, 0 0 28px rgba(0,255,102,.85);
+  }
+  50% {
+    background-color:#00ff66;
+    box-shadow:0 0 10px #00ff00, 0 0 22px #00ff66, 0 0 40px rgba(0,255,0,1);
+  }
+}
+.hl-mode {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .7rem; font-weight: 800; letter-spacing: .02em;
+  border-radius: 8px; padding: .28rem .55rem .28rem .42rem;
+  border: 1px solid rgba(224,181,103,.4); color: #f0d9a8;
+  background: rgba(40,28,10,.45);
+}
+.hl-mode::before {
+  content: ""; width: .55rem; height: .55rem; border-radius: 50%;
+  flex-shrink: 0; border: 1px solid #8a7040; background: #c9a227;
+  box-shadow: 0 0 4px rgba(224,181,103,.35);
+}
+/* Chip always shows CURRENT mode → always ACTIVE → vivid green like radio red */
+.hl-mode[data-mode="live"],
+.hl-mode[data-mode="paper"] {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  border-color: #00ff66;
+  background-color: #00cc44;
+  text-shadow: 0 0 2px #00ff66, 0 0 8px #00ff00, 0 0 16px #00ff66;
+  animation: hl-green-on-glow 1.4s ease-in-out infinite;
+}
+.hl-mode[data-mode="live"]::before,
+.hl-mode[data-mode="paper"]::before {
+  border-color: #99ffbb;
+  background: #ffffff;
+  box-shadow: 0 0 6px #00ff00, 0 0 12px #00ff66, 0 0 18px rgba(0,255,102,.95);
+}
+button.hl-toggle {
+  cursor: pointer; border: 1px solid rgba(224,181,103,.55);
+  background: rgba(120,70,20,.35); color: #f0d9a8;
+  font-size: .72rem; font-weight: 700; padding: .35rem .65rem; border-radius: 8px;
+  display: inline-flex; align-items: center; gap: .35rem;
+}
+button.hl-toggle::before {
+  content: ""; width: .5rem; height: .5rem; border-radius: 50%;
+  flex-shrink: 0; border: 1px solid #8a7040; background: #c9a227;
+  box-shadow: 0 0 4px rgba(224,181,103,.3);
+}
+/* Toggle shows switch TARGET (inactive side) → soft yellow lamp */
+button.hl-toggle[data-target="live"],
+button.hl-toggle[data-target="paper"] {
+  border-color: rgba(224,181,103,.55);
+  background: rgba(120,70,20,.35); color: #f0d9a8;
+}
+button.hl-toggle[data-target="live"]::before,
+button.hl-toggle[data-target="paper"]::before {
+  border-color: #8a7040; background: #c9a227;
+  box-shadow: 0 0 4px rgba(224,181,103,.35);
+}
+/* If JS marks active with data-active / is-active / .on — vivid green */
+button.hl-toggle[data-active="1"],
+button.hl-toggle.is-active,
+button.hl-toggle.on {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  border-color: #00ff66;
+  background-color: #00cc44;
+  text-shadow: 0 0 2px #00ff66, 0 0 8px #00ff00, 0 0 16px #00ff66;
+  animation: hl-green-on-glow 1.4s ease-in-out infinite;
+}
+button.hl-toggle[data-active="1"]::before,
+button.hl-toggle.is-active::before,
+button.hl-toggle.on::before {
+  border-color: #99ffbb;
+  background: #ffffff;
+  box-shadow: 0 0 6px #00ff00, 0 0 12px #00ff66, 0 0 18px rgba(0,255,102,.95);
+}
+button.hl-toggle:hover { filter: brightness(1.08); }
+button.hl-toggle:disabled { opacity: .55; cursor: not-allowed; }
+button.hl-toggle.busy { opacity: .7; }
+/* legacy class kept for safety */
+button.hl-to-paper { display: none; }
+/* === desk split bots (PR #4) === */
+.desk-bot-actions { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; margin-top:.55rem; }
+.desk-bot-actions .hl-toggle { width:100%; justify-content:center; min-height:2.45rem; font-size:.72rem; }
+.desk-bot-actions .hl-toggle.is-prep { border-color:rgba(251,191,36,.75); background:rgba(120,70,20,.55); }
+.bet-size-box { margin-top:.55rem; padding:.5rem .55rem; border-radius:10px; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.08); }
+.bet-size-box label { display:block; font-size:.65rem; font-weight:700; letter-spacing:.06em; color:var(--muted); text-transform:uppercase; }
+.bet-size-row { display:flex; gap:.35rem; align-items:center; margin-top:.35rem; }
+.bet-size-row input.bet-size-input {
+  flex:1; min-width:0; height:2.35rem; border-radius:8px; border:1px solid var(--line2);
+  background:#0b0e13; color:var(--text); font-size:1.05rem; font-weight:750; text-align:center;
+}
+.bet-size-row button[data-bet-step] { min-width:2.2rem; height:2.35rem; border-radius:8px; border:1px solid var(--line2); background:var(--panel2); color:var(--text); font-weight:700; }
+.bet-size-row button[data-bet-apply] { height:2.35rem; padding:0 .65rem; border-radius:8px; border:1px solid rgba(62,207,142,.55); background:rgba(62,207,142,.25); color:#fff; font-weight:700; }
+.bet-size-readout { margin:.35rem 0 0; font-size:.72rem; color:var(--text); }
+.bet-size-readout strong { color:var(--green); }
+.desk-bot-hint { min-height:1rem; margin:.35rem 0 0; font-size:.7rem; color:var(--amber); }
+.desk-chip { font-size:.65rem; padding:.12rem .4rem; border-radius:999px; border:1px solid rgba(251,191,36,.45); color:var(--amber); }
+.desk-chip.live { color:var(--green); border-color:rgba(62,207,142,.5); }
+.desk-chip.paper { color:#cbd5e1; border-color:rgba(203,213,225,.35); }
+.hl-split-note { font-size:.72rem; color:var(--muted); margin-top:.25rem; line-height:1.4; }
+
+
+/* Master Paper run fold — all paper sections; Live · Son U stays outside/open */
+details.paper-run-fold {
+  margin: .55rem 0 .95rem; border: 1px solid #24384f; border-radius: 12px;
+  background: #07101c;
+}
+details.paper-run-fold > summary {
+  cursor: pointer; list-style: none; user-select: none;
+  padding: .62rem .8rem; display: flex; justify-content: space-between; gap: .65rem;
+  flex-wrap: wrap; align-items: center;
+  font-size: .86rem; font-weight: 700; color: #b8c9dc;
+}
+details.paper-run-fold > summary::-webkit-details-marker { display: none; }
+details.paper-run-fold > summary::before { content: "▸ "; color: #6a8aaa; font-size: .75rem; }
+details.paper-run-fold[open] > summary::before { content: "▾ "; }
+details.paper-run-fold > summary .paper-run-title { font-weight: 750; color: #c9d7e8; letter-spacing: .02em; }
+details.paper-run-fold > summary .paper-run-hint { color: var(--dim); font-weight: 500; font-size: .7rem; margin-left: .35rem; }
+details.paper-run-fold .paper-run-inner { padding: .2rem .55rem .65rem; display: grid; gap: .15rem; }
+details.sfv-fold {
+  margin: 0 0 .85rem; border: 1px solid #24384f; border-radius: 10px;
+  background: rgba(40,70,110,.08);
+}
+details.sfv-fold > summary {
+  cursor: pointer; list-style: none; padding: .42rem .7rem;
+  display: flex; justify-content: space-between; gap: .65rem; align-items: center;
+  font-size: .74rem; color: #9eb6d0; user-select: none;
+}
+details.sfv-fold > summary::-webkit-details-marker { display: none; }
+details.sfv-fold > summary::before { content: "▸ "; color: #6a8aaa; font-size: .7rem; }
+details.sfv-fold[open] > summary::before { content: "▾ "; }
+details.sfv-fold > summary .sfv-fold-title { font-weight: 650; color: #b8c9dc; }
+details.sfv-fold > summary .sfv-fold-hint { color: var(--dim); font-weight: 500; font-size: .68rem; }
+details.sfv-fold .sfv-fold-inner { padding: .15rem .55rem .55rem; }
+details.sfv-fold .sfv-wrap-inner {
+  margin: 0; padding: .65rem .75rem; border: 1px solid #1e3a5f; border-radius: 10px;
+  background: linear-gradient(180deg,#0b1a2e,#0a1220);
+}
+
+details.paused-fold {
+  margin: .55rem 0 .85rem; border: 1px solid var(--line); border-radius: 10px;
+  background: rgba(180,70,70,.06);
+}
+details.paused-fold > summary {
+  cursor: pointer; list-style: none; padding: .55rem .75rem;
+  display: flex; justify-content: space-between; gap: .75rem; align-items: center;
+  font-size: .78rem; color: #e8a0a0;
+}
+details.paused-fold > summary::-webkit-details-marker { display: none; }
+details.paused-fold > summary::before { content: "▸ "; color: #c87878; }
+details.paused-fold[open] > summary::before { content: "▾ "; }
+details.paused-fold .inner { padding: 0 .75rem .75rem; }
+.paused-row {
+  display: flex; justify-content: space-between; gap: .6rem; align-items: baseline;
+  padding: .35rem 0; border-bottom: 1px solid rgba(255,255,255,.05);
+  font-size: .72rem;
+}
+.paused-row:last-child { border-bottom: 0; }
+.paused-row .pname { color: var(--text); font-weight: 600; }
+.paused-row .meta { color: var(--dim); }
+.paused-row .pill-stop {
+  display: inline-block; font-size: .62rem; font-weight: 700;
+  padding: .08rem .35rem; border-radius: 999px;
+  background: rgba(200,80,80,.2); color: #f0b0b0; margin-right: .35rem;
+}
+
+details.other {
+  margin-top: 1rem; border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+}
+details.other > summary {
+  list-style: none; cursor: pointer; padding: .65rem .8rem;
+  color: var(--muted); font-size: .8rem; display: flex; justify-content: space-between;
+}
+details.other > summary::-webkit-details-marker { display: none; }
+details.other .inner { padding: 0 .8rem .8rem; }
+.svc-grid { display: flex; flex-wrap: wrap; gap: .35rem; }
+.foot {
+  margin-top: 1.1rem; color: var(--dim); font-size: .72rem;
+  display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap;
+}
+.skel { color: var(--dim); font-size: .8rem; padding: 1rem; }
+
+.chip.btn-logs {
+  background: #2563eb !important;
+  color: #fff !important;
+  border-color: #1d4ed8 !important;
+  font-weight: 700 !important;
+  padding: .5rem 1rem !important;
+  font-size: .9rem !important;
+  text-decoration: none !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.25);
+}
+.chip.btn-logs:hover { filter: brightness(1.08); }
+.strip a.logs-link {
+  color: #60a5fa; font-weight: 700; text-decoration: underline;
+}
+
+
+
+/* === SURGICAL a2d0add: Paper run fold header alignment (desk-fold grid) ===
+ * Overrides legacy flex + space-between + flex-wrap (centered/zigzag titles).
+ */
+#paper-run-fold > summary,
+#paper-run-fold details.paper-run-fold > summary,
+#paper-run-fold details.sfv-fold > summary,
+#paper-run-fold details.nb-fold > summary,
+#paper-run-fold details.fam-fold > summary,
+#paper-run-fold details.paused-fold > summary,
+#paper-run-fold details.other > summary,
+.paper-run-inner > details.sfv-fold > summary,
+.paper-run-inner > details.nb-fold > summary,
+.paper-run-inner > details.fam-fold > summary,
+.paper-run-inner > details.paused-fold > summary,
+.paper-run-inner > details.other > summary,
+#paper-run-extra details > summary,
+summary.desk-fold-summary {
+  display:grid !important;
+  grid-template-columns:1rem minmax(0,1fr) minmax(5.75rem,36%) !important;
+  grid-template-rows:auto auto !important;
+  column-gap:.55rem !important; row-gap:.12rem !important;
+  align-items:start !important;
+  align-content:start !important;
+  justify-content:start !important;
+  justify-items:start !important;
+  flex-wrap:nowrap !important;
+  padding:.58rem .78rem !important;
+  text-align:left !important;
+  font-size:.82rem !important;
+  font-weight:700 !important;
+  list-style:none !important;
+  cursor:pointer;
+}
+#paper-run-fold > summary::before,
+#paper-run-fold details.sfv-fold > summary::before,
+#paper-run-fold details.nb-fold > summary::before,
+#paper-run-fold details.fam-fold > summary::before,
+#paper-run-fold details.paused-fold > summary::before,
+#paper-run-fold details.other > summary::before,
+.paper-run-inner > details > summary::before,
+#paper-run-extra details > summary::before {
+  grid-column:1 !important;
+  grid-row:1 / span 2 !important;
+  align-self:center !important;
+  justify-self:start !important;
+  color:var(--muted) !important;
+  font-size:.72rem !important;
+  font-weight:400 !important;
+}
+#paper-run-fold details[open] > summary::before,
+.paper-run-inner > details[open] > summary::before,
+#paper-run-extra details[open] > summary::before { content:"▾ " !important; }
+#paper-run-fold details:not([open]) > summary::before,
+.paper-run-inner > details:not([open]) > summary::before,
+#paper-run-extra details:not([open]) > summary::before { content:"▸ " !important; }
+#paper-run-fold > summary::before { content:"▸ "; }
+#paper-run-fold[open] > summary::before { content:"▾ "; }
+#paper-run-fold summary > .desk-fold-left,
+#paper-run-fold summary > span:first-of-type,
+.paper-run-inner details > summary > span:first-of-type,
+#paper-run-extra details > summary > span:first-of-type {
+  grid-column:2 !important;
+  grid-row:1 / span 2 !important;
+  min-width:0 !important;
+  width:100% !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+  text-align:left !important;
+  gap:.12rem !important;
+}
+#paper-run-fold summary > .desk-fold-right,
+#paper-run-fold summary > .desk-fold-meta,
+#paper-run-fold summary > span:last-of-type,
+.paper-run-inner details > summary > span:last-of-type,
+#paper-run-extra details > summary > span:last-of-type {
+  grid-column:3 !important;
+  grid-row:1 / span 2 !important;
+  justify-self:end !important;
+  align-self:center !important;
+  text-align:right !important;
+  font-size:.68rem !important;
+  font-weight:500 !important;
+  color:var(--muted) !important;
+  line-height:1.35 !important;
+  max-width:11.5rem !important;
+}
+#paper-run-fold summary .desk-fold-title,
+#paper-run-fold summary .paper-run-title,
+#paper-run-fold summary .sfv-fold-title,
+#paper-run-fold summary .fam-fold-title,
+.paper-run-inner details > summary .sfv-fold-title,
+.paper-run-inner details > summary .fam-fold-title {
+  display:block !important;
+  width:100% !important;
+  text-align:left !important;
+  font-size:.82rem !important;
+  font-weight:700 !important;
+  color:var(--text) !important;
+  line-height:1.25 !important;
+  margin:0 !important;
+}
+#paper-run-fold summary .desk-fold-hint,
+#paper-run-fold summary .paper-run-hint,
+#paper-run-fold summary .sfv-fold-hint,
+#paper-run-fold summary .fam-fold-hint,
+.paper-run-inner details > summary .sfv-fold-hint,
+.paper-run-inner details > summary .fam-fold-hint {
+  display:block !important;
+  width:100% !important;
+  text-align:left !important;
+  font-size:.68rem !important;
+  font-weight:500 !important;
+  color:var(--muted) !important;
+  margin:0 !important;
+  margin-left:0 !important;
+}
+.desk-fold-badges {
+  display:flex !important;
+  flex-wrap:wrap !important;
+  justify-content:flex-end !important;
+  gap:.25rem !important;
+  margin-bottom:.18rem !important;
+  width:100% !important;
+}
+.desk-fold-badges .pill { font-size:.62rem; padding:.12rem .38rem; }
+/* === end a2d0add desk-fold CSS === */
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Family Desk</h1>
+      <div class="sub" id="sub">3 Parent 紙上跑緊 · Sons 紙上跑緊 · 真倉 OFF</div>
+    </div>
+    <div class="top-actions">
+      <span class="chip ok" id="mode-chip">PAPER</span>
+      <span class="chip" id="clock">—</span>
+      <a class="chip btn btn-logs" href="/logs" id="btn-logs">Logs</a>
+      <button type="button" class="chip btn" id="btn-refresh">刷新</button>
+    </div>
+  </header>
+
+  <div class="strip" id="strip">
+    <span>Parent <b id="p-run">—</b> RUNNING</span>
+    <span class="sep">·</span>
+    <span>Son <b id="s-ready">15</b> READY</span>
+    <span class="sep">·</span>
+    <span>合計 PnL <b id="sum-pnl" class="mut">—</b></span>
+    <span class="sep">·</span>
+    <span>真倉 <b>OFF</b></span>
+    <span class="sep">·</span>
+    <span>Son 未 launch</span>
+    <span class="sep">·</span>
+    <a class="logs-link" href="/logs">打開 Logs 頁 →</a>
+  </div>
+
+
+
+
+
+  
+
+  <section class="hl-wrap" id="hl-wrap">
+    <div style="display:flex;justify-content:space-between;gap:.6rem;flex-wrap:wrap;align-items:flex-start">
+      <div>
+        <div class="hl-title">Live · Son U</div>
+        <div class="hl-sub" id="hl-sub">$10/注 · $100 · 真倉要錢包≥$100 先開 · 而家未真倉</div>
+      </div>
+      <div class="hl-actions">
+        <span class="hl-badge is-off" id="hl-badge">PREP · PAPER</span>
+        <span class="chip" id="hl-run">—</span>
+      </div>
+      <p class="hl-split-note">兩個 bot 各自 Live / Paper 同 Bet size · 撳卡內掣 · 轉一個唔會跟另一個</p>
+    </div>
+    <div id="hl-body" style="margin-top:.55rem;display:grid;gap:.45rem;font-size:.78rem">
+      <div class="skel">載入 Live…</div>
+    </div>
+    <div id="hl-note" style="margin-top:.45rem;font-size:.72rem;color:var(--muted);line-height:1.45"></div>
+  </section>
+
+<details class="paper-run-fold" id="paper-run-fold">
+  <summary class="desk-fold-summary paper-run-summary">
+    <span class="desk-fold-left">
+      <span class="desk-fold-title paper-run-title">Paper run</span>
+      <span class="desk-fold-hint paper-run-hint">Sports FV · Newborn · newnew / 5m A / V2 · 已停 · 其他 · 預設摺起</span>
+    </span>
+    <span class="desk-fold-right desk-fold-meta" id="paper-run-sub">摺起 · 撳開睇全部紙上</span>
+  </summary>
+  <div class="paper-run-inner">
+<details class="sfv-fold" id="sfv-fold">
+    <summary>
+      <span><span class="sfv-fold-title">Sports FV · 表現麻麻</span>
+        <span class="sfv-fold-hint">（紙上 · parent + Late 仔 · 撳先打開）</span></span>
+      <span id="sfv-fold-sub" style="color:var(--dim);font-size:.68rem">摺起 · 唔想見到就唔開</span>
+    </summary>
+    <div class="sfv-fold-inner">
+    <section class="sfv-wrap sfv-wrap-inner" id="sfv-wrap">
+    <div style="display:flex;justify-content:space-between;gap:.6rem;flex-wrap:wrap;align-items:flex-start">
+      <div>
+        <div style="font-size:1.02rem;font-weight:700">Sports FV · 紙上</div>
+        <div id="sfv-sub" style="margin-top:.2rem;font-size:.74rem;color:var(--muted);line-height:1.4">足球+網球 · swisstony-style fair-value · 真倉 OFF</div>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
+        <span class="nb-badge">SPORTS · PAPER</span>
+        <span class="chip" id="sfv-run">—</span>
+      </div>
+    </div>
+    <div id="sfv-body" style="margin-top:.55rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.45rem;font-size:.78rem">
+      <div class="skel">載入 Sports FV（紙上）…</div>
+    </div>
+    <div id="sfv-note" style="margin-top:.45rem;font-size:.72rem;color:var(--muted);line-height:1.45"></div>
+    <div id="sfv-tables" style="margin-top:.55rem;display:grid;gap:.55rem;font-size:.72rem"></div>
+    <div id="sfv-son-wrap" style="margin-top:.65rem;padding:.55rem .65rem;border:1px dashed #2a4a6e;border-radius:10px;background:#07101c">
+      <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap;align-items:center">
+        <div>
+          <div style="font-size:.9rem;font-weight:700">↳ 仔 · Sports FV Late · 收市線</div>
+          <div id="sfv-son-sub" style="margin-top:.15rem;font-size:.7rem;color:var(--muted);line-height:1.35">只喺開波前約兩小時入場 · 跟收市線 · 紙上</div>
+        </div>
+        <span class="chip" id="sfv-son-run">—</span>
+      </div>
+      <div id="sfv-son-body" style="margin-top:.45rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:.4rem;font-size:.74rem">
+        <div class="skel">載入 Late 仔…</div>
+      </div>
+      <div id="sfv-son-note" style="margin-top:.35rem;font-size:.68rem;color:var(--muted);line-height:1.4"></div>
+      <div id="sfv-son-tables" style="margin-top:.4rem;display:grid;gap:.45rem;font-size:.7rem"></div>
+    </div>
+  </section>
+    </div>
+  </details>
+
+<details class="nb-fold" id="nb-fold">
+    <summary>
+      <span><span class="sfv-fold-title">Grok Newborn · 六套</span>
+        <span class="sfv-fold-hint">（18 紙上 · 預設摺起）</span></span>
+      <span id="nb-fold-sub" style="color:var(--dim);font-size:.68rem">摺起 · 唔想見到就唔開</span>
+    </summary>
+    <div class="nb-fold-inner">
+<section class="newborn-wrap" id="newborn-wrap">
+    <div class="nb-head">
+      <div>
+        <div class="nb-title">Grok Newborn · 六套</div>
+        <div class="nb-sub" id="nb-sub">6 Parent + 12 Son · 紙上 $100 · DRY_RUN · 真倉 OFF</div>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
+        <span class="nb-badge">NEW · PAPER</span>
+        <span class="chip" id="nb-run">— RUNNING</span>
+      </div>
+    </div>
+    <div class="families nb-grid" id="newborn-families">
+      <div class="skel">載入 Grok Newborn…</div>
+    </div>
+  </section>
+    </div>
+  </details>
+
+  <div class="families" id="families">
+    <div class="skel">載入 Family（舊家族）…</div>
+  </div>
+
+
+  <details class="paused-fold" id="paused-fold">
+    <summary>
+      <span>已停 · 表現唔滿意 <span style="color:var(--dim)">(Stopped — unsatisfied performance)</span></span>
+      <span id="paused-sub" style="color:var(--dim)">摺起 · 資料保留</span>
+    </summary>
+    <div class="inner">
+      <div id="paused-list"><span class="skel">—</span></div>
+      <div style="margin-top:.45rem;font-size:.68rem;color:var(--dim)">
+        stop+disable · 唔刪 code／trades／status · 可之後再啟
+      </div>
+    </div>
+  </details>
+
+  <details class="other" id="other-fold">
+    <summary>
+      <span>其他服務（收起）· meme / 15m / funding / 進程</span>
+      <span id="other-sub" style="color:var(--dim)">唔佔主視野</span>
+    </summary>
+    <div class="inner">
+      <div class="svc-grid" id="svc-grid"><span class="skel">—</span></div>
+      <div style="margin-top:.55rem;font-size:.72rem;color:var(--dim)">
+        其他 bot／歷史唔喺主板。Family Logs：<a href="/logs">/logs</a> · 舊 Dual：<a href="/logs/dual">/logs/dual</a>
+      </div>
+    </div>
+  </details>
+  </div>
+</details>
+
+
+  <div class="foot">
+    <span id="foot-note">主板 :8082 · Family Desk · logs lazy-load</span>
+    <span id="foot-upd">—</span>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+
+  /* === SURGICAL a2d0add: Paper run fold header normalize + watcher === */
+  const DESK_FOLD_SUMMARY_SEL = [
+    '#paper-run-fold > summary',
+    '#paper-run-fold details.sfv-fold > summary',
+    '#paper-run-fold details.nb-fold > summary',
+    '#paper-run-fold details.fam-fold > summary',
+    '#paper-run-fold details.paused-fold > summary',
+    '#paper-run-fold details.other > summary',
+    '.paper-run-inner > details.sfv-fold > summary',
+    '.paper-run-inner > details.nb-fold > summary',
+    '.paper-run-inner > details.fam-fold > summary',
+    '.paper-run-inner > details.paused-fold > summary',
+    '.paper-run-inner > details.other > summary',
+    '#paper-run-extra details > summary',
+  ].join(',');
+
+  function normalizeDeskFoldSummaries(root) {
+    const scope = root || document.getElementById('paper-run-fold')
+      || document.querySelector('.paper-run-inner') || document.getElementById('paper-run-extra');
+    if (!scope) return;
+    scope.querySelectorAll(DESK_FOLD_SUMMARY_SEL).forEach((summary) => {
+      summary.classList.add('desk-fold-summary');
+      summary.style.setProperty('display', 'grid', 'important');
+      summary.style.setProperty('text-align', 'left', 'important');
+      summary.style.setProperty('justify-content', 'flex-start', 'important');
+      summary.style.setProperty('flex-wrap', 'nowrap', 'important');
+      summary.style.removeProperty('align-items');
+
+      const spans = [...summary.children].filter((el) => el.tagName === 'SPAN');
+      if (spans.length >= 2) {
+        const left = spans[0];
+        const meta = spans[spans.length - 1];
+        left.classList.add('desk-fold-left');
+        meta.classList.add('desk-fold-right', 'desk-fold-meta');
+        left.style.setProperty('text-align', 'left', 'important');
+        meta.style.setProperty('text-align', 'right', 'important');
+        meta.style.removeProperty('color');
+        meta.style.removeProperty('font-size');
+
+        left.querySelectorAll(
+          '.desk-fold-title, .paper-run-title, .sfv-fold-title, .fam-fold-title, .desk-fold-hint, .paper-run-hint, .sfv-fold-hint, .fam-fold-hint',
+        ).forEach((el) => {
+          el.style.setProperty('display', 'block', 'important');
+          el.style.setProperty('text-align', 'left', 'important');
+          el.style.setProperty('margin-left', '0', 'important');
+        });
+
+        let badges = meta.querySelector('.desk-fold-badges');
+        if (!badges) {
+          badges = document.createElement('span');
+          badges.className = 'desk-fold-badges';
+          meta.insertBefore(badges, meta.firstChild);
+        }
+        left.querySelectorAll('.pill.live, .pill.run').forEach((pill) => {
+          if (pill.closest('.desk-fold-badges')) return;
+          badges.appendChild(pill);
+        });
+      }
+    });
+  }
+
+  function watchDeskFoldSummaries() {
+    normalizeDeskFoldSummaries();
+    ['families', 'paper-run-extra', 'paper-run-fold', 'newborn-families'].forEach((id) => {
+      const node = $(id);
+      if (!node || node._deskFoldObs) return;
+      node._deskFoldObs = true;
+      new MutationObserver(() => {
+        normalizeDeskFoldSummaries(node.id === 'families' || node.id === 'newborn-families'
+          ? document.getElementById('paper-run-fold') || node
+          : node);
+      }).observe(node, { childList: true, subtree: true });
+    });
+  }
+  /* === end a2d0add desk-fold JS === */
+
+  const FAM_ORDER = ['BTC 5m new new', 'BTC 5m A', 'BTC 2 legs V2'];
+  let _board = null;
+  let _busy = false;
+  const _logLoaded = new Set();
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function money(v) {
+    if (v === null || v === undefined || v === '') return '—';
+    const n = Number(v);
+    if (Number.isNaN(n)) return '—';
+    return (n >= 0 ? '+$' : '-$') + Math.abs(n).toFixed(2);
+  }
+  function pnlClass(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n === 0) return 'mut';
+    return n > 0 ? 'pos' : 'neg';
+  }
+  function nowHkt() {
+    try {
+      return new Date().toLocaleString('en-HK', { timeZone: 'Asia/Hong_Kong', hour12: false }) + ' HKT';
+    } catch (_) { return new Date().toISOString(); }
+  }
+  function isRunning(row) {
+    const s = String(row.status || '').toUpperCase();
+    return !!row.launched || s === 'RUNNING' || s.startsWith('RUN');
+  }
+  function isPaused(row) {
+    if (!row) return false;
+    if (row.paused) return true;
+    if (String(row.paused_reason || '') === 'unsatisfied_performance') return true;
+    const s = String(row.status || '') + ' ' + String(row.status_label || '');
+    return /表現唔滿意|unsatisfied/i.test(s);
+  }
+  function isReady(row) {
+    if (isRunning(row) || row.launched) return false;
+    const s = String(row.status || '');
+    return /READY|未開/.test(s) || row.role === 'son';
+  }
+  function familyKey(row) {
+    const f = String(row.family || '');
+    if (f.includes('new new')) return 'BTC 5m new new';
+    if (f === 'BTC 5m A' || f.endsWith(' A')) return 'BTC 5m A';
+    if (f.includes('2 legs') || f.includes('V2')) return 'BTC 2 legs V2';
+    return f || '—';
+  }
+  function shortChange(row) {
+    return String(row.change || row.note || row.code || '').replace(/\s+/g, ' ').trim().slice(0, 72);
+  }
+
+  async function getJson(url, ms) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms || 12000);
+    try {
+      const res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+      if (!res.ok) throw new Error('http ' + res.status);
+      return await res.json();
+    } finally { clearTimeout(t); }
+  }
+
+  function sonuPaperTwinId(liveId) {
+    const id = String(liveId || '').trim();
+    if (!id) return 'son-btc-5m-ultimate';
+    if (id.endsWith('-live')) return id.slice(0, -5);
+    if (id === 'son-btc-5m-ultimate-live') return 'son-btc-5m-ultimate';
+    return id.replace(/-live$/, '') || 'son-btc-5m-ultimate';
+  }
+
+  function sonuDualLog(liveId) {
+    const live = String(liveId || 'son-btc-5m-ultimate-live');
+    const paper = sonuPaperTwinId(live);
+    return `<div class="hl-card-log sonu-log-card">
+      <div class="sonu-live-log-block" id="sonu-live-log-block">
+        <div class="sonu-live-log-kicker">Live log · Son U only</div>
+        <details class="blog" data-bot="${esc(live)}" open>
+          <summary>Live · Son U <span style="color:var(--dim)">（只呢隻 · 成交+窗過濾 · 尾部）</span></summary>
+          <div class="logbox" data-log="${esc(live)}" data-mode="all"><span class="hint">載入尾部…</span></div>
+        </details>
+      </div>
+      <details class="sonu-paper-log-fold" id="sonu-paper-log-fold">
+        <summary>Paper log · 預設收起（Son U paper · 撳開）</summary>
+        <div class="sonu-paper-log-body">
+          <details class="blog" data-bot="${esc(paper)}">
+            <summary>Paper · Son U <span style="color:var(--dim)">（開先載 · 成交優先）</span></summary>
+            <div class="logbox" data-log="${esc(paper)}" data-mode="trades"><span class="hint">未載入</span></div>
+          </details>
+        </div>
+      </details>
+    </div>`;
+  }
+
+  function logDetails(botId, label) {
+    return `<details class="blog" data-bot="${esc(botId)}">
+      <summary>${esc(label || 'Log')} <span style="color:var(--dim)">（開先載 · 成交優先 · 尾部）</span></summary>
+      <div class="logbox" data-log="${esc(botId)}"><span class="hint">未載入</span></div>
+    </details>`;
+  }
+
+  function parentHtml(p) {
+    if (!p) return '<div class="skel">未有 Parent</div>';
+    const run = isRunning(p) || String(p.status||'').toUpperCase() === 'LIVE' || !!p.live_enabled;
+    const isLiveNow = !!p.live_enabled || p.live_tag === 'LIVE' || String(p.status||'').toUpperCase() === 'LIVE';
+    const liveHist = !isLiveNow && (p.had_live || p.live_tag === '曾live' || String(p.display_name||'').includes('曾live'));
+    const name = String(p.display_name || '')
+      .replace(' · 曾live','')
+      .replace(' · LIVE','')
+      .replace(/LIVE$/,'')
+      .trim();
+    const pills = (isLiveNow
+        ? '<span class="pill live">LIVE</span>'
+        : (run ? '<span class="pill run">RUNNING</span>' : '<span class="pill ready">—</span>'))
+      + (liveHist ? ' <span class="pill live">曾live</span>' : '');
+    const pnl = p.pnl;
+    const trades = p.trade_count != null ? p.trade_count : '—';
+    // LIVE Parent V2: show live wallet with cents; paper parents keep whole dollars.
+    const cap = p.capital_usd != null
+      ? ('$' + Number(p.capital_usd).toFixed(isLiveNow ? 2 : 0))
+      : '—';
+    const countLabel = p.count_label || (trades + ' 單');
+    return `<div class="parent" data-id="${esc(p.id)}">
+      <div class="row1">
+        <div>
+          <div class="pname">${esc(name)}</div>
+          <div style="margin-top:.25rem">${pills}</div>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="lab">PnL</div><div class="val ${pnlClass(pnl)}">${esc(p.pnl_label || money(pnl))}</div></div>
+        <div class="metric"><div class="lab">Trades</div><div class="val mut">${esc(String(countLabel))}</div></div>
+        <div class="metric"><div class="lab">Capital</div><div class="val mut">${esc(cap)}</div></div>
+        <div class="metric"><div class="lab">Session</div><div class="val mut" style="font-size:.68rem">${esc(String(p.session_id||'—').slice(-14))}</div></div>
+      </div>
+      ${logDetails(p.id, 'Parent log')}
+    </div>`;
+  }
+
+  function sonHtml(s) {
+    const letter = 'Son ' + (s.son || '?');
+    const run = isRunning(s);
+    const ready = !run && isReady(s);
+    const pill = run
+      ? '<span class="pill run">RUNNING</span>'
+      : (ready ? '<span class="pill ready">READY</span>' : '<span class="pill ready">—</span>');
+    const state = run
+      ? (s.status_label || '跑緊 · 紙上')
+      : (s.status_label || (ready ? '未開跑' : '—'));
+    const cap = s.capital_usd != null ? ('$' + Number(s.capital_usd).toFixed(0)) : '$100';
+    const pnl = s.pnl;
+    const pnlLine = run
+      ? `<div class="cap ${pnlClass(pnl)}">${esc(s.pnl_label || money(pnl))}</div><div>${esc(String(s.count_label || ((s.trade_count != null ? s.trade_count : 0) + ' 單')))} · 紙上</div>`
+      : `<div class="cap">${esc(cap)}</div>紙上`;
+    return `<div class="son" data-id="${esc(s.id)}">
+      <div class="srow">
+        <div class="sletter">${esc(letter)}</div>
+        <div>
+          <div class="sname">${pill} · ${esc(state)}</div>
+          <div class="schange">${esc(shortChange(s) || '—')}</div>
+        </div>
+        <div class="sright">${pnlLine}</div>
+      </div>
+      ${logDetails(s.id, ready ? 'Son log · 未開跑' : 'Son log')}
+    </div>`;
+  }
+
+
+  
+  
+
+  const DESK_BOT_IDS = ['son-btc-5m-ultimate-live', 'dual-leg-live-v2'];
+  function deskFmt(n) {
+    const x = Math.round(Number(n) * 100) / 100;
+    if (!Number.isFinite(x)) return '—';
+    if (Math.abs(x - Math.round(x)) < 1e-9) return String(Math.round(x));
+    return String(x);
+  }
+  function deskRuleLine(rule, bet, mult) {
+    const stake = Math.round(Number(bet) * Number(mult) * 100) / 100;
+    if (Number(mult) === 2) return rule + '：' + deskFmt(bet) + ' = $' + deskFmt(stake) + '（2 腿 × $' + deskFmt(bet) + '）';
+    return rule + '：' + deskFmt(bet) + ' = $' + deskFmt(stake);
+  }
+  function deskBotMeta(r) {
+    const id = String(r.id || '');
+    if (id === 'dual-leg-live-v2') return { mult: 2, rule: 'v2', name: 'BTC 2 legs V2', cls: 'desk-v2' };
+    if (id === 'son-btc-5m-ultimate-live') return { mult: 1, rule: 'v2 5m btc', name: '終極5m', cls: 'desk-5m' };
+    return null;
+  }
+  function deskBotMode(r) {
+    if (r.mode) return r.mode;
+    if (r.live_enabled) return 'live';
+    if (r.live_armed || String(r.status_label || '').includes('armed')) return 'prep';
+    return 'paper';
+  }
+  function deskToggleButtons(r, mode) {
+    const m = deskBotMeta(r);
+    if (!m) return '';
+    const paperActive = mode === 'paper';
+    const liveActive = mode === 'live' || mode === 'prep';
+    const liveCls = 'hl-toggle' + (liveActive ? ' is-active' + (mode === 'prep' ? ' is-prep' : '') : '');
+    const paperCls = 'hl-toggle' + (paperActive ? ' is-active' : '');
+    return `<div class="desk-bot-actions" data-desk-actions="1">
+      <button type="button" class="${paperCls}" data-bot-action="to_paper" data-bot-id="${esc(r.id)}">
+        <span class="mode-label">${paperActive ? '模式：Paper（紙上）' : '切換 → Paper'}</span>
+      </button>
+      <button type="button" class="${liveCls}" data-bot-action="to_live" data-bot-id="${esc(r.id)}">
+        <span class="mode-label">${mode === 'live' ? '模式：Live（真倉）' : (mode === 'prep' ? '模式：Live prep' : '切換 → Live')}</span>
+      </button>
+    </div>`;
+  }
+  function deskBetBox(r) {
+    const m = deskBotMeta(r);
+    if (!m) return '';
+    const bet = r.bet_size != null ? r.bet_size : 10;
+    const stake = r.stake_usd != null ? r.stake_usd : (m.mult === 2 ? '20' : '10');
+    const rule = r.rule_line || deskRuleLine(m.rule, bet, m.mult);
+    const inputId = m.cls === 'desk-v2' ? 'bet-size-v2' : 'bet-size-sonu';
+    return `<div class="bet-size-box">
+      <label for="${inputId}">Bet size</label>
+      <div class="bet-size-row">
+        <button type="button" data-bet-step="-1" data-bot-id="${esc(r.id)}">−</button>
+        <input class="bet-size-input" id="${inputId}" type="number" inputmode="decimal" min="0.5" max="500" step="0.5" value="${esc(String(bet))}" autocomplete="off" data-bot-id="${esc(r.id)}">
+        <button type="button" data-bet-step="1" data-bot-id="${esc(r.id)}">+</button>
+        <button type="button" data-bet-apply data-bot-id="${esc(r.id)}">套用</button>
+      </div>
+      <p class="bet-size-readout">每注 <strong data-stake>$${esc(String(stake))}</strong> · <span data-rule>${esc(rule)}</span></p>
+    </div><p class="desk-bot-hint" data-bot-hint data-bot-id="${esc(r.id)}"></p>`;
+  }
+  function paintDeskCard(card, mode) {
+    if (!card) return;
+    card.dataset.mode = mode || 'paper';
+    const liveBtn = card.querySelector('[data-bot-action="to_live"]');
+    const paperBtn = card.querySelector('[data-bot-action="to_paper"]');
+    if (liveBtn) {
+      liveBtn.classList.toggle('is-active', mode === 'live' || mode === 'prep');
+      liveBtn.classList.toggle('is-prep', mode === 'prep');
+      const label = liveBtn.querySelector('.mode-label');
+      if (label) label.textContent = mode === 'live' ? '模式：Live（真倉）' : (mode === 'prep' ? '模式：Live prep' : '切換 → Live');
+    }
+    if (paperBtn) {
+      paperBtn.classList.toggle('is-active', mode === 'paper');
+      const label = paperBtn.querySelector('.mode-label');
+      if (label) label.textContent = mode === 'paper' ? '模式：Paper（紙上）' : '切換 → Paper';
+    }
+  }
+  async function postDeskBot(botId, action, betSize) {
+    const card = document.querySelector('[data-desk-bot-id="' + botId + '"]');
+    const hint = card && card.querySelector('[data-bot-hint]');
+    const body = { action: action };
+    if (action === 'set_bet_size') body.bet_size = betSize;
+    if (card) card.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+    let data = {};
+    try {
+      const res = await fetch('/api/desk/bots/' + encodeURIComponent(botId), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store',
+      });
+      data = await res.json().catch(() => ({}));
+      const msg = data.message_tc || data.error_tc || data.error || (data.ok ? '已更新' : '失敗');
+      if (hint) hint.textContent = msg;
+      const noteEl = $('hl-note');
+      if (noteEl && msg) noteEl.textContent = msg + ' ｜ ' + (noteEl.textContent || '').split(' ｜ ').slice(-2).join(' ｜ ');
+      if (data.ok && (action === 'to_live' || action === 'to_paper') && card) {
+        paintDeskCard(card, data.desk_mode || data.mode || 'paper');
+      }
+      await refresh();
+    } catch (e) {
+      if (hint) hint.textContent = '連唔到後端';
+    }
+    if (card) card.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+    return data;
+  }
+  function bindDeskSplitBots() {
+    const body = $('hl-body');
+    if (!body || body.dataset.deskBound === '1') return;
+    body.dataset.deskBound = '1';
+    body.addEventListener('click', (ev) => {
+      const step = ev.target.closest('[data-bet-step]');
+      if (step) {
+        const botId = step.dataset.botId;
+        const card = document.querySelector('[data-desk-bot-id="' + botId + '"]');
+        const input = card && card.querySelector('.bet-size-input');
+        if (!input) return;
+        const next = Math.round((Number(input.value || 0) + Number(step.dataset.betStep)) * 100) / 100;
+        input.value = String(Math.min(500, Math.max(0.5, next)));
+        postDeskBot(botId, 'set_bet_size', Number(input.value));
+        return;
+      }
+      const apply = ev.target.closest('[data-bet-apply]');
+      if (apply) {
+        const botId = apply.dataset.botId;
+        const card = document.querySelector('[data-desk-bot-id="' + botId + '"]');
+        const input = card && card.querySelector('.bet-size-input');
+        const bet = Number(input && input.value);
+        if (!Number.isFinite(bet) || bet < 0.5 || bet > 500) {
+          const hint = card && card.querySelector('[data-bot-hint]');
+          if (hint) hint.textContent = 'bet size 要喺 0.5 到 500';
+          return;
+        }
+        postDeskBot(botId, 'set_bet_size', bet);
+        return;
+      }
+      const modeBtn = ev.target.closest('[data-bot-action]');
+      if (!modeBtn || !modeBtn.dataset.botId) return;
+      const botId = modeBtn.dataset.botId;
+      const card = document.querySelector('[data-desk-bot-id="' + botId + '"]');
+      const mode = (card && card.dataset.mode) || 'paper';
+      const action = modeBtn.dataset.botAction;
+      if (action === 'to_paper' && mode === 'paper') return;
+      if (action === 'to_live' && mode === 'live') return;
+      const name = botId === 'dual-leg-live-v2' ? 'BTC 2 legs V2' : '終極5m';
+      const msg = action === 'to_live'
+        ? '確認「' + name + '」切換 → Live？\nplaceholder 時只 armed prep，唔會動真錢。\n另一個 bot 唔會跟。'
+        : '確認「' + name + '」切換 → Paper？真倉 OFF。\n另一個 bot 保持原狀。';
+      if (!window.confirm(msg)) return;
+      postDeskBot(botId, action);
+    });
+  }
+  function wireDeskCards(rows) {
+    (rows || []).forEach((r) => {
+      if (!DESK_BOT_IDS.includes(String(r.id || ''))) return;
+      const card = document.querySelector('[data-desk-bot-id="' + r.id + '"]');
+      if (!card) return;
+      paintDeskCard(card, deskBotMode(r));
+      if (r.bet_size != null) {
+        const input = card.querySelector('.bet-size-input');
+        if (input && document.activeElement !== input) input.value = r.bet_size;
+      }
+      if (r.rule_line) {
+        const ruleEl = card.querySelector('[data-rule]');
+        if (ruleEl) ruleEl.textContent = r.rule_line;
+      }
+      if (r.stake_usd != null) {
+        const stakeEl = card.querySelector('[data-stake]');
+        if (stakeEl) stakeEl.textContent = '$' + r.stake_usd;
+      }
+    });
+    bindDeskSplitBots();
+  }
+
+  function renderHighLive(board) {
+    const body = $('hl-body');
+    const sub = $('hl-sub');
+    const runEl = $('hl-run');
+    const noteEl = $('hl-note');
+    const badge = $('hl-badge');
+    if (!body) return;
+    const hl = (board && board.high_live_board) || {};
+    const rows = Array.isArray(hl.rows) ? hl.rows : [];
+    if (sub) sub.textContent = hl.subtitle || '預備區 · 真倉 OFF';
+    const anyLive = !!hl.any_live;
+    const armedPrep = !anyLive && Array.isArray(rows) && rows.some(r => String(r.status_label || '').includes('armed'));
+    if (badge) {
+      badge.textContent = anyLive ? 'LIVE ON' : (armedPrep ? 'PREP · ARMED' : 'PREP · PAPER');
+      badge.className = 'hl-badge ' + (anyLive ? 'is-on' : 'is-off');
+      badge.setAttribute('aria-label', anyLive ? 'LIVE ON — on air' : (armedPrep ? 'PREP ARMED — paper' : 'PREP PAPER — off air'));
+    }
+    if (runEl) {
+      runEl.textContent = anyLive ? '真倉 RUNNING' : (rows.some(r => r.launched) ? '紙上預備 RUNNING' : 'READY');
+      runEl.className = 'chip' + (anyLive ? ' ok' : '');
+    }
+    if (!rows.length) {
+      body.innerHTML = '<div class="skel">未有 Live bot</div>';
+    } else {
+      const sortRows = [...rows].sort((a, b) => {
+        const aid = String(a.id || '');
+        const bid = String(b.id || '');
+        if (aid === 'son-btc-5m-ultimate-live') return -1;
+        if (bid === 'son-btc-5m-ultimate-live') return 1;
+        return 0;
+      });
+      body.innerHTML = sortRows.map((r) => {
+        const livePill = r.live_enabled
+          ? '<span class="pill live">LIVE</span>'
+          : ((r.had_live || r.live_tag === '曾live')
+            ? '<span class="chip">曾live · PREP</span>'
+            : (String(r.status_label || '').includes('armed')
+              ? '<span class="chip">PREP · ARMED</span>'
+              : '<span class="chip">PAPER PREP</span>'));
+        const pnl = r.pnl_label || money(r.pnl);
+        const stake = r.stake_usd != null ? ('$'+r.stake_usd+'/注') : '$10/注';
+        const cap = r.capital_usd != null
+          ? ('$'+Number(r.capital_usd).toFixed(Number(r.capital_usd) % 1 ? 2 : 0))
+          : '$100';
+        const wr = r.wr_label || (r.settled_n ? '—' : '未有結算');
+        const settled = (r.settled_n != null)
+          ? (String(r.settled_n) + '（' + String(r.wins ?? 0) + 'W/' + String(r.losses ?? 0) + 'L）')
+          : '—';
+        const pnlCls = pnlClass(r.pnl);
+        const twLine = r.trades_windows_line || (() => {
+          const wf = r.window_funnel || {};
+          const n = (r.trade_count != null ? r.trade_count : 0);
+          const m = (wf.considered != null ? wf.considered : (r.scan_count != null ? r.scan_count : 0));
+          const k = (wf.filtered != null ? wf.filtered : Math.max(0, Number(m) - Number(wf.entered != null ? wf.entered : n)));
+          return 'Trades ' + n + ' 單 · ' + m + ' 窗 · 過濾 ' + k;
+        })();
+        const wf = r.window_funnel || {};
+        const winC = (wf.considered != null ? wf.considered : (r.scan_count != null ? r.scan_count : '—'));
+        const winF = (wf.filtered != null ? wf.filtered : '—');
+        const winE = (wf.entered != null ? wf.entered : (r.trade_count != null ? r.trade_count : '—'));
+        const _dm = deskBotMeta(r);
+        const _mode = deskBotMode(r);
+        const _deskAttr = _dm ? (` data-desk-bot-id="${esc(r.id)}" data-mode="${esc(_mode)}"`) : "";
+        const card = `<div class="son${_dm ? " desk-split-bot" : ""}"${_deskAttr} style="border-color:rgba(224,181,103,.35);display:block">
+          <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap;align-items:flex-start">
+            <div>
+              <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap">
+                <strong>${esc(r.display_name || r.id || '—')}</strong>
+                ${livePill}
+              </div>
+              <div class="meta" style="margin-top:.2rem">${esc(r.status_label || r.status || '')} · ${esc(stake)} · 本金 ${esc(cap)}</div>
+              <div class="meta" style="margin-top:.15rem">${esc(shortChange(r))}</div>
+            </div>
+          </div>
+          ${_dm ? deskToggleButtons(r, _mode) + deskBetBox(r) : ""}
+          <div class="hl-trades-line" aria-live="polite"><span class="label-tag">Trades</span>${esc(String(twLine).replace(/^Trades\s*/, ''))}</div>
+          <div class="hl-window-funnel" aria-label="窗口考慮／過濾／入場">
+            <div class="cell"><div class="k">考慮</div><div class="v">${esc(String(winC))}</div></div>
+            <div class="cell"><div class="k">過濾</div><div class="v filt">${esc(String(winF))}</div></div>
+            <div class="cell"><div class="k">入場</div><div class="v ent">${esc(String(winE))}</div></div>
+          </div>
+          <div class="hl-stats">
+            <div class="hl-stat"><div class="k">WR</div><div class="v wr">${esc(String(wr))}</div></div>
+            <div class="hl-stat"><div class="k">PnL</div><div class="v ${pnlCls}">${esc(pnl)}</div></div>
+            <div class="hl-stat"><div class="k">結算</div><div class="v">${esc(settled)}</div></div>
+            <div class="hl-stat"><div class="k">單數</div><div class="v">${esc(String(r.count_label || ((r.trade_count != null ? r.trade_count : 0) + ' 單')))}</div></div>
+            <div class="hl-stat"><div class="k">注碼</div><div class="v">${esc(stake)}</div></div>
+            <div class="hl-stat"><div class="k">本金</div><div class="v">${esc(cap)}</div></div>
+          </div>
+        </div>`;
+        if (String(r.id || '') === 'dual-leg-live-v2') {
+          const v2Title = esc(r.display_name || 'BTC 2 legs V2 · 曾live');
+          return `<details class="fam-fold desk-v2-fold" id="desk-v2-fold"><summary><span class="fam-fold-title">${v2Title}</span><span class="fam-fold-hint"> · 已摺 · 唔開 V2 live</span></summary><div class="fam-fold-inner">${card}</div></details>`;
+        }
+        return card;
+      }).join('');
+    }
+    wireLogFolds();
+    const bits = [];
+    if (hl.wallet_cash_usdc != null) bits.push('真錢包 $' + Number(hl.wallet_cash_usdc).toFixed(2));
+    if (hl.blocked) bits.push('阻擋：' + hl.blocked);
+    bits.push(anyLive ? '真倉已開' : '真倉未開');
+    if (noteEl) noteEl.textContent = bits.join(' ｜ ');
+    wireDeskCards(rows);
+  }
+
+  function renderSportsFv(board) {
+    const body = $('sfv-body');
+    const sub = $('sfv-sub');
+    const runEl = $('sfv-run');
+    const noteEl = $('sfv-note');
+    const tables = $('sfv-tables');
+    if (!body) return;
+    const s = (board && board.sports_fv_board) || {};
+    const hasBoard = !!(board && board.sports_fv_board);
+    const pending = Number(s.pending || 0);
+    const trades = Number(s.trade_count || 0);
+    const settled = Number(s.settled_n || 0);
+    if (sub) {
+      let tip = s.subtitle || '足球+網球 · fair-value · 真倉 OFF';
+      if (hasBoard && trades > 0) tip += ' · 已入場 ' + trades + '（掛住 ' + pending + '）';
+      else if (hasBoard && (s.last_enterable === 0 || s.last_enterable === '0')) tip += ' · 今輪可入 0（filter 緊，正常）';
+      else if (hasBoard && trades === 0) tip += ' · 掃描中／未有入場';
+      sub.textContent = tip;
+    }
+    if (runEl) runEl.textContent = (s.launched ? '跑緊' : '未開') + ' · ' + (s.unit_state || '—');
+    const cells = [
+      ['狀態', s.status_label || s.status || (hasBoard ? '—' : '掃描中')],
+      ['本金', s.initial_capital_usd != null ? ('$' + Number(s.initial_capital_usd).toFixed(0)) : '—'],
+      ['權益', s.equity_usd != null ? ('$' + Number(s.equity_usd).toFixed(2)) : '—'],
+      ['已實現 PnL', s.pnl_label || '—'],
+      ['WR', s.wr_label || '—'],
+      ['結算', String(settled) + '（' + String(s.wins ?? 0) + 'W/' + String(s.losses ?? 0) + 'L）'],
+      ['單數', String(trades)],
+      ['掛住', String(pending)],
+      ['今日入', String(s.daily_entered ?? 0)],
+      ['Edge≥', s.min_edge != null ? String(s.min_edge) : '—'],
+      ['Odds Key', s.odds_api_key_set ? 'OK' : (hasBoard ? '缺' : '—')],
+      ['Poly盤', String(s.last_poly_outcomes ?? '—')],
+      ['Matched', String(s.last_matched_sharp ?? '—')],
+      ['可入', String(s.last_enterable ?? '—')],
+      ['掃描', s.last_scan_at_hkt || s.heartbeat_at_hkt || '—'],
+      ['Heartbeat', s.heartbeat_at_hkt || '—'],
+    ];
+    body.innerHTML = cells.map(([k,v]) => `<div style="background:#0d1522;border:1px solid #1c2b40;border-radius:8px;padding:.4rem .5rem"><div style="color:var(--dim);font-size:.66rem">${k}</div><div style="font-weight:600;margin-top:.15rem">${esc(String(v))}</div></div>`).join('');
+    if (noteEl) {
+      const bits = [];
+      if (s.empty_reason) bits.push(s.empty_reason);
+      if (s.last_error) bits.push('last_error: ' + s.last_error);
+      if (Array.isArray(s.skip_reason_counts) && s.skip_reason_counts.length) {
+        bits.push('今輪拒因: ' + s.skip_reason_counts.slice(0,5).map(x => x.reason + '×' + x.n).join(' · '));
+      }
+      noteEl.textContent = bits.join(' ｜ ') || (hasBoard ? '紙上 hold-to-resolution · 真倉 OFF' : '暫讀唔到 Sports FV');
+    }
+    if (!tables) return;
+    function mkTable(title, headers, rows, emptyMsg, foldLabel) {
+      let inner;
+      if (!rows || !rows.length) {
+        inner = `<div style="font-weight:600;margin-bottom:.3rem">${esc(title)}</div><div style="color:var(--dim)">${esc(emptyMsg || '空')}</div>`;
+      } else {
+        const head = headers.map(h => `<th style="text-align:left;padding:.2rem .35rem;color:var(--dim);font-weight:500;border-bottom:1px solid #1c2b40">${esc(h)}</th>`).join('');
+        const bodyRows = rows.map(r => `<tr>${r.map(c => `<td style="padding:.25rem .35rem;border-bottom:1px solid #152033;vertical-align:top">${c}</td>`).join('')}</tr>`).join('');
+        inner = `<div style="font-weight:600;margin-bottom:.35rem">${esc(title)}</div><table style="width:100%;border-collapse:collapse;font-size:.71rem"><thead><tr>${head}</tr></thead><tbody>${bodyRows}</tbody></table>`;
+      }
+      const box = `<div style="background:#0d1522;border:1px solid #1c2b40;border-radius:8px;padding:.5rem .6rem;overflow:auto">${inner}</div>`;
+      if (!foldLabel) return box;
+      const n = rows && rows.length ? rows.length : 0;
+      const sum = n ? `${foldLabel}（${n}）` : foldLabel;
+      return `<details style="background:#0d1522;border:1px solid #1c2b40;border-radius:8px;padding:.35rem .6rem .5rem"><summary style="cursor:pointer;font-weight:600;font-size:.74rem;color:var(--muted);user-select:none;list-style:none;display:flex;align-items:center;gap:.35rem"><span style="opacity:.7">▸</span>${esc(sum)}</summary><div style="margin-top:.4rem;overflow:auto">${inner}</div></details>`;
+    }
+    const openPos = Array.isArray(s.open_positions) ? s.open_positions : [];
+    const settledTr = Array.isArray(s.settled_trades) ? s.settled_trades : [];
+    const recent = Array.isArray(s.recent_trades) ? s.recent_trades : [];
+    const signals = Array.isArray(s.top_signals) ? s.top_signals : [];
+    const scanTail = Array.isArray(s.scan_tail) ? s.scan_tail : [];
+    const openRows = openPos.map(t => [
+      esc(String(t.time_hkt || '—')),
+      esc(String(t.team || '—')),
+      esc(String(t.event || '—')),
+      esc(t.ask != null ? String(t.ask) : '—'),
+      esc(t.stake != null ? ('$' + Number(t.stake).toFixed(2)) : '—'),
+      esc(t.edge != null ? Number(t.edge).toFixed(3) : '—'),
+      esc(String(t.result || 'PENDING')),
+    ]);
+    const settledRows = settledTr.map(t => [
+      esc(String(t.time_hkt || '—')),
+      esc(String(t.team || '—')),
+      esc(String(t.event || '—')),
+      esc(String(t.result || '—')),
+      esc(String(t.pnl_label || '—')),
+    ]);
+    const recentRows = recent.map(t => [
+      esc(String(t.time_hkt || '—')),
+      esc(String(t.team || '—')),
+      esc(String(t.event || '—')),
+      esc(String(t.result || '—')),
+      esc(t.stake != null ? ('$' + Number(t.stake).toFixed(2)) : '—'),
+      esc(String(t.pnl_label || '—')),
+    ]);
+    const sigRows = signals.map(t => [
+      esc(String(t.team || '—')),
+      esc(String(t.event || '—')),
+      esc(t.edge != null ? Number(t.edge).toFixed(3) : '—'),
+      esc(t.poly_ask != null ? String(t.poly_ask) : '—'),
+      esc(t.sharp_prob != null ? Number(t.sharp_prob).toFixed(3) : '—'),
+      esc(String(t.skip || '—')),
+    ]);
+    const scanRows = scanTail.map(t => [
+      esc(String(t.at || '—')),
+      esc(String(t.poly ?? '—')),
+      esc(String(t.matched ?? '—')),
+      esc(String(t.enterable ?? '—')),
+      esc(String(t.error ?? 'ok')),
+    ]);
+    tables.innerHTML = [
+      mkTable('掛住倉（等賽果）', ['時間 HKT','隊／人','賽事','Ask','注碼','Edge','狀態'], openRows, trades ? '冇掛住倉' : '未有入場 · filter 緊'),
+      mkTable('已結算', ['時間 HKT','隊／人','賽事','結果','PnL'], settledRows, settled ? '—' : '未有結算 · 賽完先有 WR／結果', '展開已結算'),
+      mkTable('最近交易', ['時間 HKT','隊／人','賽事','結果','注碼','PnL'], recentRows, '未有交易紀錄', '展開交易 log'),
+      mkTable('今輪接近／拒單（top signals）', ['隊／人','賽事','Edge','Poly','Sharp','原因'], sigRows, '未有 scan cache', '展開拒因／接近單'),
+      mkTable('掃描紀錄（最近）', ['UTC 掃描','Poly','Matched','可入','err'], scanRows, '未有 scan jsonl', '展開掃描 log'),
+    ].join('');
+    renderSportsFvSon(board);
+    // Compact fold header glance (parent + Late son) — useful while collapsed
+    (function updateSfvFoldSub() {
+      const foldSub = $("sfv-fold-sub");
+      if (!foldSub) return;
+      const parent = (board && board.sports_fv_board) || {};
+      const son = (parent.sons && parent.sons[0]) || (board && board.sports_fv_late_board) || {};
+      const pPnL = parent.pnl_label || "—";
+      const sPnL = son.pnl_label || "—";
+      const pRun = parent.launched ? "跑緊" : "未開";
+      const sRun = son.launched ? "跑緊" : "未開";
+      foldSub.textContent = "摺起 · parent " + pRun + " " + pPnL + " · Late " + sRun + " " + sPnL;
+    })();
+  }
+
+
+  function renderSportsFvSon(board) {
+    const body = $('sfv-son-body');
+    const sub = $('sfv-son-sub');
+    const runEl = $('sfv-son-run');
+    const noteEl = $('sfv-son-note');
+    const tables = $('sfv-son-tables');
+    if (!body) return;
+    const parent = (board && board.sports_fv_board) || {};
+    const s = (parent.sons && parent.sons[0]) || (board && board.sports_fv_late_board) || {};
+    const hasBoard = !!(s && (s.id || s.status_label || s.unit_state));
+    const pending = Number(s.pending || 0);
+    const trades = Number(s.trade_count || 0);
+    const settled = Number(s.settled_n || 0);
+    if (sub) {
+      let tip = s.subtitle || 'Sports FV 仔 · 賽前約兩小時 · 紙上';
+      if (s.kickoff_window_min && s.kickoff_window_min.length === 2) {
+        tip += ' · 窗 ' + s.kickoff_window_min[0] + '–' + s.kickoff_window_min[1] + ' 分鐘';
+      }
+      if (hasBoard && trades > 0) tip += ' · 已入場 ' + trades + '（掛住 ' + pending + '）';
+      else if (hasBoard && trades === 0) tip += ' · 等窗內賽事／filter 緊';
+      sub.textContent = tip;
+    }
+    if (runEl) runEl.textContent = (s.launched ? '跑緊' : '未開') + ' · ' + (s.unit_state || '—');
+    const cells = [
+      ['狀態', s.status_label || s.status || (hasBoard ? '—' : '掃描中')],
+      ['本金', s.initial_capital_usd != null ? ('$' + Number(s.initial_capital_usd).toFixed(0)) : '—'],
+      ['權益', s.equity_usd != null ? ('$' + Number(s.equity_usd).toFixed(2)) : '—'],
+      ['已實現 PnL', s.pnl_label || '—'],
+      ['WR', s.wr_label || '—'],
+      ['結算', String(settled) + '（' + String(s.wins ?? 0) + 'W/' + String(s.losses ?? 0) + 'L）'],
+      ['單數', String(trades)],
+      ['掛住', String(pending)],
+      ['今日入', String(s.daily_entered ?? 0)],
+      ['窗內', String(s.in_kickoff_window ?? '—')],
+      ['窗外', String(s.outside_kickoff_window ?? '—')],
+      ['可入', String(s.last_enterable ?? '—')],
+      ['Matched', String(s.last_matched_sharp ?? '—')],
+      ['掃描', s.last_scan_at_hkt || s.heartbeat_at_hkt || '—'],
+    ];
+    body.innerHTML = cells.map(([k,v]) => `<div style="background:#0d1522;border:1px solid #1c2b40;border-radius:8px;padding:.35rem .45rem"><div style="color:var(--dim);font-size:.64rem">${k}</div><div style="font-weight:600;margin-top:.12rem">${esc(String(v))}</div></div>`).join('');
+    if (noteEl) {
+      const bits = [];
+      if (s.empty_reason) bits.push(s.empty_reason);
+      if (s.last_error) bits.push('last_error: ' + s.last_error);
+      noteEl.textContent = bits.join(' ｜ ') || (hasBoard ? '仔 · Smart Late CLV · 真倉 OFF' : '暫讀唔到 Late 仔');
+    }
+    if (!tables) return;
+    function mkTable(title, headers, rows, emptyMsg, foldLabel) {
+      let inner;
+      if (!rows || !rows.length) {
+        inner = `<div style="font-weight:600;margin-bottom:.25rem">${esc(title)}</div><div style="color:var(--dim)">${esc(emptyMsg || '空')}</div>`;
+      } else {
+        const head = headers.map(h => `<th style="text-align:left;padding:.2rem .3rem;color:var(--dim);font-weight:500;border-bottom:1px solid #1c2b40">${esc(h)}</th>`).join('');
+        const bodyRows = rows.map(r => `<tr>${r.map(c => `<td style="padding:.22rem .3rem;border-bottom:1px solid #152033;vertical-align:top">${c}</td>`).join('')}</tr>`).join('');
+        inner = `<div style="font-weight:600;margin-bottom:.3rem">${esc(title)}</div><table style="width:100%;border-collapse:collapse;font-size:.69rem"><thead><tr>${head}</tr></thead><tbody>${bodyRows}</tbody></table>`;
+      }
+      if (!foldLabel) return `<div style="background:#0d1522;border:1px solid #1c2b40;border-radius:8px;padding:.45rem .55rem;overflow:auto">${inner}</div>`;
+      const n = rows && rows.length ? rows.length : 0;
+      const sum = n ? `${foldLabel}（${n}）` : foldLabel;
+      return `<details style="background:#0d1522;border:1px solid #1c2b40;border-radius:8px;padding:.3rem .55rem .45rem"><summary style="cursor:pointer;font-weight:600;font-size:.72rem;color:var(--muted);user-select:none;list-style:none;display:flex;align-items:center;gap:.3rem"><span style="opacity:.7">▸</span>${esc(sum)}</summary><div style="margin-top:.35rem;overflow:auto">${inner}</div></details>`;
+    }
+    const openPos = Array.isArray(s.open_positions) ? s.open_positions : [];
+    const settledTr = Array.isArray(s.settled_trades) ? s.settled_trades : [];
+    const recent = Array.isArray(s.recent_trades) ? s.recent_trades : [];
+    const openRows = openPos.map(t => [esc(String(t.time_hkt||'—')),esc(String(t.team||'—')),esc(String(t.event||'—')),esc(t.ask!=null?String(t.ask):'—'),esc(t.stake!=null?('$' + Number(t.stake).toFixed(2)):'—'),esc(String(t.result||'PENDING'))]);
+    const settledRows = settledTr.map(t => [esc(String(t.time_hkt||'—')),esc(String(t.team||'—')),esc(String(t.event||'—')),esc(String(t.result||'—')),esc(String(t.pnl_label||'—'))]);
+    const recentRows = recent.map(t => [esc(String(t.time_hkt||'—')),esc(String(t.team||'—')),esc(String(t.event||'—')),esc(String(t.result||'—')),esc(String(t.pnl_label||'—'))]);
+    tables.innerHTML = [
+      mkTable('掛住倉', ['時間','隊／人','賽事','Ask','注碼','狀態'], openRows, trades ? '冇掛住倉' : '未有入場（等窗內）'),
+      mkTable('已結算', ['時間','隊／人','賽事','結果','PnL'], settledRows, '未有結算', '展開已結算'),
+      mkTable('最近交易', ['時間','隊／人','賽事','結果','PnL'], recentRows, '未有交易', '展開交易 log'),
+    ].join('');
+  }
+
+
+  function renderNewborn(board) {
+    const box = $('newborn-families');
+    const sub = $('nb-sub');
+    const runEl = $('nb-run');
+    if (!box) return;
+    const nb = (board && board.newborn_board) || {};
+    const families = Array.isArray(nb.families) ? nb.families : [];
+    if (sub) sub.textContent = nb.subtitle || ((nb.parents_n || 0) + ' Parent + ' + (nb.sons_n || 0) + ' Son · 紙上');
+    if (runEl) runEl.textContent = String(nb.running != null ? nb.running : 0) + ' RUNNING';
+    if (!families.length) {
+      box.innerHTML = '<div class="skel">尚未有 Newborn 資料</div>';
+      return;
+    }
+    box.innerHTML = families.map((pack) => {
+      const fam = pack.family || '—';
+      const p = pack.parent;
+      const sons = Array.isArray(pack.sons) ? pack.sons : [];
+      const run = p && isRunning(p);
+      return `<section class="fam nb-fam" data-family="${esc(fam)}">
+        <div class="fam-head">
+          <div class="fname">${esc(fam)} <span class="pill run">PAPER</span></div>
+          <div class="fmeta">${run ? 'Parent 跑緊' : 'Parent —'} · Son ${sons.length} · 紙上 $100</div>
+        </div>
+        ${parentHtml(p)}
+        <div class="sons">${sons.map(sonHtml).join('') || '<div class="skel">未有 Son</div>'}</div>
+      </section>`;
+    }).join('');
+  }
+
+  function renderFamilies(board) {
+    const fb = (board && board.family_board) || {};
+    const rows = Array.isArray(fb.rows) ? fb.rows : [];
+    const byFam = {};
+    FAM_ORDER.forEach((f) => { byFam[f] = { parent: null, sons: [] }; });
+    rows.forEach((r) => {
+      const fk = familyKey(r);
+      if (!byFam[fk]) byFam[fk] = { parent: null, sons: [] };
+      if (r.role === 'parent') byFam[fk].parent = r;
+      else if (!isPaused(r)) byFam[fk].sons.push(r);
+    });
+    Object.keys(byFam).forEach((f) => {
+      byFam[f].sons.sort((a, b) => String(a.son||'').localeCompare(String(b.son||'')));
+    });
+
+    let parentRun = 0;
+    let sumPnl = 0;
+    let sumN = 0;
+    FAM_ORDER.forEach((f) => {
+      const p = byFam[f].parent;
+      if (p && isRunning(p)) parentRun += 1;
+      if (p && p.pnl != null) { sumPnl += Number(p.pnl) || 0; sumN += 1; }
+    });
+
+    let sonRun = 0;
+    let sonReady = 0;
+    let sonPnl = 0;
+    FAM_ORDER.forEach((f) => {
+      (byFam[f].sons || []).forEach((s) => {
+        if (isRunning(s)) {
+          sonRun += 1;
+          if (s.pnl != null) sonPnl += Number(s.pnl) || 0;
+        } else if (isReady(s)) sonReady += 1;
+      });
+    });
+    $('p-run').textContent = String(parentRun);
+    $('s-ready').textContent = String(sonRun || sonReady || ((fb.sons_n != null) ? fb.sons_n : 15));
+    const labelEl = document.querySelector('#s-ready') && document.querySelector('#s-ready').previousElementSibling;
+    // strip header chip label stays; subtitle carries meaning
+    const sp = $('sum-pnl');
+    const totalPnl = sumPnl + sonPnl;
+    sp.textContent = money(totalPnl);
+    sp.className = pnlClass(totalPnl);
+    $('sub').textContent = parentRun + ' Parent RUNNING · ' + sonRun + ' Son RUNNING · ' + sonReady + ' READY · 真倉 OFF';
+
+    const foldHint = {
+      'BTC 5m new new': '（newnew 家族 · 預設摺起）',
+      'BTC 5m A': '（5m A 家族 · 預設摺起）',
+      'BTC 2 legs V2': '（V2 雙腿家族 · 預設摺起）',
+    };
+    $('families').innerHTML = FAM_ORDER.map((f, idx) => {
+      const pack = byFam[f] || { parent: null, sons: [] };
+      const p = pack.parent;
+      const isLiveNow = p && (p.live_enabled || p.status === 'LIVE' || String(p.live_tag||'') === 'LIVE' || String(p.display_name||'').includes('LIVE'));
+      const wasLive = p && !isLiveNow && (p.had_live || String(p.display_name||'').includes('曾live'));
+      const run = p && isRunning(p);
+      const livePill = isLiveNow ? ' <span class="pill live">LIVE</span>' : (wasLive ? ' <span class="pill live">曾live</span>' : '');
+      const modeMeta = isLiveNow ? '真倉' : '紙上';
+      const sonRun = (pack.sons || []).filter(isRunning).length;
+      const pPnL = (p && p.pnl != null) ? (p.pnl_label || money(p.pnl)) : '—';
+      const glance = (run ? 'Parent 跑緊 ' + pPnL : 'Parent —') + ' · Son跑 ' + sonRun + '/' + pack.sons.length + ' · ' + modeMeta;
+      const fid = 'fam-fold-' + idx;
+      return `<details class="fam-fold" id="${fid}" data-family="${esc(f)}">
+        <summary>
+          <span><span class="fam-fold-title">${esc(f)}</span>
+            <span class="fam-fold-hint">${esc(foldHint[f] || '（預設摺起）')}</span>${livePill}</span>
+          <span class="fam-fold-sub" style="color:var(--dim);font-size:.68rem">摺起 · ${esc(glance)}</span>
+        </summary>
+        <div class="fam-fold-inner">
+          <section class="fam" data-family="${esc(f)}">
+            <div class="fam-head">
+              <div class="fname">${esc(f)}${livePill}</div>
+              <div class="fmeta">${run ? 'Parent 跑緊' : 'Parent —'} · Son ${pack.sons.length} · ${modeMeta}</div>
+            </div>
+            ${parentHtml(p)}
+            <div class="sons">${pack.sons.map(sonHtml).join('') || '<div class="skel">未有 Son</div>'}</div>
+          </section>
+        </div>
+      </details>`;
+    }).join('');
+
+    wireLogFolds();
+    normalizeDeskFoldSummaries(document.getElementById('paper-run-fold'));
+    renderPaused(board);
+  }
+
+  function renderPaused(board) {
+    const box = $('paused-list');
+    const sub = $('paused-sub');
+    if (!box) return;
+    const fb = (board && board.family_board) || {};
+    const pack = fb.paused_unsatisfied || {};
+    let rows = Array.isArray(pack.rows) ? pack.rows.slice() : [];
+    // Fallback: gather paused sons from family rows if payload missing
+    if (!rows.length) {
+      const all = Array.isArray(fb.rows) ? fb.rows : [];
+      rows = all.filter((r) => r && r.role === 'son' && isPaused(r)).map((r) => ({
+        id: r.id,
+        name: r.display_name || r.id,
+        family: r.family,
+        pnl: r.pnl,
+        pnl_label: r.pnl_label,
+        trade_count: r.trade_count,
+        count_label: r.count_label,
+        status_label: r.status_label,
+      }));
+    }
+    if (sub) sub.textContent = (rows.length ? (rows.length + ' 隻 · 摺起') : '空') + ' · 資料保留';
+    if (!rows.length) {
+      box.innerHTML = '<div class="skel">暫無</div>';
+      return;
+    }
+    box.innerHTML = rows.map((r) => {
+      const name = r.name || r.display_name || r.id || '—';
+      const fam = r.family ? (' · ' + r.family) : '';
+      const pnl = r.pnl_label || money(r.pnl);
+      const n = r.count_label || ((r.trade_count != null) ? (r.trade_count + ' 單') : '—');
+      return `<div class="paused-row" data-id="${esc(r.id || '')}">
+        <div>
+          <span class="pill-stop">已停</span>
+          <span class="pname">${esc(name)}</span>
+          <span class="meta">${esc(fam)}</span>
+        </div>
+        <div class="sright">
+          <span class="${pnlClass(r.pnl)}">${esc(pnl)}</span>
+          <span class="meta"> · ${esc(String(n))}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function wireLogFolds() {
+    document.querySelectorAll('details.blog').forEach((el) => {
+      if (el._wired) return;
+      el._wired = true;
+      el.addEventListener('toggle', () => {
+        if (!el.open) return;
+        const id = el.getAttribute('data-bot');
+        if (!id) return;
+        loadBotLog(id, false);
+      });
+      // Live Son U log defaults open — load immediately (Son U only)
+      if (el.open) {
+        const id = el.getAttribute('data-bot');
+        if (id) loadBotLog(id, false);
+      }
+    });
+  }
+
+  function parseLogLine(line) {
+    const raw = String(line || '');
+    const parts = raw.split(' · ').map((x) => x.trim()).filter(Boolean);
+    let ts = '', status = '', side = '', pnl = '', ask = '', stake = '', slug = '', rest = '';
+    if (parts.length) {
+      const maybeTs = parts[0];
+      if (/^\d{4}-\d{2}-\d{2}/.test(maybeTs) || /^\d{2}:\d{2}/.test(maybeTs)) {
+        ts = maybeTs; parts.shift();
+      }
+    }
+    if (parts.length) { status = parts.shift(); }
+    if (parts.length && !/^pnl=/i.test(parts[0]) && parts[0].indexOf('=') < 0) {
+      side = parts.shift();
+    }
+    parts.forEach((p) => {
+      if (/^pnl=/i.test(p)) {
+        const m = p.match(/pnl=([+\-]?\d+(?:\.\d+)?)/i);
+        if (m) pnl = m[1];
+        const a = p.match(/ask=([+\-]?\d+(?:\.\d+)?)/i);
+        if (a) ask = a[1];
+        const s = p.match(/\$([+\-]?\d+(?:\.\d+)?)/);
+        if (s) stake = s[1];
+      } else if (/ask=/i.test(p)) {
+        const a = p.match(/ask=([+\-]?\d+(?:\.\d+)?)/i);
+        if (a) ask = a[1];
+      } else if (/btc-|eth-|updown|market/i.test(p) || p.length > 12) {
+        slug = p;
+      } else {
+        rest += (rest ? ' · ' : '') + p;
+      }
+    });
+    return { raw, ts, status, side, pnl, ask, stake, slug, rest };
+  }
+
+  function logStatusTag(status) {
+    const s = String(status || '').toLowerCase();
+    let cls = 'skip';
+    if (/win|won/.test(s)) cls = 'win';
+    else if (/loss|lost|fail/.test(s)) cls = 'loss';
+    else if (/open/.test(s)) cls = 'open';
+    else if (/enter|fill|closed|settled|hedg/.test(s)) cls = 'entered';
+    else if (/skip/.test(s)) cls = 'skip';
+    return `<span class="log-tag ${cls}">${esc(status || '—')}</span>`;
+  }
+
+  function renderStructuredLog(box, data, ms, mode) {
+    const lines = Array.isArray(data.lines) ? data.lines : [];
+    const stats = data.stats || {};
+    const trades = stats.trades || 0;
+    const skips = stats.skips || 0;
+    const total = stats.total || 0;
+    const head =
+      `<div class="log-head">` +
+      `<span class="log-pill">成交 ${trades}</span>` +
+      `<span class="log-pill">skip ${skips}</span>` +
+      `<span class="log-pill">總 ${total}</span>` +
+      (data.source ? `<span class="log-pill">${esc(String(data.source).replace(/^.*\//,''))}</span>` : '') +
+      `<span class="log-pill">${ms}ms</span>` +
+      `<span class="log-modes">` +
+      `<button type="button" data-log-mode="trades" class="${mode === 'trades' ? 'active' : ''}">成交</button>` +
+      `<button type="button" data-log-mode="all" class="${mode === 'all' ? 'active' : ''}">全部</button>` +
+      `</span></div>`;
+
+    let body = '';
+    if (!lines.length) {
+      if (mode === 'trades' && skips > 0 && trades === 0) {
+        body = `<div class="log-empty">呢段時間未有成交（${skips} 次 skip）· 撳「全部」睇近況活動</div>`;
+      } else {
+        body = `<div class="hint">${esc(data.note || '暫無 log')}</div>`;
+      }
+    } else {
+      body = `<div class="log-list">` + lines.map((ln) => {
+        const p = parseLogLine(ln);
+        const isSkip = /skip/i.test(p.status);
+        const pnlNum = parseFloat(p.pnl);
+        let pnlHtml = '';
+        if (p.pnl !== '' && !Number.isNaN(pnlNum)) {
+          const cls = pnlNum > 0 ? 'pos' : (pnlNum < 0 ? 'neg' : '');
+          pnlHtml = `<span class="log-pnl ${cls}">${pnlNum >= 0 ? '+' : ''}${pnlNum.toFixed(2)}</span>`;
+          if (p.stake) pnlHtml += ` <span class="log-meta">$${esc(p.stake)}</span>`;
+        }
+        const bits = [];
+        if (p.side) bits.push(`<span class="log-meta">${esc(p.side)}</span>`);
+        if (p.ask) bits.push(`<span class="log-meta">ask ${esc(p.ask)}</span>`);
+        if (p.rest) bits.push(`<span class="log-meta">${esc(p.rest)}</span>`);
+        return `<div class="log-row${isSkip ? ' skip' : ''}">
+          <div class="log-ts">${esc(p.ts || '—')} HKT</div>
+          <div class="log-main">${logStatusTag(p.status)} ${bits.join('')} ${pnlHtml}</div>
+          ${p.slug ? `<div class="log-slug">${esc(p.slug)}</div>` : ''}
+        </div>`;
+      }).join('') + `</div>`;
+    }
+    box.innerHTML = head + body;
+    box.querySelectorAll('.log-modes button[data-log-mode]').forEach((btn) => {
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const m = btn.getAttribute('data-log-mode') || 'trades';
+        box.dataset.mode = m;
+        _logLoaded.delete(box.getAttribute('data-log'));
+        loadBotLog(box.getAttribute('data-log'), true);
+      });
+    });
+  }
+
+  async function loadBotLog(botId, force) {
+    const box = document.querySelector('.logbox[data-log="' + CSS.escape(botId) + '"]');
+    if (!box) return;
+    const mode = box.dataset.mode || 'trades';
+    if (!force && _logLoaded.has(botId) && box.dataset.filled === '1' && box.dataset.modeLoaded === mode) return;
+    box.innerHTML = '<span class="hint">載入尾部…</span>';
+    const t0 = performance.now();
+    try {
+      const data = await getJson('/api/bot-log-tail?id=' + encodeURIComponent(botId) + '&n=60&mode=' + encodeURIComponent(mode), 15000);
+      const ms = Math.round(performance.now() - t0);
+      if (!data || !data.ok) throw new Error((data && data.error) || 'bad');
+      renderStructuredLog(box, data, ms, mode);
+      box.dataset.filled = '1';
+      box.dataset.modeLoaded = mode;
+      _logLoaded.add(botId);
+    } catch (e) {
+      box.innerHTML = '<span class="err">log 載入失敗 · ' + esc(e.message || e) + '</span>';
+    }
+  }
+
+  function renderServices(services) {
+    const grid = $('svc-grid');
+    if (!grid) return;
+    const list = (services && (services.services || services.rows || services)) || [];
+    const arr = Array.isArray(list) ? list : [];
+    if (!arr.length) {
+      grid.innerHTML = '<span class="chip">服務狀態暫無</span>';
+      return;
+    }
+    grid.innerHTML = arr.slice(0, 24).map((s) => {
+      const name = s.name || s.unit || s.id || 'svc';
+      const st = String(s.state || s.status || '').toLowerCase();
+      const on = /run|active/.test(st);
+      return `<span class="chip ${on ? 'ok' : ''}">${esc(name)} · ${esc(st || '—')}</span>`;
+    }).join('');
+  }
+
+  async function refresh() {
+    if (_busy) return;
+    _busy = true;
+    const btn = $('btn-refresh');
+    if (btn) btn.textContent = '…';
+    $('clock').textContent = nowHkt();
+    try {
+      // Only light endpoints on page refresh — NO competition-log, NO strategy-overview
+      const [board, services] = await Promise.all([
+        getJson('/api/all-paper-strategies', 20000),
+        getJson('/api/services-status', 8000).catch(() => null),
+      ]);
+      if (board && board.ok !== false) {
+        _board = board;
+        renderHighLive(board);
+        renderSportsFv(board);
+        renderNewborn(board);
+        renderFamilies(board);
+      } else if (_board) {
+        renderHighLive(_board);
+        renderSportsFv(_board);
+        renderNewborn(_board);
+        renderFamilies(_board);
+      } else {
+        // 即使 API 失敗都要清走 Sports FV 無限 spinner
+        renderSportsFv({ sports_fv_board: { status_label: '暫讀唔到', status: 'offline', launched: false, unit_state: '—', note: 'API 失敗 · 稍後刷新', sons: [{ status_label: '暫讀唔到', launched: false, unit_state: '—' }] } });
+        $('families').innerHTML = '<div class="skel">讀唔到 Family board</div>';
+      }
+      if (services) renderServices(services);
+      $('foot-upd').textContent = '更新 ' + nowHkt();
+      // Re-fetch only logs that are currently open (still lazy, still tail)
+      document.querySelectorAll('details.blog[open]').forEach((el) => {
+        const id = el.getAttribute('data-bot');
+        if (id) loadBotLog(id, true);
+      });
+    } catch (e) {
+      console.error(e);
+      if (!_board) $('families').innerHTML = '<div class="skel">刷新失敗</div>';
+    } finally {
+      _busy = false;
+      if (btn) btn.textContent = '刷新';
+    }
+  }
+
+  watchDeskFoldSummaries();
+  $('btn-refresh').addEventListener('click', () => refresh());
+  refresh();
+  setInterval(refresh, 20000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refresh();
+  });
+})();
+</script>
+</body>
+</html>

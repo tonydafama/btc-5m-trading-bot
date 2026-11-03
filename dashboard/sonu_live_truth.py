@@ -120,9 +120,23 @@ def _unit_enabled(unit: str) -> bool:
         return False
 
 
+def _unit_active(unit: str) -> bool:
+    try:
+        proc = subprocess.run(
+            ["systemctl", "is-active", unit],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+        return proc.stdout.strip() == "active"
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
 def live_active(root: Path) -> bool:
-    """On-air 真倉 only when exec path is real and unit enabled."""
-    return exec_is_real_live(root) and _unit_enabled(SONU_EXEC_UNIT)
+    """On-air 真倉 only when exec path is real and live-exec unit is running."""
+    return exec_is_real_live(root) and _unit_active(SONU_EXEC_UNIT)
 
 
 def live_control_payload(root: Path, *, wallet_cash_usdc: float | None = None) -> dict[str, Any]:
@@ -135,6 +149,8 @@ def live_control_payload(root: Path, *, wallet_cash_usdc: float | None = None) -
     wallet_ok = wallet_cash_usdc is not None and float(wallet_cash_usdc) >= min_wallet
     if active:
         label_tc = "而家模式：Live（真倉 ON）"
+    elif exec_real and _unit_enabled(SONU_EXEC_UNIT) and not active:
+        label_tc = "Live exec 已 enable · 等 unit active"
     elif armed and placeholder:
         label_tc = "PREP · 紙上 armed · 真倉路徑未接好（live-exec 仍 DRY_RUN placeholder）"
     elif placeholder:
@@ -209,7 +225,12 @@ def apply_live_control_action(root: Path, action: str, *, wallet_cash_usdc: floa
 
     _write_dotenv_key(root, "SONU_LIVE_ARMED_PREP", "1")
     try:
-        subprocess.run(["systemctl", "enable", "--now", SONU_EXEC_UNIT], check=False, timeout=8)
+        subprocess.run(["systemctl", "stop", SONU_PAPER_UNIT], check=False, timeout=8)
+        subprocess.run(["systemctl", "disable", SONU_PAPER_UNIT], check=False, timeout=8)
+    except (OSError, subprocess.SubprocessError):
+        pass
+    try:
+        subprocess.run(["systemctl", "enable", "--now", SONU_EXEC_UNIT], check=False, timeout=12)
     except (OSError, subprocess.SubprocessError):
         pass
     out = live_control_payload(root, wallet_cash_usdc=wallet_cash_usdc)

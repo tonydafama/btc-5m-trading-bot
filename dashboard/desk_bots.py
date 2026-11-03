@@ -172,10 +172,19 @@ def current_bet_size(root: Path, bot_id: str, env: dict[str, str] | None = None)
         return float(spec["default_bet_size"])
 
 
-def bet_view(root: Path, bot_id: str, env: dict[str, str] | None = None) -> dict[str, Any]:
+def bet_view(
+    root: Path,
+    bot_id: str,
+    env: dict[str, str] | None = None,
+    *,
+    wallet_cash_usdc: float | None = None,
+) -> dict[str, Any]:
     spec = BOT_SPECS[bot_id]
     bet = current_bet_size(root, bot_id, env)
     stake = stake_usd_for(bot_id, bet)
+    capital = float(spec["capital_usd"])
+    if bot_id == SONU_ID and wallet_cash_usdc is not None:
+        capital = round(float(wallet_cash_usdc), 2)
     return {
         "bet_size": bet,
         "bet_multiplier": int(spec["multiplier"]),
@@ -184,15 +193,21 @@ def bet_view(root: Path, bot_id: str, env: dict[str, str] | None = None) -> dict
         "per_leg_usd": fmt_num(bet if int(spec["multiplier"]) == 2 else stake),
         "rule_label": spec["rule_label"],
         "rule_line": rule_line(bot_id, bet),
-        "capital_usd": float(spec["capital_usd"]),
+        "capital_usd": capital,
     }
 
 
-def decorate_bet(root: Path, row: dict[str, Any], env: dict[str, str] | None = None) -> dict[str, Any]:
+def decorate_bet(
+    root: Path,
+    row: dict[str, Any],
+    env: dict[str, str] | None = None,
+    *,
+    wallet_cash_usdc: float | None = None,
+) -> dict[str, Any]:
     bot_id = str(row.get("id") or "")
     if bot_id not in BOT_SPECS:
         return row
-    row.update(bet_view(root, bot_id, env))
+    row.update(bet_view(root, bot_id, env, wallet_cash_usdc=wallet_cash_usdc))
     return row
 
 
@@ -411,7 +426,7 @@ def desk_status(root: Path, *, wallet_cash_usdc: float | None = None, env: dict[
                 "label_tc": extra.get("label_tc"),
                 "live_active": bool(extra.get("live_active")),
                 "exec_dry_run_placeholder": bool(extra.get("exec_dry_run_placeholder", not extra.get("exec_is_real_live", False))),
-                **bet_view(root, bot_id, env),
+                **bet_view(root, bot_id, env, wallet_cash_usdc=wallet_cash_usdc),
             }
         )
     return {"ok": True, "bots": bots, "wallet_cash_usdc": wallet_cash_usdc}
