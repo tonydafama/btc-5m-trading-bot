@@ -54,11 +54,52 @@ def patch_template() -> None:
           : ((r.had_live || r.live_tag === '曾live')
             ? '<span class="chip">曾live</span>'
             : '');"""
-    new_pill = """        const lampOn = deskBotMode(r) === 'live' && !!r.live_enabled;
+    empty_pill = """        const lampOn = deskBotMode(r) === 'live' && !!r.live_enabled;
         const livePill = lampOn ? '<span class="hl-badge is-on" aria-label="LIVE ON">LIVE ON</span>' : '';"""
-    if old_pill not in text:
+    ready_pill = """        const lampOn = deskBotMode(r) === 'live' && !!r.live_enabled;
+        const livePill = lampOn
+          ? '<span class="hl-badge is-on" aria-label="LIVE ON">LIVE ON</span>'
+          : '<span class="hl-badge is-off" aria-label="LIVE ON standby">LIVE ON</span>';"""
+    if ready_pill in text:
+        pass
+    elif empty_pill in text:
+        text = text.replace(empty_pill, ready_pill)
+    elif old_pill in text:
+        text = text.replace(old_pill, ready_pill)
+    else:
         raise SystemExit("livePill block missing")
-    text = text.replace(old_pill, new_pill)
+    off_dark = """.hl-badge.is-off {
+  color: #2a2a2a;
+  -webkit-text-fill-color: #2a2a2a;
+  border-color: #111;
+  background: #0a0a0a;
+  text-shadow: none;
+  box-shadow: none;
+  animation: none;
+  filter: brightness(0.55);
+}
+.hl-badge.is-off::before {
+  border-color: #1a1a1a;
+  background: #151515;
+  box-shadow: none;
+}"""
+    off_ready = """.hl-badge.is-off {
+  color: #c8b89a;
+  -webkit-text-fill-color: #c8b89a;
+  border-color: #6a5a3a;
+  background: #1a140c;
+  text-shadow: none;
+  box-shadow: inset 0 0 0 1px rgba(224,181,103,.15);
+  animation: none;
+  filter: none;
+}
+.hl-badge.is-off::before {
+  border-color: #6a5a3a;
+  background: #3a3024;
+  box-shadow: none;
+}"""
+    if off_dark in text:
+        text = text.replace(off_dark, off_ready)
     old_fold = """        if (String(r.id || '') === 'dual-leg-live-v2') {
           const v2Title = esc(r.display_name || 'BTC 2 legs V2 · 曾live');
           return `<details class="fam-fold desk-v2-fold" id="desk-v2-fold"><summary><span class="fam-fold-title">${v2Title}</span><span class="fam-fold-hint"> · 已摺 · 唔開 V2 live</span></summary><div class="fam-fold-inner">${card}</div></details>`;
