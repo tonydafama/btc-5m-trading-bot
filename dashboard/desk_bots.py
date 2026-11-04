@@ -39,8 +39,8 @@ BOT_SPECS: dict[str, dict[str, Any]] = {
     },
     V2_ID: {
         "id": V2_ID,
-        "display_name": "BTC 2 legs V3",
-        "rule_label": "v3",
+        "display_name": "BTC 2 legs V2",
+        "rule_label": "v2",
         "multiplier": 2,
         "default_bet_size": 10.0,
         "capital_usd": 100.0,
@@ -313,7 +313,7 @@ def live_conflict_message(root: Path, bot_id: str) -> str | None:
     except Exception:
         pass
     if bot_id != V2_ID and v2_unit_is_live(root):
-            names.append("BTC 2 legs V3")
+            names.append("BTC 2 legs V2")
     try:
         from v2_newnew_live_truth import live_active as na_on
 
@@ -476,7 +476,7 @@ def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -
                 "action": action,
                 "desk_mode": "paper",
                 "display_name": BOT_SPECS[V2_ID]["display_name"],
-                "message_tc": "BTC 2 legs V3 已切換 → Paper（真倉 OFF）",
+                "message_tc": "BTC 2 legs V2 已切換 → Paper（真倉 OFF）",
             }
         )
         return out
@@ -522,7 +522,7 @@ def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -
             "bot_id": V2_ID,
             "action": action,
             "error": "live_unit_down",
-            "error_tc": "BTC 2 legs V3 live unit 未啟動，仍然 Paper",
+            "error_tc": "BTC 2 legs V2 live unit 未啟動，仍然 Paper",
         }
     out.update(
         {
@@ -531,7 +531,7 @@ def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -
             "action": action,
             "desk_mode": "live",
             "display_name": BOT_SPECS[V2_ID]["display_name"],
-            "message_tc": "BTC 2 legs V3 已切換 → Live（真倉 ON）",
+            "message_tc": "BTC 2 legs V2 已切換 → Live（真倉 ON）",
         }
     )
     return out

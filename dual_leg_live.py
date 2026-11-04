@@ -172,7 +172,7 @@ def now_hkt() -> str:
 
 # Fresh first legs stop at 18:00 and start again at 00:00. An open pair still hedges.
 ENTRY_PAUSE_REMARK_TC = (
-    "BTC 2 legs V3：不設時段暫停，全日按市況開新倉。已開倉會自己行完。"
+    "BTC 2 legs V2：香港時間 18:00–24:00 暫停開新倉，00:00 再開始。已開倉會自己行完。"
 )
 ENTRY_PAUSE_ACTIVE_REMARK_TC = (
     "而家暫停開新倉（香港時間 18:00–24:00），00:00 再開始。已開倉會自己行完。"

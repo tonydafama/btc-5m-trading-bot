@@ -439,8 +439,7 @@ def run_forever(poll_sec: float) -> int:
                 and ev.get("would_leg1")
                 and not _block_entry_pause
             ):
-                # V3 always requires the other side ≤ opp_before_leg1_max.
-                # Other profiles keep the env gate, default off.
+                # Profiles that set require_opp_before_leg1, or REQUIRE_OPP_BEFORE_LEG1=1.
                 _req_opp = bool(profile.require_opp_before_leg1) or (
                     (os.getenv("REQUIRE_OPP_BEFORE_LEG1") or "0").strip().lower()
                     in {"1", "true", "yes", "on"}
