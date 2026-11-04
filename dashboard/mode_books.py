@@ -389,6 +389,18 @@ def _v2_paper(row: dict[str, Any]) -> bool:
     return (not session) or ("v2" in session)
 
 
+def _v2_prior_live_archive(root: Path) -> Path | None:
+    """The live ledger archived when V3 started. Newest snapshot wins."""
+    base = root / "logs" / "archive"
+    if not base.is_dir():
+        return None
+    found = [path for path in base.glob("v2_live_before_v3_*/dual_leg_live_trades.json") if path.is_file()]
+    if not found:
+        return None
+    found.sort(key=lambda path: path.stat().st_mtime, reverse=True)
+    return found[0]
+
+
 def _live_lines(
     current: list[dict[str, Any]],
     history: list[dict[str, Any]],
@@ -397,25 +409,38 @@ def _live_lines(
     current_open: bool = False,
     current_started: datetime | None = None,
     pnl_net_of_fees: bool = False,
+    prior: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     lines: list[dict[str, Any]] = []
     current_stats = summarize(current)
     history_stats = summarize(history)
+    prior_rows = prior or []
+    prior_stats = summarize(prior_rows)
     current_n = current_stats["settled_n"] + current_stats["breakeven"]
     history_n = history_stats["settled_n"] + history_stats["breakeven"]
+    prior_n = prior_stats["settled_n"] + prior_stats["breakeven"]
+    v3_book = prior is not None
     if current_n or current_open:
         if current_n:
             be = f" · 打和 {current_stats['breakeven']} 唔計勝率" if current_stats["breakeven"] else ""
             note = f"今次真倉 · {current_stats['wl_label']}{be}"
+            if v3_book:
+                note = f"今次真倉 · V3 · {current_stats['wl_label']}{be}"
             if pnl_net_of_fees:
                 note += " · PnL 已扣 taker 手續費"
         else:
-            note = "今次未有真倉成交"
+            note = "今次真倉 · V3 · 未有成交" if v3_book else "今次未有真倉成交"
         lines.append(
             _line("今次", current, note, open_book=current_open, started_at=current_started, empty_live=not current_n)
         )
     else:
         lines.append(_line("今次", [], "今次未開始。Live 掣成功開真倉之後，呢度先會有新時段。", empty_live=True))
+    if prior_n:
+        be = f" · 打和 {prior_stats['breakeven']} 唔計勝率" if prior_stats["breakeven"] else ""
+        note = f"上次真倉 · V2 · {prior_stats['wl_label']}{be}"
+        if pnl_net_of_fees:
+            note += " · PnL 已扣 taker 手續費"
+        lines.append(_line("上次", prior_rows, note))
     if history_n:
         be = f" · 打和 {history_stats['breakeven']} 唔計勝率" if history_stats["breakeven"] else ""
         lines.append(_line("歷史", history, f"歷史真倉 {segments} 段{be}"))
@@ -446,7 +471,14 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
         prior = _prior_paper(root, "dual_leg_btc_paper_trades.json", paper, _v2_paper)
         seen: set[str] = set()
         live_now, _ = _take([root / "logs" / "dual_leg_live_trades.json"], _parent_live, seen)
-        history, segments = _take(_archive_files(root, "dual_leg_live_trades.json"), _parent_live, seen)
+        prior_live_path = _v2_prior_live_archive(root)
+        prior_live: list[dict[str, Any]] = []
+        if prior_live_path is not None:
+            prior_live, _ = _take([prior_live_path], _parent_live, seen)
+        history_files = [
+            path for path in _archive_files(root, "dual_leg_live_trades.json") if path != prior_live_path
+        ]
+        history, segments = _take(history_files, _parent_live, seen)
         paper_open = _unit_active_since_hkt(OBSERVER_UNIT) is not None
         paper_lines = [_line("今次", paper, _paper_note(paper, prior=False), open_book=paper_open)]
         if prior:
@@ -461,6 +493,7 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
                 current_open=live_since is not None,
                 current_started=live_since,
                 pnl_net_of_fees=True,
+                prior=prior_live,
             ),
         )
 

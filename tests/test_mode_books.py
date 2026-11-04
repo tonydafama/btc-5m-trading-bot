@@ -184,6 +184,28 @@ class ModeBookTests(unittest.TestCase):
         self.assertEqual(row["pnl"], 0.0)
         self.assertEqual(row["settled_n"], 0)
 
+    def test_v2_live_archive_sits_under_v3_as_last_session(self) -> None:
+        _dump(
+            self.root / "logs" / "dual_leg_live_trades.json",
+            [{"slug": "v3", "mode": "LIVE", "profile": "v3", "trade_result": "WIN", "pnl": 2, "opened_at_hkt": "2026-11-04 11:10:00 HKT", "settled_at_hkt": "2026-11-04 11:15:00 HKT"}],
+        )
+        _dump(
+            self.root / "logs" / "archive" / "v2_live_before_v3_20261104-110421" / "dual_leg_live_trades.json",
+            [{"slug": "v2", "mode": "LIVE", "profile": "v2", "trade_result": "WIN", "pnl": 5, "opened_at_hkt": "2026-11-03 16:11:00 HKT", "settled_at_hkt": "2026-11-03 16:20:00 HKT"}],
+        )
+        _dump(
+            self.root / "logs" / "archive" / "older" / "dual_leg_live_trades.json",
+            [{"slug": "old", "mode": "LIVE", "profile": "v2", "trade_result": "LOSS", "pnl": -1, "opened_at_hkt": "2026-10-24 13:27:00 HKT", "settled_at_hkt": "2026-10-24 14:00:00 HKT"}],
+        )
+        books = mb.books_for_bot(self.root, mb.V2_ID)
+        scopes = [line["scope"] for line in books["live"]["rows"]]
+        self.assertEqual(scopes, ["今次", "上次", "歷史"])
+        self.assertEqual(books["live"]["rows"][0]["pnl"], 2.0)
+        self.assertIn("V3", books["live"]["rows"][0]["note"])
+        self.assertEqual(books["live"]["rows"][1]["pnl"], 5.0)
+        self.assertIn("V2", books["live"]["rows"][1]["note"])
+        self.assertEqual(books["live"]["rows"][2]["pnl"], -1.0)
+
     def test_open_book_runs_until_now(self) -> None:
         line = mb._line(
             "今次",
