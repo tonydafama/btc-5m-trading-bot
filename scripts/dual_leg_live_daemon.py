@@ -439,12 +439,18 @@ def run_forever(poll_sec: float) -> int:
                 and ev.get("would_leg1")
                 and not _block_entry_pause
             ):
-                # live 影武者 / Son F: optional opp-before gate (default OFF → parent live unchanged)
-                _req_opp = (os.getenv("REQUIRE_OPP_BEFORE_LEG1") or "0").strip().lower() in {
-                    "1", "true", "yes", "on"
-                }
+                # V3 always requires the other side ≤ opp_before_leg1_max.
+                # Other profiles keep the env gate, default off.
+                _req_opp = bool(profile.require_opp_before_leg1) or (
+                    (os.getenv("REQUIRE_OPP_BEFORE_LEG1") or "0").strip().lower()
+                    in {"1", "true", "yes", "on"}
+                )
                 if _req_opp:
-                    _opp_max = float(os.getenv("OPP_BEFORE_LEG1_MAX") or 0.50)
+                    _opp_max = (
+                        float(profile.opp_before_leg1_max)
+                        if profile.require_opp_before_leg1
+                        else float(os.getenv("OPP_BEFORE_LEG1_MAX") or 0.50)
+                    )
                     _leg1 = ev["would_leg1"]
                     _side1 = str(_leg1["side"])
                     _opp_side = "down" if _side1 == "up" else "up"

@@ -60,6 +60,9 @@ class DualLegProfile:
     allowed_regimes: tuple[str, ...] = ("volatile_chop",)
     require_binance_regime: bool = True
     bonus_watch_ask: float = 0.20
+    # First leg only when the other side is already cheap enough to hedge now.
+    require_opp_before_leg1: bool = False
+    opp_before_leg1_max: float = 0.50
 
     def required_depth_usd(self) -> float:
         if self.strict_fill:
@@ -140,7 +143,7 @@ PROFILES: dict[str, DualLegProfile] = {
         max_spread=0.12,
         allowed_regimes=("volatile_chop", "quiet_mixed"),
     ),
-    # Live book from 2026-11-04: V2 gates, chop only, no clock pause, $15 per leg.
+    # Live from 2026-11-04: chop only, no clock pause, first leg only if opposite ≤ 0.50.
     "v3": DualLegProfile(
         name="v3",
         unit_usd=15.0,
@@ -156,6 +159,8 @@ PROFILES: dict[str, DualLegProfile] = {
         max_opposite_ask=0.72,
         max_spread=0.12,
         allowed_regimes=("volatile_chop",),
+        require_opp_before_leg1=True,
+        opp_before_leg1_max=0.50,
     ),
 }
 

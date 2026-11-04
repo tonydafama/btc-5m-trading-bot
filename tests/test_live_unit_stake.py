@@ -78,6 +78,8 @@ class V3ProfileTests(unittest.TestCase):
         self.assertEqual(profile.allowed_regimes, ("volatile_chop",))
         self.assertEqual(profile.unit_usd, 15.0)
         self.assertEqual(profile.max_opposite_ask, 0.72)
+        self.assertTrue(profile.require_opp_before_leg1)
+        self.assertEqual(profile.opp_before_leg1_max, 0.50)
         self.assertNotIn("quiet_mixed", profile.allowed_regimes)
 
     def test_entry_opposite_records_ask_and_bid(self) -> None:
