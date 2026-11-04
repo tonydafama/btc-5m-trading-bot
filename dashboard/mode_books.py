@@ -99,6 +99,7 @@ def row_key(row: dict[str, Any]) -> str:
 def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
     wins = losses = breakeven = skips = 0
     pnl = 0.0
+    fee = 0.0
     seen: set[str] = set()
     for row in rows:
         if not isinstance(row, dict):
@@ -124,6 +125,10 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 pnl += float(raw or 0)
             except (TypeError, ValueError):
                 pass
+            try:
+                fee += float(row.get("total_estimated_fee") or 0)
+            except (TypeError, ValueError):
+                pass
     return {
         "wins": wins,
         "losses": losses,
@@ -132,6 +137,7 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "settled_n": wins + losses,
         "pnl": round(pnl, 2),
         "pnl_label": money(pnl),
+        "fee_usd": round(fee, 2),
         "wr_label": wr_label(wins, losses),
         "wl_label": wl_label(wins, losses, breakeven),
     }
@@ -426,8 +432,8 @@ def _live_lines(
             note = f"今次真倉 · {current_stats['wl_label']}{be}"
             if v3_book:
                 note = f"今次真倉 · V3 · {current_stats['wl_label']}{be}"
-            if pnl_net_of_fees:
-                note += " · PnL 已扣 taker 手續費"
+            if pnl_net_of_fees and current_stats.get("fee_usd"):
+                note += f" · 手續費 ${current_stats['fee_usd']:.2f}"
         else:
             note = "今次真倉 · V3 · 未有成交" if v3_book else "今次未有真倉成交"
         lines.append(
@@ -438,12 +444,15 @@ def _live_lines(
     if prior_n:
         be = f" · 打和 {prior_stats['breakeven']} 唔計勝率" if prior_stats["breakeven"] else ""
         note = f"上次真倉 · V2 · {prior_stats['wl_label']}{be}"
-        if pnl_net_of_fees:
-            note += " · PnL 已扣 taker 手續費"
+        if pnl_net_of_fees and prior_stats.get("fee_usd"):
+            note += f" · 手續費 ${prior_stats['fee_usd']:.2f}"
         lines.append(_line("上次", prior_rows, note))
     if history_n:
         be = f" · 打和 {history_stats['breakeven']} 唔計勝率" if history_stats["breakeven"] else ""
-        lines.append(_line("歷史", history, f"歷史真倉 {segments} 段{be}"))
+        hist_note = f"歷史真倉 {segments} 段{be}"
+        if pnl_net_of_fees and history_stats.get("fee_usd"):
+            hist_note += f" · 手續費 ${history_stats['fee_usd']:.2f}"
+        lines.append(_line("歷史", history, hist_note))
     return lines
 
 
