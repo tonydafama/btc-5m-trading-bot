@@ -73,13 +73,12 @@ class EntryPauseTests(unittest.TestCase):
 
 
 class V3ProfileTests(unittest.TestCase):
-    def test_v3_is_chop_only_fifteen_per_leg(self) -> None:
+    def test_v3_is_chop_only_ten_per_leg_and_waits_for_hedge(self) -> None:
         profile = live.PROFILES["v3"]
         self.assertEqual(profile.allowed_regimes, ("volatile_chop",))
-        self.assertEqual(profile.unit_usd, 15.0)
+        self.assertEqual(profile.unit_usd, 10.0)
         self.assertEqual(profile.max_opposite_ask, 0.72)
-        self.assertTrue(profile.require_opp_before_leg1)
-        self.assertEqual(profile.opp_before_leg1_max, 0.50)
+        self.assertFalse(profile.require_opp_before_leg1)
         self.assertNotIn("quiet_mixed", profile.allowed_regimes)
 
     def test_entry_opposite_records_ask_and_bid(self) -> None:

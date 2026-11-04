@@ -143,10 +143,11 @@ PROFILES: dict[str, DualLegProfile] = {
         max_spread=0.12,
         allowed_regimes=("volatile_chop", "quiet_mixed"),
     ),
-    # Live from 2026-11-04: chop only, no clock pause, first leg only if opposite ≤ 0.50.
+    # Highest recorded book: chop only, no clock pause, enter then wait for the hedge.
+    # Opposite may be up to 0.72. Do not require it to be ≤ 0.50 before leg 1.
     "v3": DualLegProfile(
         name="v3",
-        unit_usd=15.0,
+        unit_usd=10.0,
         max_ask=0.50,
         min_depth_usd=3.0,
         depth_mult=2.0,
@@ -159,7 +160,7 @@ PROFILES: dict[str, DualLegProfile] = {
         max_opposite_ask=0.72,
         max_spread=0.12,
         allowed_regimes=("volatile_chop",),
-        require_opp_before_leg1=True,
+        require_opp_before_leg1=False,
         opp_before_leg1_max=0.50,
     ),
 }
