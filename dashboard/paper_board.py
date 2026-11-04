@@ -247,6 +247,49 @@ def _ledger_stats(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _gold_box_window_funnel(
+    root: Path,
+    *,
+    bot_id: str,
+    live_active: bool,
+    ledger_rows: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Window funnel for gold-box cards. 考慮 equals 過濾 (same window count); UI shows 過濾 + 入場 only."""
+    from desk_bots import V2_ID
+
+    if bot_id == V2_ID and live_active:
+        st = _read_json(root / "logs" / "dual_leg_live_status.json", {})
+        windows = st.get("samples_total")
+        entered = st.get("settled_trades")
+        if entered is None:
+            entered = st.get("posted_live_orders")
+        if windows is not None:
+            w = int(windows)
+            e = int(entered or 0)
+            return {
+                "considered": w,
+                "filtered": w,
+                "entered": e,
+                "trades": e,
+                "ledger": "live",
+            }
+
+    rows = list(ledger_rows or [])
+    if not rows and bot_id == V2_ID:
+        path = root / "logs" / ("dual_leg_live_trades.json" if live_active else "dual_leg_btc_paper_trades.json")
+        rows = _file_rows(path) if path.is_file() else []
+    stats = _ledger_stats(rows) if rows else {"trade_count": 0, "scan_count": 0}
+    windows = int(stats.get("scan_count") or len(rows))
+    entered = int(stats.get("trade_count") or 0)
+    return {
+        "considered": windows,
+        "filtered": windows,
+        "entered": entered,
+        "trades": entered,
+        "ledger": "live" if live_active else "paper",
+    }
+
+
 def _count_label(stats: dict[str, Any]) -> str:
     trades = int(stats.get("trade_count") or 0)
     scans = int(stats.get("scan_count") or 0)
@@ -1072,6 +1115,25 @@ def _fair_value_experiment(root: Path) -> dict[str, Any]:
     }
 
 
+def _wallet_cash_for_high_live(root: Path) -> float | None:
+    """Prefer live daemon status / on-disk cache so the gold box matches the bot ledger."""
+    status = _read_json(root / "logs" / "dual_leg_live_status.json", {})
+    raw = status.get("wallet_cash_usdc")
+    if raw is not None:
+        try:
+            return round(float(raw), 2)
+        except (TypeError, ValueError):
+            pass
+    cache = _read_json(root / "logs" / "wallet_cache.json", {})
+    raw = cache.get("cash_usdc") or cache.get("available_usdc")
+    if raw is not None:
+        try:
+            return round(float(raw), 2)
+        except (TypeError, ValueError):
+            pass
+    return None
+
+
 def _v2_golive_prep(root: Path, env: dict[str, str]) -> dict[str, Any]:
     """Desk V2 live-prep snapshot (DRY_RUN placeholder — not go-live)."""
     dry = _tri_flag(env.get("DUAL_LEG_LIVE_DRY_RUN"))
@@ -1080,9 +1142,14 @@ def _v2_golive_prep(root: Path, env: dict[str, str]) -> dict[str, Any]:
     pnl = meta.get("realized_pnl_usd")
     settled = meta.get("settled_trades")
     if pnl is None:
-        logs = _named_logs(root, lambda n: "dual" in n and "leg" in n and "live" in n)
-        if logs:
-            stats = _ledger_stats(_file_rows(logs[0]))
+        status = _read_json(root / "logs" / "dual_leg_live_status.json", {})
+        if status.get("realized_pnl_usd") is not None:
+            pnl = status.get("realized_pnl_usd")
+            settled = status.get("settled_trades")
+    if pnl is None:
+        trades_path = root / "logs" / "dual_leg_live_trades.json"
+        if trades_path.is_file():
+            stats = _ledger_stats(_file_rows(trades_path))
             pnl = stats.get("pnl")
             settled = stats.get("trade_count")
     return {
@@ -1101,8 +1168,19 @@ def _v2_golive_prep(root: Path, env: dict[str, str]) -> dict[str, Any]:
     }
 
 
+def _sonu_live_truth_module():
+    try:
+        import sonu_live_truth as mod
+    except ImportError:
+        import dashboard.sonu_live_truth as mod
+    return mod
+
+
 def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
-    from sonu_live_truth import SONU_BOT_ID, live_active, live_armed_prep
+    mod = _sonu_live_truth_module()
+    SONU_BOT_ID = mod.SONU_BOT_ID
+    live_active = mod.live_active
+    live_armed_prep = mod.live_armed_prep
 
     paths = [
         root / "logs" / "sons" / f"{SONU_BOT_ID}_trades.json",
@@ -1118,7 +1196,7 @@ def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
     real_live = live_active(root)
     if real_live:
         status_label = "跑緊 · 真倉 ON"
-        change = "Live · 真倉 ON"
+        change = "Live · 真倉 ON · $10/注"
     elif armed:
         status_label = "跑緊 · 紙上 armed · 真倉未開"
         change = "PREP · 紙上 armed · 真倉 OFF"
@@ -1127,16 +1205,17 @@ def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
         change = "Paper prep · 真倉 OFF"
     trades = int(stats.get("trade_count") or 0)
     considered = int(stats.get("scan_count") or trades)
-    filtered = max(0, considered - trades)
+    filtered = considered
     row = {
         "id": SONU_BOT_ID,
-        "display_name": "終極5m · Live預備",
+        "display_name": "終極5m" if real_live else "終極5m · Live預備",
         "desk_section": "high_live",
         "family": "Live",
         "role": "son",
         "son": "UL",
         "launched": True,
         "live_enabled": real_live,
+        "live_on_air": real_live,
         "dry_run": not real_live,
         "mode": "live" if real_live else ("prep" if armed else "paper"),
         "status": "RUNNING · paper",
@@ -1175,6 +1254,10 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
     pnl = prep.get("realized_pnl_usd")
     settled = prep.get("settled_trades")
     mode = v2_mode_view(root, env)
+    live_on = bool(mode["live_active"])
+    wf = _gold_box_window_funnel(root, bot_id="dual-leg-live-v2", live_active=live_on)
+    entered = int(wf.get("entered") or settled or 0)
+    windows = int(wf.get("filtered") or 0)
     row = {
         "id": "dual-leg-live-v2",
         "display_name": "BTC 2 legs V2",
@@ -1183,6 +1266,8 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
         "role": "parent",
         "launched": bool(mode["live_active"] or mode["live_armed"]),
         "live_enabled": bool(mode["live_active"]),
+        "live_on_air": bool(mode.get("live_on_air")),
+        "entry_pause": mode.get("entry_pause"),
         "live_armed": bool(mode["live_armed"] or mode["live_armed_prep"]),
         "had_live": True,
         "live_tag": "曾live",
@@ -1195,44 +1280,110 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
         "label_tc": mode["label_tc"],
         "pnl": pnl,
         "pnl_label": _money(float(pnl or 0)),
-        "trade_count": settled,
-        "count_label": f"{settled or 0} 單" if settled is not None else "—",
+        "trade_count": entered,
+        "count_label": f"{entered} 單 · {windows} 窗" if windows else f"{entered} 單",
         "settled_n": settled,
         "wins": None,
         "losses": None,
         "wr_label": "曾live",
         "capital_usd": 100.0,
-        "window_funnel": {
-            "considered": 0,
-            "filtered": 0,
-            "entered": 0,
-            "trades": 0,
-            "ledger": "live" if mode["live_active"] else "paper",
-        },
+        "trades_windows_line": f"Trades {entered} 單 · {windows} 窗 · 過濾 {windows}",
+        "window_funnel": wf,
         "unit": "dual-leg-live-v2",
     }
     return decorate_bet(root, row, env)
 
 
+def _na_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
+    from desk_bots import NA_ID, decorate_bet
+
+    try:
+        from v2_newnew_live_truth import live_active as na_live_active
+        from v2_newnew_live_truth import live_control_payload
+    except ImportError:
+        from dashboard.v2_newnew_live_truth import live_active as na_live_active
+        from dashboard.v2_newnew_live_truth import live_control_payload
+
+    na = live_control_payload(root)
+    paths = [
+        root / "logs" / "sons" / f"{NA_ID}_trades.json",
+        root / "logs" / f"{NA_ID}_trades.json",
+    ]
+    son_path = next((p for p in paths if p.is_file()), None)
+    rows = _file_rows(son_path) if son_path else []
+    stats = _ledger_stats(rows) if rows else {"trade_count": 0, "scan_count": 0, "pnl": 0.0}
+    active = na_live_active(root)
+    wf = _gold_box_window_funnel(root, bot_id=NA_ID, live_active=active, ledger_rows=rows)
+    entered = int(wf.get("entered") or 0)
+    windows = int(wf.get("filtered") or 0)
+    row = {
+        "id": NA_ID,
+        "display_name": na.get("display_name") or "V2 newnew A · abort",
+        "desk_section": "high_live",
+        "family": "BTC 5m new new",
+        "role": "son",
+        "launched": True,
+        "live_enabled": active,
+        "live_on_air": active,
+        "live_armed": bool(na.get("live_armed") or na.get("live_armed_prep")),
+        "dry_run": not bool(na.get("exec_is_real_live")),
+        "mode": "live" if active else "paper",
+        "status": na.get("status") or "RUNNING · paper",
+        "status_label": na.get("label_tc") or "Live預備 · 紙上",
+        "change": na.get("label_tc") or "Paper",
+        "note": na.get("note_tc") or "",
+        "pnl": round(float(stats.get("pnl") or 0), 2),
+        "pnl_label": _money(float(stats.get("pnl") or 0)),
+        "trade_count": entered,
+        "count_label": f"{entered} 單 · {windows} 窗" if windows else f"{entered} 單",
+        "capital_usd": 100.0,
+        "trades_windows_line": f"Trades {entered} 單 · {windows} 窗 · 過濾 {windows}",
+        "window_funnel": wf,
+        "unit": "btc-son-btc-2legs-v2-newnew-a.service",
+    }
+    return decorate_bet(root, row, env)
+
+
 def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | None = None) -> dict[str, Any]:
-    from sonu_live_truth import exec_is_real_live, live_active
+    if wallet_cash_usdc is None:
+        wallet_cash_usdc = _wallet_cash_for_high_live(root)
+    mod = _sonu_live_truth_module()
+    exec_is_real_live = mod.exec_is_real_live
+    live_active = mod.live_active
 
     prep = _v2_golive_prep(root, env)
     from desk_bots import v2_mode_view
 
     v2_mode = v2_mode_view(root, env)
-    rows = [_son_u_high_live_row(root, env), _v2_high_live_row(prep, root, env)]
+    rows = [
+        _v2_high_live_row(prep, root, env),
+        _son_u_high_live_row(root, env),
+        _na_high_live_row(root, env),
+    ]
+    try:
+        try:
+            from mode_books import attach_mode_books
+        except ImportError:
+            from dashboard.mode_books import attach_mode_books
+
+        attach_mode_books(root, rows)
+    except Exception:
+        pass
     any_live = (exec_is_real_live(root) and live_active(root)) or bool(v2_mode["live_active"])
+    any_on_air = any(bool(r.get("live_on_air")) for r in rows)
+    pause = v2_mode.get("entry_pause") or {}
     subtitle = (
         "預備區 · 紙上 rehearsal · 真倉 OFF（要錢包≥$100 + Son U go live）"
         if not any_live
-        else "真倉 ON"
+        else ("真倉暫停開新倉 · 00:00 再開" if any_live and not any_on_air else "真倉 ON")
     )
     return {
         "ok": True,
         "title": "Live",
         "subtitle": subtitle,
         "any_live": any_live,
+        "any_on_air": any_on_air,
+        "entry_pause": pause,
         "blocked": None if any_live or exec_is_real_live(root) else "live_exec_dry_run_placeholder",
         "rows": rows,
         "wallet_cash_usdc": wallet_cash_usdc,
@@ -1282,7 +1433,7 @@ def build_all_paper_strategies(
     ]
     running = sum(1 for row in bots if row["status"] == "running")
     any_live = any(row.get("mode") == "LIVE" for row in bots)
-    high_live = _high_live_board(root, modes, None)
+    high_live = _high_live_board(root, modes, _wallet_cash_for_high_live(root))
     v2_prep = _v2_golive_prep(root, modes)
     title = "全部 Paper · 冇 live 真下單" if not any_live else "有 LIVE 模式 · Paper 區只顯示模擬帳"
     line = f"{running} 個 bot 跑緊 / {len(paper)} 條 paper 策略 / {len(experiments)} 項實驗"

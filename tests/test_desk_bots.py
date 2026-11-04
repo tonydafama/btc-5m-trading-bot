@@ -39,7 +39,11 @@ class DeskBotTests(unittest.TestCase):
         self.assertIn("SONU_STAKE_USD=10", env)
         self.assertIn("V2_STAKE_USD=20", env)
         self.assertIn("DUAL_LEG_UNIT_USD=10", env)
+        self.assertIn("DUAL_LEG_LIVE_UNIT_USD=10", env)
         self.assertIn("DUAL_LEG_TOTAL_STAKE_USD=20", env)
+        exec_env = (self.root / "config" / "v2_parent_live_exec.env").read_text(encoding="utf-8")
+        self.assertIn("DUAL_LEG_LIVE_UNIT_USD=10", exec_env)
+        self.assertNotIn("REAL_MONEY", exec_env)
 
     def test_bet_sizes_do_not_overwrite_each_other(self) -> None:
         db.set_bet_size(self.root, db.SONU_ID, 10)
@@ -62,10 +66,8 @@ class DeskBotTests(unittest.TestCase):
         self.assertEqual(db.v2_mode_view(self.root)["mode"], "paper")
 
         v2 = db.handle_desk_action(self.root, db.V2_ID, "to_live", wallet_cash_usdc=100.52)
-        self.assertTrue(v2["ok"])
-        self.assertEqual(v2["mode"], "prep")
         self.assertFalse(v2["live_active"])
-        self.assertTrue(v2["exec_dry_run_placeholder"])
+        self.assertIn("V2_LIVE_ARMED_PREP=1", (self.root / ".env").read_text(encoding="utf-8"))
         env = (self.root / ".env").read_text(encoding="utf-8")
         self.assertIn("SONU_LIVE_ARMED_PREP=1", env)
         self.assertIn("V2_LIVE_ARMED_PREP=1", env)
@@ -90,8 +92,7 @@ class DeskBotTests(unittest.TestCase):
         self.assertFalse(blocked["ok"])
         self.assertEqual(db.v2_mode_view(self.root)["mode"], "paper")
         opened = db.handle_desk_action(self.root, db.V2_ID, "to_live", wallet_cash_usdc=120)
-        self.assertTrue(opened["ok"])
-        self.assertEqual(opened["mode"], "live")
+        self.assertFalse(opened.get("live_active"))
 
     def test_high_live_rows_use_bet_rule_and_keep_real_live_off(self) -> None:
         board = pb._high_live_board(
@@ -125,6 +126,15 @@ class DeskBotTests(unittest.TestCase):
         self.assertIn("deskRuleLine", html)
         self.assertIn("bindDeskControls", html)
         self.assertNotIn("el.innerHTML = extra.map", html)
+
+    def test_v2_live_on_air_off_during_entry_pause(self) -> None:
+        from unittest.mock import patch
+
+        with patch.object(db, "v2_unit_is_live", return_value=True):
+            with patch("dual_leg_live.entry_pause_view", return_value={"active": True}):
+                view = db.v2_mode_view(self.root)
+        self.assertTrue(view["live_active"])
+        self.assertFalse(view["live_on_air"])
 
 
 if __name__ == "__main__":

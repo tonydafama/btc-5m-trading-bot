@@ -280,9 +280,40 @@ class PaperBoardTests(unittest.TestCase):
         hl = board.get("high_live_board") or {}
         self.assertFalse(hl.get("any_live"))
         rows = hl.get("rows") or []
-        self.assertGreaterEqual(len(rows), 2)
-        self.assertEqual(rows[0].get("id"), "son-btc-5m-ultimate-live")
-        self.assertEqual(rows[1].get("display_name"), "BTC 2 legs V2")
+        self.assertGreaterEqual(len(rows), 3)
+        self.assertEqual(rows[0].get("id"), "dual-leg-live-v2")
+        self.assertEqual(rows[1].get("id"), "son-btc-5m-ultimate-live")
+
+    def test_high_live_wallet_from_status_cache(self) -> None:
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {"wallet_cash_usdc": 137.28, "realized_pnl_usd": 32.81},
+        )
+        board = self._build()
+        hl = board.get("high_live_board") or {}
+        self.assertEqual(hl.get("wallet_cash_usdc"), 137.28)
+
+    def test_v2_live_funnel_from_status_samples(self) -> None:
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {"samples_total": 290, "settled_trades": 27, "wallet_cash_usdc": 100},
+        )
+        env = {"DUAL_LEG_LIVE_DRY_RUN": "0", "DUAL_LEG_REAL_MONEY": "1"}
+        from desk_bots import v2_mode_view
+
+        # Force live_active path requires systemd; test helper directly
+        wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
+        self.assertEqual(wf["filtered"], 290)
+        self.assertEqual(wf["entered"], 27)
+
+    def test_high_live_board_fills_wallet_when_arg_none(self) -> None:
+        _write(self.bot / "logs" / "wallet_cache.json", {"cash_usdc": 99.5})
+        board = paper_board._high_live_board(
+            self.bot,
+            {"DUAL_LEG_LIVE_DRY_RUN": "1"},
+            None,
+        )
+        self.assertEqual(board.get("wallet_cash_usdc"), 99.5)
 
 
 if __name__ == "__main__":
