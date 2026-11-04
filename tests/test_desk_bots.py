@@ -34,7 +34,7 @@ class DeskBotTests(unittest.TestCase):
         self.assertEqual(sonu["stake_usd"], "10")
         self.assertEqual(v2["stake_usd"], "20")
         self.assertIn("v2 5m btc：10 = $10", sonu["rule_line"])
-        self.assertIn("v2：10 = $20", v2["rule_line"])
+        self.assertIn("v3：10 = $20", v2["rule_line"])
         env = (self.root / ".env").read_text(encoding="utf-8")
         self.assertIn("SONU_STAKE_USD=10", env)
         self.assertIn("V2_STAKE_USD=20", env)

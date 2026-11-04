@@ -1239,7 +1239,7 @@ summary.desk-fold-summary {
   }
   function deskBotMeta(r) {
     const id = String(r.id || '');
-    if (id === 'dual-leg-live-v2') return { mult: 2, rule: 'v2', name: 'BTC 2 legs V2', cls: 'desk-v2' };
+    if (id === 'dual-leg-live-v2') return { mult: 2, rule: 'v3', name: 'BTC 2 legs V3', cls: 'desk-v2' };
     if (id === 'son-btc-2legs-v2-newnew-a') return { mult: 2, rule: 'v2 newnew', name: 'V2 newnew A · abort', cls: 'desk-na' };
     if (id === 'son-btc-5m-ultimate-live') return { mult: 1, rule: 'v2 5m btc', name: '終極5m', cls: 'desk-5m' };
     return null;
@@ -1369,7 +1369,7 @@ summary.desk-fold-summary {
       const action = modeBtn.dataset.botAction;
       if (action === 'to_paper' && mode === 'paper') return;
       if (action === 'to_live' && mode === 'live') return;
-      const name = botId === 'dual-leg-live-v2' ? 'BTC 2 legs V2' : '終極5m';
+      const name = botId === 'dual-leg-live-v2' ? 'BTC 2 legs V3' : '終極5m';
       const execReal = _sonuLiveTruth && _sonuLiveTruth.exec_is_real_live && !_sonuLiveTruth.exec_dry_run_placeholder;
       const msg = action === 'to_live'
         ? (execReal

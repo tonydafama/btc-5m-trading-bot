@@ -1260,7 +1260,7 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
     windows = int(wf.get("filtered") or 0)
     row = {
         "id": "dual-leg-live-v2",
-        "display_name": "BTC 2 legs V2",
+        "display_name": "BTC 2 legs V3",
         "desk_section": "high_live",
         "family": "BTC 2 legs V2",
         "role": "parent",

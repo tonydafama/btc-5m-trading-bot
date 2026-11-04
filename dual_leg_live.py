@@ -140,6 +140,23 @@ PROFILES: dict[str, DualLegProfile] = {
         max_spread=0.12,
         allowed_regimes=("volatile_chop", "quiet_mixed"),
     ),
+    # Live book from 2026-11-04: V2 gates, chop only, no clock pause, $15 per leg.
+    "v3": DualLegProfile(
+        name="v3",
+        unit_usd=15.0,
+        max_ask=0.50,
+        min_depth_usd=3.0,
+        depth_mult=2.0,
+        ask_slip=0.02,
+        strict_fill=True,
+        require_hedgeable=True,
+        first_t_min=45.0,
+        second_t_min=22.0,
+        max_abs_delta_pct=0.12,
+        max_opposite_ask=0.72,
+        max_spread=0.12,
+        allowed_regimes=("volatile_chop",),
+    ),
 }
 
 
@@ -149,16 +166,31 @@ def now_hkt() -> str:
 
 # Fresh first legs stop at 18:00 and start again at 00:00. An open pair still hedges.
 ENTRY_PAUSE_REMARK_TC = (
-    "BTC 2 legs V2：香港時間 18:00–24:00 暫停開新倉，00:00 再開始。已開倉會自己行完。"
+    "BTC 2 legs V3：不設時段暫停，全日按市況開新倉。已開倉會自己行完。"
 )
 ENTRY_PAUSE_ACTIVE_REMARK_TC = (
     "而家暫停開新倉（香港時間 18:00–24:00），00:00 再開始。已開倉會自己行完。"
 )
 
 
+def _entry_pause_flag() -> str:
+    """Process env wins. Otherwise the live exec env file. Default stays on."""
+    raw = os.getenv("DUAL_LEG_LIVE_ENTRY_PAUSE")
+    if raw is not None and str(raw).strip() != "":
+        return str(raw)
+    explicit = (os.getenv("DUAL_LEG_LIVE_ENV_FILE") or "").strip()
+    candidates = [Path(explicit)] if explicit else []
+    candidates.append(Path("/root/btc-5m-bot/config/v2_parent_live_exec.env"))
+    for path in candidates:
+        found = _env_file_value(path, "DUAL_LEG_LIVE_ENTRY_PAUSE")
+        if found is not None and str(found).strip() != "":
+            return str(found)
+    return "1"
+
+
 def new_entry_paused(now: datetime | None = None) -> bool:
     """True from 18:00 until 24:00 HKT. Set DUAL_LEG_LIVE_ENTRY_PAUSE=0 to disable."""
-    if os.getenv("DUAL_LEG_LIVE_ENTRY_PAUSE", "1").strip().lower() in (
+    if _entry_pause_flag().strip().lower() in (
         "0",
         "false",
         "no",
@@ -180,6 +212,25 @@ def entry_pause_view(now: datetime | None = None) -> dict[str, Any]:
         "window_hkt": "18:00-24:00",
         "resume_hkt": "00:00",
         "remark_tc": ENTRY_PAUSE_ACTIVE_REMARK_TC if active else ENTRY_PAUSE_REMARK_TC,
+    }
+
+
+def entry_opposite_record(snapshot: dict[str, Any], side: str) -> dict[str, Any]:
+    """Quote of the other leg at the second the first leg is posted."""
+    opposite = "down" if str(side) == "up" else "up"
+    book = _book(snapshot, opposite)
+    ask = book.get("best_ask")
+    spread = book.get("spread")
+    bid = None
+    if ask is not None and spread is not None:
+        bid = round(float(ask) - float(spread), 4)
+    return {
+        "side": opposite,
+        "best_ask": None if ask is None else float(ask),
+        "spread": None if spread is None else float(spread),
+        "best_bid": bid,
+        "ask_depth_usd": book.get("ask_depth_usd"),
+        "t_remaining": snapshot.get("t_remaining"),
     }
 
 

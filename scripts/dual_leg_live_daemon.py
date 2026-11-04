@@ -31,6 +31,7 @@ from dual_leg_live import (  # noqa: E402
     build_fok_buy_intent,
     dry_run_enabled,
     evaluate_checkpoint,
+    entry_opposite_record,
     entry_pause_view,
     execute_fok_intent,
     live_profile_name,
@@ -494,6 +495,7 @@ def run_forever(poll_sec: float) -> int:
                     res1 = _post_intent(intent)
                     if res1.get("posted"):
                         posted_live_orders += 1
+                        opposite_at_entry = entry_opposite_record(snapshot, side1)
                         row = {
                             "strategy": "DUAL_LEG_5M_LIVE_V1",
                             "mode": "LIVE",
@@ -506,6 +508,7 @@ def run_forever(poll_sec: float) -> int:
                             "first_leg": _leg_from_fill(
                                 side1, intent, res1, snapshot["checkpoint"], t_rem
                             ),
+                            "entry_opposite": opposite_at_entry,
                             "second_leg": None,
                             "legs_posted": 1,
                             "entry_regime": regime,
@@ -548,6 +551,7 @@ def run_forever(poll_sec: float) -> int:
                                 "slug": market.slug,
                                 "status": row["status"],
                                 "legs_posted": row["legs_posted"],
+                                "entry_opposite": row.get("entry_opposite"),
                             }
                         )
                         print(
@@ -646,7 +650,13 @@ def run_forever(poll_sec: float) -> int:
                     "DUAL_LEG_LIVE_DRY_RUN": "0",
                     "live_enabled": True,
                     "profile": profile_name,
-                    "logic": ("V2" if profile_name == "v2" else "OLD_V1"),
+                    "logic": (
+                        "V3"
+                        if profile_name == "v3"
+                        else "V2"
+                        if profile_name == "v2"
+                        else "OLD_V1"
+                    ),
                     "session_id": os.getenv("DUAL_LEG_LIVE_SESSION_ID") or None,
                     "unit_usd": unit,
                     "pair_lock_usd": round(unit * 2, 2),

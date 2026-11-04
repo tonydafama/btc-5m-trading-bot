@@ -179,6 +179,10 @@ class ModeBookTests(unittest.TestCase):
         self.assertEqual(books["live"]["rows"][0]["pnl"], 0.0)
         self.assertEqual(books["live"]["rows"][1]["scope"], "歷史")
         self.assertEqual(books["live"]["rows"][1]["pnl"], -1.0)
+        row = {"id": mb.V2_ID, "live_enabled": True}
+        mb.attach_mode_books(self.root, [row])
+        self.assertEqual(row["pnl"], 0.0)
+        self.assertEqual(row["settled_n"], 0)
 
     def test_open_book_runs_until_now(self) -> None:
         line = mb._line(

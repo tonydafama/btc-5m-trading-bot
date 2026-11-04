@@ -62,6 +62,36 @@ class EntryPauseTests(unittest.TestCase):
         os.environ["DUAL_LEG_LIVE_ENTRY_PAUSE"] = "0"
         self.assertFalse(live.new_entry_paused(datetime(2026, 11, 3, 20, 0, tzinfo=hkt)))
 
+    def test_pause_off_in_exec_env_file(self) -> None:
+        hkt = ZoneInfo("Asia/Hong_Kong")
+        os.environ.pop("DUAL_LEG_LIVE_ENTRY_PAUSE", None)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "exec.env"
+            path.write_text("DUAL_LEG_LIVE_ENTRY_PAUSE=0\n", encoding="utf-8")
+            os.environ["DUAL_LEG_LIVE_ENV_FILE"] = str(path)
+            self.assertFalse(live.new_entry_paused(datetime(2026, 11, 3, 20, 0, tzinfo=hkt)))
+
+
+class V3ProfileTests(unittest.TestCase):
+    def test_v3_is_chop_only_fifteen_per_leg(self) -> None:
+        profile = live.PROFILES["v3"]
+        self.assertEqual(profile.allowed_regimes, ("volatile_chop",))
+        self.assertEqual(profile.unit_usd, 15.0)
+        self.assertEqual(profile.max_opposite_ask, 0.72)
+        self.assertNotIn("quiet_mixed", profile.allowed_regimes)
+
+    def test_entry_opposite_records_ask_and_bid(self) -> None:
+        snapshot = {
+            "t_remaining": 210.0,
+            "up_book": {"best_ask": 0.38, "spread": 0.02, "ask_depth_usd": 40},
+            "down_book": {"best_ask": 0.64, "spread": 0.01, "ask_depth_usd": 80},
+        }
+        rec = live.entry_opposite_record(snapshot, "up")
+        self.assertEqual(rec["side"], "down")
+        self.assertEqual(rec["best_ask"], 0.64)
+        self.assertEqual(rec["best_bid"], 0.63)
+        self.assertEqual(rec["t_remaining"], 210.0)
+
 
 if __name__ == "__main__":
     unittest.main()

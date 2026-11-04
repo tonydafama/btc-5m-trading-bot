@@ -20,7 +20,7 @@ V2_ID = "dual-leg-live-v2"
 NA_ID = "son-btc-2legs-v2-newnew-a"
 GOLD_IDS = (SONU_ID, V2_ID, NA_ID)
 
-PARENT_LIVE_PROFILE = "v2"
+PARENT_LIVE_PROFILES = {"v2", "v3"}
 NEWNEW_LIVE_PROFILE = "v2_live_shadow"
 SONU_LIVE_UNIT = "btc-son-btc-5m-ultimate-live-exec.service"
 SONU_PAPER_UNIT = "btc-son-btc-5m-ultimate-live.service"
@@ -375,7 +375,7 @@ def _prior_paper(root: Path, filename: str, current: list[dict[str, Any]], pred:
 
 
 def _parent_live(row: dict[str, Any]) -> bool:
-    return is_live_row(row) and str(row.get("profile") or "") == PARENT_LIVE_PROFILE
+    return is_live_row(row) and str(row.get("profile") or "") in PARENT_LIVE_PROFILES
 
 
 def _newnew_shared_live(row: dict[str, Any]) -> bool:
@@ -568,7 +568,8 @@ def attach_mode_books(root: Path, rows: list[dict[str, Any]]) -> None:
                 return 0
 
         head_settled = _settled_n(head)
-        if head_settled == 0:
+        # A fresh open session stays at zero. Closed empty books still fall back.
+        if head_settled == 0 and not head.get("open"):
             for line in lines:
                 if line is head:
                     continue
