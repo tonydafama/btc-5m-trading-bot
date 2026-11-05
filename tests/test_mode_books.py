@@ -184,7 +184,7 @@ class ModeBookTests(unittest.TestCase):
         self.assertEqual(row["pnl"], 0.0)
         self.assertEqual(row["settled_n"], 0)
 
-    def test_v2_book_is_current_and_v3_session_stays_off_the_desk(self) -> None:
+    def test_v3_live_record_follows_history(self) -> None:
         _dump(
             self.root / "logs" / "dual_leg_live_trades.json",
             [{"slug": "v2", "mode": "LIVE", "profile": "v2", "trade_result": "WIN", "pnl": 5, "opened_at_hkt": "2026-11-03 16:11:00 HKT", "settled_at_hkt": "2026-11-03 16:20:00 HKT"}],
@@ -199,12 +199,15 @@ class ModeBookTests(unittest.TestCase):
         )
         books = mb.books_for_bot(self.root, mb.V2_ID)
         scopes = [line["scope"] for line in books["live"]["rows"]]
-        self.assertEqual(scopes, ["今次", "歷史"])
+        self.assertEqual(scopes, ["今次", "歷史", "V3"])
         self.assertEqual(books["live"]["rows"][0]["pnl"], 5.0)
         self.assertNotIn("V3", books["live"]["rows"][0]["note"])
         self.assertEqual(books["live"]["rows"][1]["pnl"], -1.0)
-        blob = str(books)
-        self.assertNotIn("v3", blob.lower())
+        v3 = books["live"]["rows"][2]
+        self.assertEqual(v3["pnl"], -138.0)
+        self.assertEqual(v3["when_label"], "11/04 11:05 → 14:50")
+        self.assertIn("V3 真倉", v3["note"])
+        self.assertEqual(books["live"]["when_label"], "11/03 16:11 → 16:20")
 
     def test_open_book_runs_until_now(self) -> None:
         line = mb._line(

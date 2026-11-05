@@ -2,7 +2,8 @@
 
 Skip rows are not wins. Breakeven counts in PnL and is excluded from the win-rate
 denominator. Live archives are deduped by market slug so snapshot copies are not
-added twice. Parent V2 live history is profile ``v2`` only.
+added twice. Parent history stays the older V2 books. The V3 session is its own
+line after 歷史.
 """
 
 from __future__ import annotations
@@ -337,7 +338,23 @@ def _archive_files(root: Path, name: str) -> list[Path]:
         if "dual_leg_v1" in posix or "v3_live_session" in posix:
             continue
         found.append(path)
-    found.sort(key=lambda item: item.stat().st_mtime if item.is_file() else 0, reverse=True)
+        found.sort(key=lambda item: item.stat().st_mtime if item.is_file() else 0, reverse=True)
+    return found
+
+
+def _v3_live_files(root: Path) -> list[Path]:
+    base = root / "logs" / "archive"
+    if not base.is_dir():
+        return []
+    found: list[Path] = []
+    try:
+        paths = list(base.rglob("dual_leg_live_trades.json"))
+    except OSError:
+        return []
+    for path in paths:
+        if path.is_file() and "v3_live_session" in path.as_posix():
+            found.append(path)
+    found.sort(key=lambda item: item.stat().st_mtime if item.is_file() else 0)
     return found
 
 
@@ -396,6 +413,14 @@ def _v2_paper(row: dict[str, Any]) -> bool:
     return (not session) or ("v2" in session)
 
 
+def _book_note(head: str, stats: dict[str, Any], *, pnl_net_of_fees: bool) -> str:
+    be = f" · 打和 {stats['breakeven']} 唔計勝率" if stats["breakeven"] else ""
+    note = f"{head} · {stats['wl_label']}{be}"
+    if pnl_net_of_fees and stats.get("fee_usd"):
+        note += f" · 手續費 ${stats['fee_usd']:.2f}"
+    return note
+
+
 def _live_lines(
     current: list[dict[str, Any]],
     history: list[dict[str, Any]],
@@ -404,6 +429,7 @@ def _live_lines(
     current_open: bool = False,
     current_started: datetime | None = None,
     pnl_net_of_fees: bool = False,
+    v3: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     lines: list[dict[str, Any]] = []
     current_stats = summarize(current)
@@ -412,10 +438,7 @@ def _live_lines(
     history_n = history_stats["settled_n"] + history_stats["breakeven"]
     if current_n or current_open:
         if current_n:
-            be = f" · 打和 {current_stats['breakeven']} 唔計勝率" if current_stats["breakeven"] else ""
-            note = f"今次真倉 · {current_stats['wl_label']}{be}"
-            if pnl_net_of_fees and current_stats.get("fee_usd"):
-                note += f" · 手續費 ${current_stats['fee_usd']:.2f}"
+            note = _book_note("今次真倉", current_stats, pnl_net_of_fees=pnl_net_of_fees)
         else:
             note = "今次未有真倉成交"
         lines.append(
@@ -429,6 +452,10 @@ def _live_lines(
         if pnl_net_of_fees and history_stats.get("fee_usd"):
             hist_note += f" · 手續費 ${history_stats['fee_usd']:.2f}"
         lines.append(_line("歷史", history, hist_note))
+    v3_rows = v3 or []
+    v3_stats = summarize(v3_rows)
+    if v3_stats["settled_n"] + v3_stats["breakeven"]:
+        lines.append(_line("V3", v3_rows, _book_note("V3 真倉", v3_stats, pnl_net_of_fees=pnl_net_of_fees)))
     return lines
 
 
@@ -457,6 +484,7 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
         seen: set[str] = set()
         live_now, _ = _take([root / "logs" / "dual_leg_live_trades.json"], _parent_live, seen)
         history, segments = _take(_archive_files(root, "dual_leg_live_trades.json"), _parent_live, seen)
+        v3_rows, _ = _take(_v3_live_files(root), _parent_live, seen)
         paper_open = _unit_active_since_hkt(OBSERVER_UNIT) is not None
         paper_lines = [_line("今次", paper, _paper_note(paper, prior=False), open_book=paper_open)]
         if prior:
@@ -471,6 +499,7 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
                 current_open=live_since is not None,
                 current_started=live_since,
                 pnl_net_of_fees=True,
+                v3=v3_rows,
             ),
         )
 
