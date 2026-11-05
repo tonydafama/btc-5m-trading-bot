@@ -166,6 +166,35 @@ PROFILES: dict[str, DualLegProfile] = {
 }
 
 
+# Observer checkpoints (observer.py CHECKPOINTS, OBSERVE_T_START=75).
+# A hit is once per window while t_remaining is inside [cp-3, cp+2],
+# the same band the paper observer uses.
+PAPER_DECISION_CHECKPOINTS: tuple[int, ...] = (75, 60, 50, 40, 30, 25, 12, 5)
+PAPER_DECISION_LEAD_SEC = 2.0
+PAPER_DECISION_LAG_SEC = 3.0
+# Poll quickly just before the first band (75+2) so an 8s idle poll cannot skip it.
+PAPER_DECISION_WATCH_SEC = 80.0
+PAPER_DECISION_POLL_SEC = 1.0
+
+
+def paper_decision_checkpoint(t_remaining: float, seen: set[int]) -> int | None:
+    """Return the paper checkpoint this instant should decide on, or None."""
+    t_rem = float(t_remaining)
+    for cp in PAPER_DECISION_CHECKPOINTS:
+        if cp in seen:
+            continue
+        if (cp - PAPER_DECISION_LAG_SEC) <= t_rem <= (cp + PAPER_DECISION_LEAD_SEC):
+            return cp
+    return None
+
+
+def decision_poll_sec(t_remaining: float, idle_poll_sec: float) -> float:
+    """Idle poll until the paper watch window, then poll fast enough to hit each band."""
+    if float(t_remaining) <= PAPER_DECISION_WATCH_SEC:
+        return PAPER_DECISION_POLL_SEC
+    return float(idle_poll_sec)
+
+
 def now_hkt() -> str:
     return datetime.now(timezone.utc).astimezone(HKT).strftime("%Y-%m-%d %H:%M:%S HKT")
 
