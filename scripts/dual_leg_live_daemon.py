@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """BTC dual-leg LIVE daemon — profile from DUAL_LEG_LIVE_PROFILE (v1|v2), UNIT from env, posts FOK when DRY_RUN=0.
 
+Decisions follow the paper observer clock: one look per window at T-75, T-60, T-50,
+T-40, T-30, T-25, T-12 and T-5 (band cp-3..cp+2). The idle poll does not enter.
+
 Safety:
 - Requires DUAL_LEG_LIVE_DRY_RUN=0 (refuses to start otherwise).
 - BTC only (dual_leg_live.assert_btc_only).
@@ -30,6 +33,9 @@ from dual_leg_live import (  # noqa: E402
     assert_btc_only,
     build_fok_buy_intent,
     dry_run_enabled,
+    PAPER_DECISION_CHECKPOINTS,
+    account_live_trade_pnl,
+    decision_poll_sec,
     evaluate_checkpoint,
     entry_opposite_record,
     entry_pause_view,
@@ -38,9 +44,9 @@ from dual_leg_live import (  # noqa: E402
     live_unit_usd,
     new_entry_paused,
     now_hkt,
+    paper_decision_checkpoint,
     read_live_unit_usd,
     profile_to_dict,
-    account_live_trade_pnl,
 )
 from polymarket_fees import estimate_taker_fee  # noqa: E402
 
@@ -305,6 +311,8 @@ def run_forever(poll_sec: float) -> int:
     last_slug = None
     open_price = None
     paused_logged: set[str] = set()
+    seen_decision_cps: set[int] = set()
+    last_housekeep = 0.0
 
     _append_event(
         {
@@ -317,11 +325,14 @@ def run_forever(poll_sec: float) -> int:
             "wallet_cash_usdc": cash,
             "profile_params": profile_to_dict(profile),
             "note": f"{profile_name.upper()} live FOK daemon · BTC only · no max-open gate",
+            "decision_clock": "paper_checkpoints",
+            "decision_checkpoints": list(PAPER_DECISION_CHECKPOINTS),
         }
     )
     print(
         f"[live] START DRY_RUN=0 profile={profile_name} unit=${unit} "
-        f"cash=${cash:.2f} poll={poll_sec}s @ {started}",
+        f"cash=${cash:.2f} idle_poll={poll_sec}s "
+        f"decisions={list(PAPER_DECISION_CHECKPOINTS)} @ {started}",
         flush=True,
     )
 
@@ -347,8 +358,27 @@ def run_forever(poll_sec: float) -> int:
                     _write_json(TRADES_PATH, trades)
                     _write_json(STATE_PATH, state)
                 last_slug = market.slug
+                seen_decision_cps = set()
+                btc_open = fetch_btc_usd()
                 open_price = None
+                if isinstance(btc_open, dict) and btc_open.get("price") is not None:
+                    open_price = float(btc_open["price"])
                 print(f"[live] window {market.slug} t_rem={t_rem:.1f}", flush=True)
+
+            # Paper only decides at T-75, T-60, T-50, T-40, T-30, T-25, T-12, T-5.
+            # Entry and hedge wait for that same band. Window roll above still runs
+            # on every poll so a restart can settle the previous slug.
+            cp_hit = paper_decision_checkpoint(t_rem, seen_decision_cps)
+            if cp_hit is None:
+                now_mono = time.monotonic()
+                if now_mono - last_housekeep >= poll_sec:
+                    last_housekeep = now_mono
+                    trades, settled_n, _realized = settle_pending_live_trades(trades)
+                    if settled_n:
+                        _write_json(TRADES_PATH, trades)
+                time.sleep(decision_poll_sec(t_rem, poll_sec))
+                continue
+            seen_decision_cps.add(cp_hit)
 
             btc = fetch_btc_usd()
             px = float(btc["price"])
@@ -363,15 +393,9 @@ def run_forever(poll_sec: float) -> int:
             down_book = enrich_book_with_asks(summarize_book(down_raw), down_raw)
             regime = recent_market_regime("btc")
 
-            cp = None
-            for label in (75, 60, 50, 40, 30, 25, 12, 5):
-                if abs(t_rem - label) <= 2.5:
-                    cp = f"T-{label}"
-                    break
-
             snapshot = {
                 "slug": market.slug,
-                "checkpoint": cp or f"T-{int(t_rem)}",
+                "checkpoint": f"T-{cp_hit}",
                 "t_remaining": round(t_rem, 1),
                 "delta_usd": round(delta_usd, 2),
                 "delta_pct": round(delta_pct, 4),
@@ -404,7 +428,8 @@ def run_forever(poll_sec: float) -> int:
             row = state.get(market.slug)
 
             # --- Entry: no open position ---
-            # 18:00–24:00 HKT blocks a new first leg only. A one-leg row still hedges.
+            # DUAL_LEG_LIVE_ENTRY_PAUSE=1 blocks a new first leg 18:00–24:00 HKT.
+            # Default is open, including that window. A one-leg row still hedges.
             _block_entry_pause = False
             if row is None and new_entry_paused():
                 _block_entry_pause = True
@@ -683,6 +708,8 @@ def run_forever(poll_sec: float) -> int:
                     ),
                     "started_at_hkt": started,
                     "poll_sec": poll_sec,
+                    "decision_clock": "paper_checkpoints",
+                    "decision_checkpoints": list(PAPER_DECISION_CHECKPOINTS),
                     "profile_params": profile_to_dict(profile),
                     "entry_pause": entry_pause_view(),
                     "last_eval": {
@@ -712,7 +739,7 @@ def run_forever(poll_sec: float) -> int:
             time.sleep(poll_sec)
             continue
 
-        time.sleep(poll_sec)
+        time.sleep(decision_poll_sec(t_rem, poll_sec))
 
     _append_event({"event": "live_daemon_stop", "timestamp_hkt": now_hkt()})
     print("[live] stopped cleanly", flush=True)

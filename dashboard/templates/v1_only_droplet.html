@@ -1447,15 +1447,9 @@ summary.desk-fold-summary {
     if (!body) return;
     const hl = (board && board.high_live_board) || {};
     let rows = Array.isArray(hl.rows) ? hl.rows.map(mergeDeskRow) : [];
-    const sonRowLive = rows.some((r) => (
-      String(r.id || '') === 'son-btc-5m-ultimate-live' && !!r.live_enabled
-    ));
-    const anyLive = !!(
-      (_sonuLiveTruth && _sonuLiveTruth.live_active)
-      || hl.any_live
-      || sonRowLive
-    );
-    const anyOnAir = hl.any_on_air === true || rows.some((r) => rowLiveOnAir(r));
+    rows = rows.filter((r) => String(r.id || '') !== 'son-btc-5m-ultimate-live');
+    const anyLive = rows.some((r) => !!r.live_enabled);
+    const anyOnAir = rows.some((r) => rowLiveOnAir(r));
     if (badge) {
       if (anyOnAir) {
         badge.hidden = false;
@@ -1471,7 +1465,7 @@ summary.desk-fold-summary {
     if (!rows.length) {
       body.innerHTML = '<div class="skel">未有 Live bot</div>';
     } else {
-      const sortOrder = ['dual-leg-live-v2', 'son-btc-5m-ultimate-live', 'son-btc-2legs-v2-newnew-a'];
+      const sortOrder = ['dual-leg-live-v2', 'son-btc-2legs-v2-newnew-a'];
       const sortRows = [...rows].sort((a, b) => {
         const ai = sortOrder.indexOf(String(a.id || ''));
         const bi = sortOrder.indexOf(String(b.id || ''));

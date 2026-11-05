@@ -463,6 +463,7 @@ def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -
                 "DRY_RUN": "1",
                 "DUAL_LEG_LIVE_DRY_RUN": "1",
                 "DUAL_LEG_LIVE_PROFILE": "v2",
+                "DUAL_LEG_LIVE_ENTRY_PAUSE": "0",
             },
         )
         _write_dotenv_key(root, "V2_LIVE_ARMED_PREP", "0")
@@ -503,6 +504,7 @@ def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -
             "DUAL_LEG_LIVE_DRY_RUN": "0",
             "DUAL_LEG_LIVE_PROFILE": "v2",
             "DUAL_LEG_LIVE_UNIT_USD": fmt_num(bet),
+            "DUAL_LEG_LIVE_ENTRY_PAUSE": "0",
         },
     )
     _write_dotenv_key(root, "V2_LIVE_ARMED_PREP", "1")

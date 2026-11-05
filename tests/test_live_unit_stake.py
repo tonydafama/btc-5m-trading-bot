@@ -57,6 +57,18 @@ class EntryPauseTests(unittest.TestCase):
         self.assertIn("00:00", view["remark_tc"])
         self.assertIn("已開倉會自己行完", view["remark_tc"])
 
+    def test_evening_entries_are_open_by_default(self) -> None:
+        hkt = ZoneInfo("Asia/Hong_Kong")
+        os.environ.pop("DUAL_LEG_LIVE_ENTRY_PAUSE", None)
+        os.environ["DUAL_LEG_LIVE_ENV_FILE"] = "/tmp/does-not-exist-v2-exec.env"
+        try:
+            self.assertFalse(live.new_entry_paused(datetime(2026, 11, 3, 20, 0, tzinfo=hkt)))
+            view = live.entry_pause_view(datetime(2026, 11, 3, 20, 0, tzinfo=hkt))
+            self.assertFalse(view["active"])
+            self.assertIn("照開新倉", view["remark_tc"])
+        finally:
+            os.environ.pop("DUAL_LEG_LIVE_ENV_FILE", None)
+
     def test_pause_can_be_turned_off(self) -> None:
         hkt = ZoneInfo("Asia/Hong_Kong")
         os.environ["DUAL_LEG_LIVE_ENTRY_PAUSE"] = "0"
