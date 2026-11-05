@@ -1177,6 +1177,7 @@ def _sonu_live_truth_module():
 
 
 def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
+    """Row builder kept for the son service. The Live box does not render it."""
     mod = _sonu_live_truth_module()
     SONU_BOT_ID = mod.SONU_BOT_ID
     live_active = mod.live_active
@@ -1347,17 +1348,14 @@ def _na_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
 def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | None = None) -> dict[str, Any]:
     if wallet_cash_usdc is None:
         wallet_cash_usdc = _wallet_cash_for_high_live(root)
-    mod = _sonu_live_truth_module()
-    exec_is_real_live = mod.exec_is_real_live
-    live_active = mod.live_active
 
     prep = _v2_golive_prep(root, env)
     from desk_bots import v2_mode_view
 
     v2_mode = v2_mode_view(root, env)
+    # 終極5m keeps running and keeps its logs. It is not a card in the Live box.
     rows = [
         _v2_high_live_row(prep, root, env),
-        _son_u_high_live_row(root, env),
         _na_high_live_row(root, env),
     ]
     try:
@@ -1369,11 +1367,11 @@ def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | 
         attach_mode_books(root, rows)
     except Exception:
         pass
-    any_live = (exec_is_real_live(root) and live_active(root)) or bool(v2_mode["live_active"])
+    any_live = any(bool(r.get("live_enabled")) for r in rows)
     any_on_air = any(bool(r.get("live_on_air")) for r in rows)
     pause = v2_mode.get("entry_pause") or {}
     subtitle = (
-        "預備區 · 紙上 rehearsal · 真倉 OFF（要錢包≥$100 + Son U go live）"
+        "預備區 · 紙上 rehearsal · 真倉 OFF"
         if not any_live
         else ("真倉暫停開新倉 · 00:00 再開" if any_live and not any_on_air else "真倉 ON")
     )
@@ -1384,7 +1382,7 @@ def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | 
         "any_live": any_live,
         "any_on_air": any_on_air,
         "entry_pause": pause,
-        "blocked": None if any_live or exec_is_real_live(root) else "live_exec_dry_run_placeholder",
+        "blocked": None if any_live else "live_exec_dry_run_placeholder",
         "rows": rows,
         "wallet_cash_usdc": wallet_cash_usdc,
     }

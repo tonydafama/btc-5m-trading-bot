@@ -102,7 +102,7 @@ class DeskBotTests(unittest.TestCase):
         )
         self.assertFalse(board["any_live"])
         rows = {row["id"]: row for row in board["rows"]}
-        self.assertEqual(rows[db.SONU_ID]["stake_usd"], "10")
+        self.assertNotIn(db.SONU_ID, rows)
         self.assertEqual(rows[db.V2_ID]["stake_usd"], "20")
         self.assertEqual(rows[db.V2_ID]["mode"], "paper")
         db.handle_desk_action(self.root, db.V2_ID, "to_live", wallet_cash_usdc=200)

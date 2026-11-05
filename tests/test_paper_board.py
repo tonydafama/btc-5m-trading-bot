@@ -280,9 +280,11 @@ class PaperBoardTests(unittest.TestCase):
         hl = board.get("high_live_board") or {}
         self.assertFalse(hl.get("any_live"))
         rows = hl.get("rows") or []
-        self.assertGreaterEqual(len(rows), 3)
-        self.assertEqual(rows[0].get("id"), "dual-leg-live-v2")
-        self.assertEqual(rows[1].get("id"), "son-btc-5m-ultimate-live")
+        self.assertEqual([row.get("id") for row in rows], [
+            "dual-leg-live-v2",
+            "son-btc-2legs-v2-newnew-a",
+        ])
+        self.assertNotIn("son-btc-5m-ultimate-live", [row.get("id") for row in rows])
 
     def test_high_live_wallet_from_status_cache(self) -> None:
         _write(
