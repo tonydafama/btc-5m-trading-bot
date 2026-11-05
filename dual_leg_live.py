@@ -199,9 +199,10 @@ def now_hkt() -> str:
     return datetime.now(timezone.utc).astimezone(HKT).strftime("%Y-%m-%d %H:%M:%S HKT")
 
 
-# Fresh first legs stop at 18:00 and start again at 00:00. An open pair still hedges.
+# Evening new entries stay open. Set DUAL_LEG_LIVE_ENTRY_PAUSE=1 to stop
+# fresh first legs from 18:00 until 00:00. An open pair still hedges either way.
 ENTRY_PAUSE_REMARK_TC = (
-    "BTC 2 legs V2：香港時間 18:00–24:00 暫停開新倉，00:00 再開始。已開倉會自己行完。"
+    "BTC 2 legs V2：香港時間 18:00–24:00 照開新倉。"
 )
 ENTRY_PAUSE_ACTIVE_REMARK_TC = (
     "而家暫停開新倉（香港時間 18:00–24:00），00:00 再開始。已開倉會自己行完。"
@@ -209,7 +210,7 @@ ENTRY_PAUSE_ACTIVE_REMARK_TC = (
 
 
 def _entry_pause_flag() -> str:
-    """Process env wins. Otherwise the live exec env file. Default stays on."""
+    """Process env wins. Otherwise the live exec env file. Default is open."""
     raw = os.getenv("DUAL_LEG_LIVE_ENTRY_PAUSE")
     if raw is not None and str(raw).strip() != "":
         return str(raw)
@@ -220,11 +221,11 @@ def _entry_pause_flag() -> str:
         found = _env_file_value(path, "DUAL_LEG_LIVE_ENTRY_PAUSE")
         if found is not None and str(found).strip() != "":
             return str(found)
-    return "1"
+    return "0"
 
 
 def new_entry_paused(now: datetime | None = None) -> bool:
-    """True from 18:00 until 24:00 HKT. Set DUAL_LEG_LIVE_ENTRY_PAUSE=0 to disable."""
+    """True from 18:00 until 24:00 HKT only when DUAL_LEG_LIVE_ENTRY_PAUSE=1."""
     if _entry_pause_flag().strip().lower() in (
         "0",
         "false",

@@ -428,7 +428,8 @@ def run_forever(poll_sec: float) -> int:
             row = state.get(market.slug)
 
             # --- Entry: no open position ---
-            # 18:00–24:00 HKT blocks a new first leg only. A one-leg row still hedges.
+            # DUAL_LEG_LIVE_ENTRY_PAUSE=1 blocks a new first leg 18:00–24:00 HKT.
+            # Default is open, including that window. A one-leg row still hedges.
             _block_entry_pause = False
             if row is None and new_entry_paused():
                 _block_entry_pause = True
