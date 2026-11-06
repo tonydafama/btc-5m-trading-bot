@@ -66,6 +66,10 @@
     .log-body { flex:1 1 12rem; min-width:0; color:var(--text); word-break:break-word; line-height:1.35; }
     .log-body .slug { font-weight:650; }
     .log-body .reason { color:#c5d2e0; }
+    .log-pnl { font-weight:800; font-variant-numeric:tabular-nums; margin-right:.35rem; }
+    .log-pnl.pos { color:var(--green); }
+    .log-pnl.neg { color:var(--red); }
+    .log-pnl.flat { color:var(--muted); }
     .empty {
       padding:1.1rem .85rem; font-size:.9rem; color:#c8d4e4; text-align:center;
       border:1px dashed rgba(94,179,255,.35); border-radius:12px; background:rgba(0,0,0,.25);
@@ -184,7 +188,8 @@
       p = parseLine(p);
       if (!p || isSkipRow(p)) return false;
       const ev = String(p.event || '');
-      if (ev === 'entry' || ev === 'hedge' || ev === 'trade_settled') return true;
+      if (ev === 'trade_settled') return true;
+      if (ev === 'entry' || ev === 'hedge') return true;
       const res = String(p.trade_result || p.result || '').toUpperCase();
       if (['WIN', 'LOSS', 'FAILED', 'FAIL', 'FILLED'].includes(res)) return true;
       return !!p.entered;
@@ -200,8 +205,14 @@
       if (ev.startsWith('skip_') || ev === 'entry_failed' || ev === 'hedge_failed') {
         return { label: 'SKIP', className: 'tag skip' };
       }
-      if (ev === 'entry' || ev === 'hedge' || ev === 'trade_settled') {
-        return { label: 'FILL', className: 'tag fill' };
+      if (ev === 'trade_settled') {
+        const tr = String(r.trade_result || '').toUpperCase();
+        if (tr === 'LOSS') return { label: 'LOSS', className: 'tag loss' };
+        if (tr === 'WIN') return { label: 'WIN', className: 'tag fill' };
+        return { label: 'SET', className: 'tag fill' };
+      }
+      if (ev === 'entry' || ev === 'hedge') {
+        return { label: ev === 'hedge' ? 'HEDGE' : 'ENTRY', className: 'tag fill' };
       }
       if (isSkipRow(r)) return { label: 'SKIP', className: 'tag skip' };
       const res = String(r.trade_result || '').toUpperCase();
@@ -209,6 +220,19 @@
       if (res === 'WIN' || isFillRow(r)) return { label: 'FILL', className: 'tag fill' };
       if (res === 'FAILED' || res === 'FAIL') return { label: 'FAIL', className: 'tag fail' };
       return { label: 'FILL', className: 'tag fill' };
+    }
+
+    function pnlHtml(row) {
+      const r = parseLine(row) || {};
+      let v = r.log_pnl_usd;
+      if (v == null && r.pnl != null) {
+        const n = Number(r.pnl);
+        if (!Number.isNaN(n)) v = n;
+      }
+      if (v == null || !Number.isFinite(v)) return '';
+      const cls = v > 1e-9 ? 'pos' : v < -1e-9 ? 'neg' : 'flat';
+      const sign = v > 0 ? '+' : '';
+      return `<span class="log-pnl ${cls}">${sign}$${Math.abs(v).toFixed(2)}</span>`;
     }
 
     function renderRows(container, rows, emptyMsg) {
@@ -223,16 +247,18 @@
         const tag = statusTag(row);
         const ts = (row.timestamp_hkt || '').replace(' HKT', '').slice(11, 19) || (row.timestamp_hkt || '').slice(0, 19);
         const slug = row.slug || row.event || '—';
+        const pnl = pnlHtml(row);
         let reason = row.reason && String(row.reason) !== String(slug) ? String(row.reason) : '';
         if (!reason && row.event) reason = String(row.event);
+        if (pnl && reason.indexOf('PnL ') === 0) reason = reason.replace(/^PnL [^·]+·\s*/, '');
         if (reason.length > 180) reason = reason.slice(0, 177) + '…';
-        const fillClass = tag.label === 'FILL' || tag.label === 'LOSS' ? ' fill-card' : '';
+        const fillClass = ['FILL', 'WIN', 'LOSS', 'SET', 'ENTRY', 'HEDGE'].includes(tag.label) ? ' fill-card' : '';
         const reasonHtml = reason ? ` · <span class="reason">${reason}</span>` : '';
         return `<article class="log-card${fillClass}">
           <div class="log-line">
             <span class="log-ts">${ts || '—'}</span>
             <span class="${tag.className}">${tag.label}</span>
-            <span class="log-body"><span class="slug">${slug}</span>${reasonHtml}</span>
+            <span class="log-body">${pnl}<span class="slug">${slug}</span>${reasonHtml}</span>
           </div>
         </article>`;
       }).join('');
@@ -245,13 +271,16 @@
     }
 
     function normalizeTailStats(raw) {
-      if (!raw || typeof raw !== 'object') return { fills: 0, skips: 0, total: 0 };
-      const fills = raw.trades ?? raw.fills ?? 0;
-      return {
-        fills: Number(fills) || 0,
-        skips: Number(raw.skips) || 0,
-        total: Number(raw.total) || 0,
-      };
+      if (!raw || typeof raw !== 'object') {
+        return { fills: 0, skips: 0, total: 0, settles: 0, posts: 0, info: 0 };
+      }
+      const settles = Number(raw.settles ?? raw.trades ?? 0) || 0;
+      const posts = Number(raw.posts ?? 0) || 0;
+      const skips = Number(raw.skips) || 0;
+      const info = Number(raw.info ?? 0) || 0;
+      const total = Number(raw.total) || 0;
+      const fills = Number(raw.fills) || posts + settles;
+      return { fills, skips, total, settles, posts, info };
     }
 
     function tailSource(payload) {
@@ -325,7 +354,10 @@
       if (tailPayload && tailPayload.stats) liveStats = normalizeTailStats(tailPayload.stats);
       const statsEl = document.getElementById('live-stats-line');
       if (statsEl) {
-        statsEl.innerHTML = `事件 <strong>${liveStats.fills ?? 0}</strong> · skip ${liveStats.skips ?? 0}`;
+        const tailNote = (liveStats.total != null && liveStats.total >= TAIL_N)
+          ? ` <span style="color:var(--muted);font-weight:600">（本頁最近 ${TAIL_N} 行）</span>`
+          : '';
+        statsEl.innerHTML = `已結算 <strong>${liveStats.settles ?? 0}</strong> · 下單 <strong>${liveStats.posts ?? 0}</strong> · 略過 ${liveStats.skips ?? 0}${tailNote}`;
       }
       const src = tailSource(tailPayload);
       if (src) liveSource = src;
@@ -356,7 +388,7 @@
         return;
       }
       liveAllRows = [];
-      liveStats = { fills: 0, skips: 0, total: 0 };
+      liveStats = { fills: 0, skips: 0, total: 0, settles: 0, posts: 0, info: 0 };
       paintLiveUnit({});
     }
 

@@ -46,14 +46,22 @@ The UI uses **`id === dual-leg-live-v2`** for the hero “LIVE ON” title.
   "bot": "dual-leg-live-v2",
   "ledger": "live",
   "mode": "all",
-  "stats": { "fills": 3, "skips": 2, "trades": 3, "total": 5 },
+  "stats": {
+    "settles": 2,
+    "posts": 5,
+    "skips": 1,
+    "fills": 7,
+    "trades": 2,
+    "info": 1,
+    "total": 40
+  },
   "source": "dual_leg_live_daemon.jsonl",
   "lines": [ { "event": "entry", "timestamp_hkt": "…", "slug": "…" } ]
 }
 ```
 
-- **`stats.fills`** / **`stats.trades`**: meaningful rows (entries / hedge / settle for live; WIN/LOSS/pnl for paper).
-- **`stats.skips`**: skip / failed events (live) or SKIP rows (paper).
+- **Live**: **`settles`** = `trade_settled` rows (one per closed trade, **PnL 在呢度**); **`posts`** = `entry` + `hedge` FOK posts; **`skips`** = `skip_*` / failed posts; **`total`** = lines returned (tail).
+- **Paper**: **`trades`** = filled/settled rows; **`skips`** = SKIP rows.
 
 ### Legacy: `GET /api/bot-log-tail?…`
 

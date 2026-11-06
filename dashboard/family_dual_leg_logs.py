@@ -83,7 +83,20 @@ def _normalize_live_row(row: dict[str, Any]) -> dict[str, Any]:
     out["timestamp_hkt"] = out.get("timestamp_hkt") or ""
     ev = str(out.get("event") or "")
     kind = _live_event_kind(ev)
-    if kind == "fill":
+    if ev == "trade_settled":
+        tr = str(out.get("trade_result") or "").upper()
+        if tr in ("WIN", "LOSS"):
+            out["trade_result"] = tr
+        elif out.get("pnl") is not None:
+            try:
+                p = float(out["pnl"])
+                out["trade_result"] = "WIN" if p > 1e-9 else "LOSS" if p < -1e-9 else "PUSH"
+            except (TypeError, ValueError):
+                out["trade_result"] = tr or "SETTLED"
+        else:
+            out["trade_result"] = tr or "SETTLED"
+        out["entered"] = True
+    elif kind == "fill":
         out["trade_result"] = "FILLED"
         out["entered"] = True
     elif kind == "skip":
@@ -97,7 +110,20 @@ def _normalize_live_row(row: dict[str, Any]) -> dict[str, Any]:
     note_parts = [ev] if ev else []
     if slug:
         note_parts.append(slug)
-    if out.get("error"):
+    if ev == "trade_settled":
+        try:
+            pnl_v = out.get("pnl")
+            pnl_f = float(pnl_v) if pnl_v is not None else None
+        except (TypeError, ValueError):
+            pnl_f = None
+        oc = str(out.get("outcome") or "").upper()
+        if pnl_f is not None:
+            sign = "+" if pnl_f > 0 else ""
+            note_parts = [f"PnL {sign}${pnl_f:.2f}", oc or "—", slug or "—"]
+        else:
+            note_parts = [f"結算 {out.get('trade_result') or '—'}", oc or "", slug or "—"]
+        out["log_pnl_usd"] = pnl_f
+    elif out.get("error"):
         note_parts.append(str(out.get("error")))
     elif out.get("skip_reasons"):
         note_parts.append(str(out.get("skip_reasons"))[:120])
@@ -120,8 +146,18 @@ def _normalize_paper_row(row: dict[str, Any]) -> dict[str, Any]:
     elif out.get("pnl") is not None:
         out.setdefault("trade_result", "FILLED")
         out["entered"] = True
-    out.setdefault("reason", out.get("reason") or out.get("strategy_reason") or "")
-    out.setdefault("slug", str(out.get("slug") or "—"))
+    slug = str(out.get("slug") or "—")
+    try:
+        pnl_f = float(out["pnl"]) if out.get("pnl") is not None else None
+    except (TypeError, ValueError):
+        pnl_f = None
+    if pnl_f is not None:
+        sign = "+" if pnl_f > 0 else ""
+        out["reason"] = f"PnL {sign}${pnl_f:.2f} · {out.get('trade_result') or '—'} · {slug}"
+        out["log_pnl_usd"] = pnl_f
+    else:
+        out.setdefault("reason", out.get("reason") or out.get("strategy_reason") or "")
+    out.setdefault("slug", slug)
     out["bot"] = "dual-leg-paper-v2"
     return out
 
@@ -180,16 +216,23 @@ def tail_dual_leg_v2_logs(
             rows = rows[:limit]
         stats_src = rows
 
-    fills = 0
+    settles = 0
+    posts = 0
     skips = 0
+    info = 0
+    fills = 0  # legacy: posts + settles (meaningful trading activity)
     if ledger_l == "live":
         for r in stats_src:
             ev = str(r.get("event") or "")
-            k = _live_event_kind(ev)
-            if k == "fill":
-                fills += 1
-            elif k == "skip":
+            if ev == "trade_settled":
+                settles += 1
+            elif ev in ("entry", "hedge"):
+                posts += 1
+            elif ev.startswith("skip_") or ev in ("entry_failed", "hedge_failed"):
                 skips += 1
+            elif _live_event_kind(ev) == "info" or ev == "loop_error":
+                info += 1
+        fills = posts + settles
     else:
         for r in stats_src:
             tr = str(r.get("trade_result") or "").upper()
@@ -210,7 +253,10 @@ def tail_dual_leg_v2_logs(
         "stats": {
             "fills": fills,
             "skips": skips,
-            "trades": fills,
+            "trades": settles if ledger_l == "live" else fills,
+            "settles": settles,
+            "posts": posts,
+            "info": info,
             "total": len(stats_src),
         },
         "source": path.name if path.is_file() else None,
