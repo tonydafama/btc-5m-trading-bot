@@ -13,6 +13,29 @@
     * { box-sizing:border-box; }
     body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif; line-height:1.45; }
     .wrap { max-width:640px; margin:0 auto; padding:.85rem 1rem 2.5rem; }
+    @media (max-width:480px) {
+      .wrap { padding:.6rem .55rem 2rem; }
+      h1 { font-size:1.05rem; }
+      .sub { font-size:.72rem; line-height:1.4; }
+      .hero { padding:.65rem .65rem .85rem; }
+      .hero-title { font-size:.95rem; }
+      .hero-status { font-size:.8rem; margin-bottom:.55rem; }
+      .toolbar { flex-direction:column; align-items:stretch; }
+      .seg { width:100%; justify-content:stretch; }
+      .seg button { flex:1; text-align:center; padding:.42rem .5rem; font-size:.78rem; }
+      .stats-line {
+        font-size:.74rem; line-height:1.45;
+        min-width:0; width:100%;
+      }
+      .reload { align-self:flex-start; }
+      .log-card { padding:.5rem .55rem; }
+      .log-line { flex-direction:column; align-items:flex-start; gap:.35rem; }
+      .log-ts { font-size:.75rem; }
+      .log-body { font-size:.8rem; line-height:1.4; flex:none; width:100%; }
+      .log-body .slug { word-break:break-all; display:block; margin-top:.15rem; }
+      .fold-toolbar { flex-wrap:wrap; }
+      .fold-meta { margin-left:0; width:100%; font-size:.7rem; }
+    }
     a { color:var(--blue); text-decoration:none; }
     header { display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem; margin-bottom:1rem; }
     h1 { margin:0; font-size:1.2rem; font-weight:800; letter-spacing:-.02em; }
@@ -99,7 +122,7 @@
     <header>
       <div>
         <h1>Log · BTC 2 legs V2</h1>
-        <div class="sub">只顯示<strong>今次 session</strong>：真倉 dual_leg_live_daemon.jsonl · 紙上 dual_leg_btc_paper_trades.json</div>
+        <div class="sub"><strong>今次 session</strong>：真倉 jsonl · 紙上 trades</div>
       </div>
       <a href="/"><button type="button" class="desk-btn">← Desk</button></a>
     </header>
@@ -222,6 +245,15 @@
       return { label: 'FILL', className: 'tag fill' };
     }
 
+    function shortSlug(s) {
+      const t = String(s || '').trim();
+      if (!t || t === '—') return t || '—';
+      const parts = t.split('-');
+      const last = parts[parts.length - 1];
+      if (/^\d+$/.test(last) && last.length >= 8) return '⋯' + last.slice(-10);
+      return t.length > 22 ? t.slice(0, 20) + '…' : t;
+    }
+
     function pnlHtml(row) {
       const r = parseLine(row) || {};
       let v = r.log_pnl_usd;
@@ -246,12 +278,14 @@
       el.innerHTML = list.map((row) => {
         const tag = statusTag(row);
         const ts = (row.timestamp_hkt || '').replace(' HKT', '').slice(11, 19) || (row.timestamp_hkt || '').slice(0, 19);
-        const slug = row.slug || row.event || '—';
+        const slugRaw = row.slug || row.event || '—';
+        const slug = shortSlug(slugRaw);
         const pnl = pnlHtml(row);
-        let reason = row.reason && String(row.reason) !== String(slug) ? String(row.reason) : '';
+        let reason = row.reason && String(row.reason) !== String(slugRaw) ? String(row.reason) : '';
         if (!reason && row.event) reason = String(row.event);
         if (pnl && reason.indexOf('PnL ') === 0) reason = reason.replace(/^PnL [^·]+·\s*/, '');
-        if (reason.length > 180) reason = reason.slice(0, 177) + '…';
+        const maxR = (window.innerWidth && window.innerWidth < 480) ? 90 : 180;
+        if (reason.length > maxR) reason = reason.slice(0, maxR - 1) + '…';
         const fillClass = ['FILL', 'WIN', 'LOSS', 'SET', 'ENTRY', 'HEDGE'].includes(tag.label) ? ' fill-card' : '';
         const reasonHtml = reason ? ` · <span class="reason">${reason}</span>` : '';
         return `<article class="log-card${fillClass}">

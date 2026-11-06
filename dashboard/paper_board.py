@@ -263,20 +263,71 @@ def _live_exec_session_id(root: Path) -> str:
     return ""
 
 
-def _apply_live_display_epoch(root: Path, session_id: str, windows: int, entered: int) -> tuple[int, int]:
+def _live_unique_slugs_this_session(root: Path, exec_session: str) -> set[str]:
+    """Market slugs touched this live session (trades rows + open state).
+
+    ``samples_total`` counts decision *samples* (checkpoint ticks), which is much
+    larger than ``Trades N 單`` — use slug-union for the gold-box funnel so the
+    窗/過濾 lines match how many 5m windows were involved.
+    """
+    slugs: set[str] = set()
+    sess = (exec_session or "").strip()
+
+    trades = _read_json(root / "logs" / "dual_leg_live_trades.json", [])
+    if isinstance(trades, list):
+        for row in trades:
+            if not isinstance(row, dict):
+                continue
+            if sess:
+                row_sid = str(row.get("session_id") or "").strip()
+                if row_sid and row_sid != sess:
+                    continue
+            slug = str(row.get("slug") or "").strip()
+            if slug:
+                slugs.add(slug)
+
+    state = _read_json(root / "logs" / "dual_leg_live_state.json", {})
+    if isinstance(state, dict):
+        for slug_key, row in state.items():
+            sk = str(slug_key or "").strip()
+            if not sk:
+                continue
+            if isinstance(row, dict) and sess:
+                row_sid = str(row.get("session_id") or "").strip()
+                if row_sid and row_sid != sess:
+                    continue
+            slugs.add(sk)
+    return slugs
+
+
+def _apply_live_display_epoch(
+    root: Path,
+    session_id: str,
+    raw_windows: int,
+    raw_entered: int,
+    *,
+    windows_are_slugs: bool,
+) -> tuple[int, int]:
     """Shift the visible funnel so a fresh live session starts at 0.
 
-    The daemon keeps a lifetime sample counter in the status file. A display
-    epoch records the counter at the moment this session's Desk was reset.
+    For **slug-based** window counts, only subtract ``windows_baseline`` when set
+    (new resets). Legacy epochs used ``samples_baseline`` for daemon sample
+    counts — do not apply that baseline to slugs or the 窗 line goes wrong.
     """
     epoch = _read_json(root / "logs" / "dual_leg_live_display_epoch.json", {})
     if not isinstance(epoch, dict):
-        return windows, entered
+        return raw_windows, raw_entered
     if not session_id or str(epoch.get("session_id") or "") != session_id:
-        return windows, entered
-    base_w = int(epoch.get("samples_baseline") or 0)
+        return raw_windows, raw_entered
     base_e = int(epoch.get("entered_baseline") or 0)
-    return max(0, windows - base_w), max(0, entered - base_e)
+    e = max(0, raw_entered - base_e)
+    if windows_are_slugs:
+        wb = epoch.get("windows_baseline")
+        if wb is None:
+            return raw_windows, e
+        return max(0, raw_windows - int(wb)), e
+    base_w = int(epoch.get("samples_baseline") or 0)
+    return max(0, raw_windows - base_w), e
 
 
 def _gold_box_window_funnel(
@@ -304,12 +355,34 @@ def _gold_box_window_funnel(
                 "trades": 0,
                 "ledger": "live",
             }
-        windows = st.get("samples_total")
+        sess_for_slugs = session or exec_session
+        slug_set = _live_unique_slugs_this_session(root, sess_for_slugs)
         entered = st.get("settled_trades")
         if entered is None:
             entered = st.get("posted_live_orders")
+        # Prefer unique 5m window (slug) count; falls back to status samples if no data yet.
+        if slug_set:
+            raw_w = len(slug_set)
+            raw_e = int(entered or 0)
+            w, e = _apply_live_display_epoch(
+                root, session, raw_w, raw_e, windows_are_slugs=True
+            )
+            return {
+                "considered": w,
+                "filtered": w,
+                "entered": e,
+                "trades": e,
+                "ledger": "live",
+            }
+        windows = st.get("samples_total")
         if windows is not None:
-            w, e = _apply_live_display_epoch(root, session, int(windows), int(entered or 0))
+            w, e = _apply_live_display_epoch(
+                root,
+                session,
+                int(windows),
+                int(entered or 0),
+                windows_are_slugs=False,
+            )
             return {
                 "considered": w,
                 "filtered": w,

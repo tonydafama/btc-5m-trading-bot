@@ -31,7 +31,7 @@ class FamilyLogsTemplateTests(unittest.TestCase):
         self.assertIn("dual-leg-live-v2", html)
         self.assertIn("function normalizeTailStats(", html)
         self.assertIn("已結算", html)
-        self.assertIn("只顯示", html)
+        self.assertIn("今次 session", html)
         self.assertNotIn("sonu_only", html)
         self.assertNotIn("son-btc-5m-ultimate-live", html)
         self.assertNotIn("LOCKED · Live", html)

@@ -346,13 +346,36 @@ class PaperBoardTests(unittest.TestCase):
             self.bot / "logs" / "dual_leg_live_status.json",
             {"samples_total": 290, "settled_trades": 27, "wallet_cash_usdc": 100},
         )
-        env = {"DUAL_LEG_LIVE_DRY_RUN": "0", "DUAL_LEG_REAL_MONEY": "1"}
-        from desk_bots import v2_mode_view
-
+        _write(self.bot / "config" / "v2_parent_live_exec.env", "")
         # Force live_active path requires systemd; test helper directly
         wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
         self.assertEqual(wf["filtered"], 290)
         self.assertEqual(wf["entered"], 27)
+
+    def test_v2_live_funnel_uses_unique_slugs_not_samples(self) -> None:
+        """窗 = unique market slugs, not daemon checkpoint samples (798 vs 11)."""
+        _write(
+            self.bot / "config" / "v2_parent_live_exec.env",
+            "DUAL_LEG_LIVE_SESSION_ID=sess-a\n",
+        )
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {
+                "session_id": "sess-a",
+                "samples_total": 798,
+                "settled_trades": 2,
+            },
+        )
+        _write(
+            self.bot / "logs" / "dual_leg_live_trades.json",
+            [
+                {"slug": "btc-updown-5m-one", "session_id": "sess-a", "pnl": 1},
+                {"slug": "btc-updown-5m-two", "session_id": "sess-a", "pnl": -1},
+            ],
+        )
+        wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
+        self.assertEqual(wf["filtered"], 2)
+        self.assertEqual(wf["entered"], 2)
 
     def test_stale_live_status_does_not_paint_the_new_session(self) -> None:
         _write(
