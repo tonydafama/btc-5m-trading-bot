@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Log · Son U</title>
+  <title>Log · BTC 2 legs V2</title>
   <style>
     :root {
       --bg:#06080c; --panel:#111820; --border:#2a3544;
@@ -22,11 +22,15 @@
       border-radius:10px; padding:.45rem .75rem; font-size:.8rem; font-weight:650; cursor:pointer;
     }
     .hero {
-      border:1px solid rgba(255,80,80,.35); border-radius:16px;
+      border:1px solid rgba(62,232,138,.45); border-radius:16px;
       background:linear-gradient(180deg,#141c28 0%,#0e141c 100%);
       padding:.85rem .95rem 1rem; margin-bottom:.75rem;
     }
-    .hero-title { font-size:1.05rem; font-weight:800; margin:0 0 .35rem; color:#ff8a8a; }
+    .hero.inactive {
+      border-color:rgba(255,80,80,.35);
+    }
+    .hero-title { font-size:1.05rem; font-weight:800; margin:0 0 .35rem; color:var(--green); }
+    .hero.inactive .hero-title { color:#ff8a8a; }
     .hero-status { font-size:.88rem; font-weight:650; color:var(--text); margin-bottom:.75rem; }
     .hero-status.paused { color:var(--orange); }
     .toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin-bottom:.55rem; }
@@ -58,6 +62,7 @@
     .tag.fill { color:#042a18; background:var(--green); }
     .tag.loss { color:#fff; background:var(--red); }
     .tag.fail { color:#1a1000; background:var(--orange); }
+    .tag.info { color:#dceaf8; background:rgba(94,179,255,.22); border:1px solid rgba(94,179,255,.35); }
     .log-body { flex:1 1 12rem; min-width:0; color:var(--text); word-break:break-word; line-height:1.35; }
     .log-body .slug { font-weight:650; }
     .log-body .reason { color:#c5d2e0; }
@@ -71,7 +76,7 @@
     }
     details.fold summary {
       cursor:pointer; padding:.65rem .9rem; font-weight:650; font-size:.85rem;
-      color:var(--orange); list-style:none;
+      color:var(--blue); list-style:none;
     }
     details.fold summary::-webkit-details-marker { display:none; }
     details.fold[open] summary { border-bottom:1px solid var(--border); }
@@ -89,39 +94,34 @@
   <div class="wrap">
     <header>
       <div>
-        <h1>Log · Son U</h1>
-        <div class="sub">Live 終極5m 紀錄 · 預設睇全部（含 skip）</div>
+        <h1>Log · BTC 2 legs V2</h1>
+        <div class="sub">Parent V2 真倉事件（dual_leg_live_daemon.jsonl）+ Parent V2 紙上成交</div>
       </div>
       <a href="/"><button type="button" class="desk-btn">← Desk</button></a>
     </header>
 
-    <section class="hero" id="live-hero" aria-label="Live Son U">
-      <h2 class="hero-title">終極5m · Live</h2>
+    <section class="hero" id="live-hero" aria-label="V2 Live">
+      <h2 class="hero-title" id="live-hero-title">BTC 2 legs V2 · Live</h2>
       <div class="hero-status" id="live-status-line">載入中…</div>
       <div class="toolbar">
         <div class="seg" role="tablist">
           <button type="button" class="active" data-live-mode="all" id="live-mode-all">全部</button>
           <button type="button" data-live-mode="trades" id="live-mode-trades">成交</button>
         </div>
-        <span class="stats-line" id="live-stats-line">成交 — · skip —</span>
+        <span class="stats-line" id="live-stats-line">事件 — · skip —</span>
         <button type="button" class="reload" id="live-reload">重新載入</button>
       </div>
-      <div class="log-list" id="sonu-live-log-body"></div>
+      <div class="log-list" id="v2-live-log-body"></div>
     </section>
 
-    <details class="fold" id="sonu-paper-fold">
-      <summary>Paper · Son U（預設收起）</summary>
+    <details class="fold" id="paper-fold" open>
+      <summary>Paper · BTC 2 legs V2</summary>
       <div class="fold-toolbar">
         <button type="button" class="active" data-paper-mode="all">全部</button>
         <button type="button" data-paper-mode="trades">成交</button>
-        <span class="fold-meta" id="sonu-paper-meta">—</span>
+        <span class="fold-meta" id="paper-meta">—</span>
       </div>
-      <div class="log-list" id="sonu-paper-log-body" style="padding:0 .75rem .75rem"></div>
-    </details>
-
-    <details class="fold" id="fleet-log-fold">
-      <summary id="fleet-fold-summary">其他機械人 · 預設收起</summary>
-      <div class="log-list" id="fleet-log-body" style="padding:.5rem .75rem .75rem"></div>
+      <div class="log-list" id="v2-paper-log-body" style="padding:0 .75rem .75rem"></div>
     </details>
 
     <footer class="page-foot" id="page-foot">—</footer>
@@ -129,9 +129,8 @@
 
   <script>
     /* CORE LOG HELPERS — Do NOT delete parseLine / statusTag / renderRows when patching Son U lock. */
-    const DEFAULT_LIVE_BOT = 'son-btc-5m-ultimate-live';
-    const LIVE_TAIL_N = 40;
-    const SONU_FLEET_TOKENS = ['V1', '5M', 'DUAL', 'FUNDING', 'MEME', 'SPORTS', 'GROK', 'NEWNEW'];
+    const V2_LIVE_BOT = 'dual-leg-live-v2';
+    const TAIL_N = 40;
 
     function parseLine(raw) {
       if (raw == null) return null;
@@ -171,6 +170,8 @@
     function isSkipRow(p) {
       p = parseLine(p);
       if (!p) return true;
+      const ev = String(p.event || '');
+      if (ev.startsWith('skip_') || ev === 'entry_failed' || ev === 'hedge_failed') return true;
       const res = String(p.trade_result || p.status || '').toUpperCase();
       if (res === 'SKIPPED' || res === 'SKIP') return true;
       if (p.entered === false) return true;
@@ -182,6 +183,8 @@
     function isFillRow(p) {
       p = parseLine(p);
       if (!p || isSkipRow(p)) return false;
+      const ev = String(p.event || '');
+      if (ev === 'entry' || ev === 'hedge' || ev === 'trade_settled') return true;
       const res = String(p.trade_result || p.result || '').toUpperCase();
       if (['WIN', 'LOSS', 'FAILED', 'FAIL', 'FILLED'].includes(res)) return true;
       return !!p.entered;
@@ -189,6 +192,17 @@
 
     function statusTag(row) {
       const r = parseLine(row) || {};
+      const ev = String(r.event || '');
+      if (ev === 'live_daemon_start' || ev === 'live_daemon_stop') {
+        return { label: 'INFO', className: 'tag info' };
+      }
+      if (ev === 'loop_error') return { label: 'FAIL', className: 'tag fail' };
+      if (ev.startsWith('skip_') || ev === 'entry_failed' || ev === 'hedge_failed') {
+        return { label: 'SKIP', className: 'tag skip' };
+      }
+      if (ev === 'entry' || ev === 'hedge' || ev === 'trade_settled') {
+        return { label: 'FILL', className: 'tag fill' };
+      }
       if (isSkipRow(r)) return { label: 'SKIP', className: 'tag skip' };
       const res = String(r.trade_result || '').toUpperCase();
       if (res === 'LOSS') return { label: 'LOSS', className: 'tag loss' };
@@ -208,9 +222,10 @@
       el.innerHTML = list.map((row) => {
         const tag = statusTag(row);
         const ts = (row.timestamp_hkt || '').replace(' HKT', '').slice(11, 19) || (row.timestamp_hkt || '').slice(0, 19);
-        const slug = row.slug || '—';
+        const slug = row.slug || row.event || '—';
         let reason = row.reason && String(row.reason) !== String(slug) ? String(row.reason) : '';
-        if (reason.length > 160) reason = reason.slice(0, 157) + '…';
+        if (!reason && row.event) reason = String(row.event);
+        if (reason.length > 180) reason = reason.slice(0, 177) + '…';
         const fillClass = tag.label === 'FILL' || tag.label === 'LOSS' ? ' fill-card' : '';
         const reasonHtml = reason ? ` · <span class="reason">${reason}</span>` : '';
         return `<article class="log-card${fillClass}">
@@ -229,7 +244,6 @@
       return parsed.filter(isFillRow);
     }
 
-    /** Droplet tail: stats.trades; repo may send stats.fills. */
     function normalizeTailStats(raw) {
       if (!raw || typeof raw !== 'object') return { fills: 0, skips: 0, total: 0 };
       const fills = raw.trades ?? raw.fills ?? 0;
@@ -246,30 +260,24 @@
     }
 
     /** Droplet: GET /api/family-bots → { ok, n, bots:[{ id, display_name, status, … }] } */
-    function findSonULiveBot(payload) {
+    function findV2LiveBot(payload) {
       if (!payload) return null;
       const bots = payload.bots;
       if (Array.isArray(bots)) {
-        return bots.find((b) => String(b?.id || '').trim() === DEFAULT_LIVE_BOT) || null;
+        return bots.find((b) => String(b?.id || '').trim() === V2_LIVE_BOT) || null;
       }
-      return payload.son_u_live || null;
+      return null;
     }
 
     function statusLineFromBot(bot) {
-      if (!bot) return '紙上預備 · 跑緊';
+      if (!bot) return '真倉 OFF';
       if (bot.status_line) return bot.status_line;
-      const st = String(bot.status || '').trim();
-      if (st && (/[·・]/.test(st) || /[\u4e00-\u9fff]/.test(st))) return st;
-      const mode = String(bot.mode || bot.ledger || '').toLowerCase();
-      const seat = mode === 'live' || bot.live ? '真倉 ON' : '紙上預備';
-      const paused = bot.paused === true || bot.running === false
-        || /pause|stopped|idle/i.test(st);
-      return `${seat} · ${paused ? '暫停' : '跑緊'}`;
+      return String(bot.status || '').trim() || '—';
     }
 
     function emptyTradesMsg(stats) {
       const skips = stats?.skips ?? 0;
-      return `暫無成交（${skips} skip）· 切去全部睇`;
+      return `暫無成交事件（${skips} skip）· 切去全部睇`;
     }
 
     function countStats(rows) {
@@ -277,16 +285,6 @@
       let fills = 0; let skips = 0;
       parsed.forEach((p) => { if (isFillRow(p)) fills += 1; else if (isSkipRow(p)) skips += 1; });
       return { fills, skips, total: parsed.length };
-    }
-
-    function isSonuTradeRow(r) {
-      const row = parseLine(r);
-      if (!row) return false;
-      if (['sonu', 'crypto15m', 'son_u'].includes(row.desk)) return true;
-      const bot = String(row.bot || row.asset || '').trim().toUpperCase();
-      if (SONU_FLEET_TOKENS.some((tok) => bot.includes(tok))) return false;
-      if (bot === 'BTC' || bot === 'ETH') return true;
-      return false;
     }
 
     async function fetchJson(url) {
@@ -303,23 +301,31 @@
     let liveStats = { fills: 0, skips: 0, total: 0 };
     let liveSource = '';
     let paperRows = [];
-    let fleetRows = [];
     let familyBots = null;
 
-    function paintLiveStatus() {
+    function paintLiveHero() {
+      const bot = findV2LiveBot(familyBots);
       const lineEl = document.getElementById('live-status-line');
-      if (!lineEl) return;
-      const bot = findSonULiveBot(familyBots);
-      const text = statusLineFromBot(bot);
-      lineEl.textContent = text;
-      lineEl.classList.toggle('paused', /暫停/.test(text));
+      const hero = document.getElementById('live-hero');
+      const title = document.getElementById('live-hero-title');
+      if (lineEl) {
+        const text = statusLineFromBot(bot);
+        lineEl.textContent = text;
+        lineEl.classList.toggle('paused', /暫停/.test(text));
+      }
+      const on = bot && String(bot.status || bot.status_line || '').includes('LIVE ON');
+      if (hero) hero.classList.toggle('inactive', !on);
+      if (title) {
+        title.textContent = on ? 'LIVE ON · BTC 2 legs V2' : 'BTC 2 legs V2 · Live';
+        title.style.color = on ? '' : '';
+      }
     }
 
     function paintLiveUnit(tailPayload) {
       if (tailPayload && tailPayload.stats) liveStats = normalizeTailStats(tailPayload.stats);
       const statsEl = document.getElementById('live-stats-line');
       if (statsEl) {
-        statsEl.innerHTML = `成交 <strong>${liveStats.fills ?? 0}</strong> · skip ${liveStats.skips ?? 0}`;
+        statsEl.innerHTML = `事件 <strong>${liveStats.fills ?? 0}</strong> · skip ${liveStats.skips ?? 0}`;
       }
       const src = tailSource(tailPayload);
       if (src) liveSource = src;
@@ -328,22 +334,20 @@
 
       const view = rowsForMode(liveAllRows, liveMode);
       if (liveMode === 'trades' && !view.length) {
-        renderRows('sonu-live-log-body', [], emptyTradesMsg(liveStats));
+        renderRows('v2-live-log-body', [], emptyTradesMsg(liveStats));
       } else {
-        renderRows('sonu-live-log-body', view, liveMode === 'all' ? '尚無紀錄' : emptyTradesMsg(liveStats));
+        renderRows('v2-live-log-body', view, liveMode === 'all' ? '尚無紀錄' : emptyTradesMsg(liveStats));
       }
     }
 
     async function refreshLiveUnit() {
       const [bots, payload] = await Promise.all([
         fetchJson('/api/family-bots'),
-        fetchJson(
-          `/api/bot-log-tail?id=${encodeURIComponent(DEFAULT_LIVE_BOT)}&mode=all&n=${LIVE_TAIL_N}`,
-        ),
+        fetchJson(`/api/dual-leg-log-tail?ledger=live&mode=all&n=${TAIL_N}`),
       ]);
       if (bots) {
         familyBots = bots;
-        paintLiveStatus();
+        paintLiveHero();
       }
       if (payload && Array.isArray(payload.lines)) {
         liveAllRows = payload.lines;
@@ -351,40 +355,31 @@
         paintLiveUnit(payload);
         return;
       }
-      const fallback = await fetchJson('/api/crypto15m/trades?ledger=live&sonu_only=1&limit=200');
-      const rows = (Array.isArray(fallback) ? fallback : []).filter(isSonuTradeRow);
-      liveStats = countStats(rows);
-      liveAllRows = rows;
-      paintLiveUnit({ stats: { trades: liveStats.fills, skips: liveStats.skips, total: liveStats.total }, source: 'crypto_15m_trade_log_live.json' });
+      liveAllRows = [];
+      liveStats = { fills: 0, skips: 0, total: 0 };
+      paintLiveUnit({});
     }
 
     function paintPaper() {
       const view = rowsForMode(paperRows, paperMode);
       const stats = countStats(paperRows);
-      const meta = document.getElementById('sonu-paper-meta');
+      const meta = document.getElementById('paper-meta');
       if (meta) meta.textContent = `成交 ${stats.fills} · skip ${stats.skips}`;
       if (paperMode === 'trades' && !view.length) {
-        renderRows('sonu-paper-log-body', [], emptyTradesMsg(stats));
+        renderRows('v2-paper-log-body', [], emptyTradesMsg(stats));
       } else {
-        renderRows('sonu-paper-log-body', view, paperMode === 'all' ? '尚無紀錄' : emptyTradesMsg(stats));
+        renderRows('v2-paper-log-body', view, paperMode === 'all' ? '尚無紀錄' : emptyTradesMsg(stats));
       }
     }
 
-    function paintFleet() {
-      renderRows('fleet-log-body', fleetRows.slice(0, 120), '其他 bot 尚無紀錄');
-      const sum = document.getElementById('fleet-fold-summary');
-      const n = familyBots?.n ?? familyBots?.bots?.length ?? familyBots?.fleet_count ?? fleetRows.length;
-      if (sum) sum.textContent = `其他機械人 (${n}) · 預設收起`;
-    }
-
-    async function refreshAll() {
-      await refreshLiveUnit();
-      const paperRaw = await fetchJson('/api/crypto15m/trades?ledger=paper&sonu_only=1&limit=300');
-      paperRows = (Array.isArray(paperRaw) ? paperRaw : []).filter(isSonuTradeRow);
+    async function refreshPaper() {
+      const payload = await fetchJson(`/api/dual-leg-log-tail?ledger=paper&mode=all&n=${TAIL_N}`);
+      if (payload && Array.isArray(payload.lines)) {
+        paperRows = payload.lines;
+      } else {
+        paperRows = [];
+      }
       paintPaper();
-      const fleetRaw = await fetchJson('/api/crypto15m/trades?ledger=paper&sonu_only=0&limit=150');
-      fleetRows = (Array.isArray(fleetRaw) ? fleetRaw : []).filter((r) => !isSonuTradeRow(r));
-      paintFleet();
     }
 
     document.querySelectorAll('[data-live-mode]').forEach((btn) => {
@@ -402,6 +397,11 @@
       });
     });
     document.getElementById('live-reload')?.addEventListener('click', () => refreshLiveUnit());
+
+    async function refreshAll() {
+      await refreshLiveUnit();
+      await refreshPaper();
+    }
 
     refreshAll();
     setInterval(refreshAll, 30000);

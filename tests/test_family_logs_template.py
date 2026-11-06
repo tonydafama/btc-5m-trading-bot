@@ -1,4 +1,4 @@
-"""family_logs.html must keep core log helpers (Son U lock regression guard)."""
+"""family_logs.html must keep core log helpers (regression guard)."""
 
 from __future__ import annotations
 
@@ -17,25 +17,22 @@ class FamilyLogsTemplateTests(unittest.TestCase):
         self.assertIn("function renderRows(", html)
         self.assertIn("Do NOT delete parseLine / statusTag / renderRows", html)
 
-    def test_revamped_sonu_logs_ui(self) -> None:
+    def test_parent_v2_logs_ui(self) -> None:
         html = FAMILY.read_text(encoding="utf-8")
-        self.assertIn("Log · Son U", html)
-        self.assertIn("終極5m · Live", html)
-        self.assertIn("sonu-paper-fold", html)
-        self.assertIn("sonu_only=1", html)
-        self.assertIn("isSonuTradeRow", html)
-        self.assertIn("暫無成交", html)
+        self.assertIn("Log · BTC 2 legs V2", html)
+        self.assertIn("LIVE ON · BTC 2 legs V2", html)
+        self.assertIn("paper-fold", html)
+        self.assertIn("暫無成交事件", html)
         self.assertIn("isFillRow", html)
         self.assertIn("/api/family-bots", html)
-        self.assertIn("data-live-mode=\"all\"", html)
+        self.assertIn('data-live-mode="all"', html)
         self.assertIn("let liveMode = 'all'", html)
-        self.assertIn("/api/bot-log-tail?id=", html)
-        self.assertIn("function findSonULiveBot(", html)
-        self.assertIn("function statusLineFromBot(", html)
+        self.assertIn("/api/dual-leg-log-tail?", html)
+        self.assertIn("dual-leg-live-v2", html)
         self.assertIn("function normalizeTailStats(", html)
-        self.assertIn("son-btc-5m-ultimate-live", html)
+        self.assertNotIn("sonu_only", html)
+        self.assertNotIn("son-btc-5m-ultimate-live", html)
         self.assertNotIn("LOCKED · Live", html)
-        self.assertNotIn("id=son-btc", html)
 
 
 if __name__ == "__main__":
