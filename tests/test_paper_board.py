@@ -330,6 +330,17 @@ class PaperBoardTests(unittest.TestCase):
         self.assertEqual(hl.get("wallet_label"), "銀包")
         self.assertFalse(hl.get("wallet_is_live_session"))
 
+    def test_fresh_paper_counters_stay_zero_beside_stopped_live(self) -> None:
+        _write(self.bot / "logs" / "dual_leg_btc_paper_trades.json", [])
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {"samples_total": 987, "settled_trades": 17, "realized_pnl_usd": -36.59},
+        )
+        board = paper_board._high_live_board(self.bot, {"DUAL_LEG_LIVE_DRY_RUN": "1"}, {"wallet_cash_usdc": None})
+        row = next(item for item in board["rows"] if item["id"] == "dual-leg-live-v2")
+        self.assertEqual(row["trades_windows_line"], "Trades 0 單 · 0 窗 · 過濾 0")
+        self.assertEqual(row["trade_count"], 0)
+
     def test_v2_live_funnel_from_status_samples(self) -> None:
         _write(
             self.bot / "logs" / "dual_leg_live_status.json",

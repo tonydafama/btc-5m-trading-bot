@@ -1352,8 +1352,9 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
     mode = v2_mode_view(root, env)
     live_on = bool(mode["live_active"])
     wf = _gold_box_window_funnel(root, bot_id="dual-leg-live-v2", live_active=live_on)
-    entered = int(wf.get("entered") or settled or 0)
-    windows = int(wf.get("filtered") or 0)
+    # 0 is a real fresh-session count. Do not replace it with the stopped live book.
+    entered = int(wf["entered"]) if wf.get("entered") is not None else int(settled or 0)
+    windows = int(wf["filtered"]) if wf.get("filtered") is not None else 0
     row = {
         "id": "dual-leg-live-v2",
         "display_name": "BTC 2 legs V2",

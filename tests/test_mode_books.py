@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from datetime import datetime
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "dashboard"))
@@ -122,6 +123,25 @@ class ModeBookTests(unittest.TestCase):
         self.assertEqual(prior["scope"], "上次")
         self.assertEqual((prior["wins"], prior["losses"], prior["pnl"]), (1, 2, -7.0))
         self.assertEqual(prior["wr_label"], "33.3%")
+
+    def test_open_empty_v2_paper_stays_at_zero(self) -> None:
+        from datetime import datetime
+
+        _dump(self.root / "logs" / "dual_leg_btc_paper_trades.json", [])
+        archive = self.root / "logs" / "archive" / "btc_v2_paper" / "dual_leg_btc_paper_trades.json"
+        _dump(
+            archive,
+            [{"slug": "old", "mode": "paper", "session_id": "paper-v2", "trade_result": "WIN", "pnl": 587.6}],
+        )
+        started = datetime(2026, 11, 7, 1, 8, 27)
+        with mock.patch.object(mb, "_unit_active_since_hkt", return_value=started):
+            row = {"id": mb.V2_ID, "live_enabled": False}
+            mb.attach_mode_books(self.root, [row])
+        self.assertEqual(row["pnl"], 0.0)
+        self.assertEqual(row["settled_n"], 0)
+        scopes = [line["scope"] for line in row["mode_books"]["paper"]["rows"]]
+        self.assertEqual(scopes, ["今次", "上次"])
+        self.assertTrue(row["mode_books"]["paper"]["rows"][0]["open"])
 
     def test_attach_headline_follows_the_active_mode(self) -> None:
         _dump(

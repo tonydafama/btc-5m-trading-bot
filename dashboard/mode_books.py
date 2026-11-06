@@ -485,8 +485,16 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
         live_now, _ = _take([root / "logs" / "dual_leg_live_trades.json"], _parent_live, seen)
         history, segments = _take(_archive_files(root, "dual_leg_live_trades.json"), _parent_live, seen)
         v3_rows, _ = _take(_v3_live_files(root), _parent_live, seen)
-        paper_open = _unit_active_since_hkt(OBSERVER_UNIT) is not None
-        paper_lines = [_line("今次", paper, _paper_note(paper, prior=False), open_book=paper_open)]
+        paper_since = _unit_active_since_hkt(OBSERVER_UNIT)
+        paper_lines = [
+            _line(
+                "今次",
+                paper,
+                _paper_note(paper, prior=False),
+                open_book=paper_since is not None,
+                started_at=paper_since,
+            )
+        ]
         if prior:
             paper_lines.append(_line("上次", prior, _paper_note(prior, prior=True)))
         live_since = _unit_active_since_hkt(V2_LIVE_UNIT)
