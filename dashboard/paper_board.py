@@ -1367,15 +1367,6 @@ def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | 
         attach_mode_books(root, rows)
     except Exception:
         pass
-    try:
-        try:
-            from mode_books import live_pnl_battle
-        except ImportError:
-            from dashboard.mode_books import live_pnl_battle
-
-        vs = live_pnl_battle(rows)
-    except Exception:
-        vs = None
     any_live = any(bool(r.get("live_enabled")) for r in rows)
     any_on_air = any(bool(r.get("live_on_air")) for r in rows)
     pause = v2_mode.get("entry_pause") or {}
@@ -1393,7 +1384,6 @@ def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | 
         "entry_pause": pause,
         "blocked": None if any_live else "live_exec_dry_run_placeholder",
         "rows": rows,
-        "vs": vs,
         "wallet_cash_usdc": wallet_cash_usdc,
     }
 

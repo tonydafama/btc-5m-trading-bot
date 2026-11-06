@@ -248,51 +248,5 @@ class ModeBookTests(unittest.TestCase):
             mb._dur_label(section["rows"][0]["duration_min"] + section["rows"][1]["duration_min"]),
         )
 
-    def test_live_pnl_battle_scores_live_books_only(self) -> None:
-        _dump(
-            self.root / "logs" / "dual_leg_btc_paper_trades.json",
-            [{"slug": "paper", "mode": "paper", "session_id": "paper-v2", "trade_result": "WIN", "pnl": 100}],
-        )
-        _dump(
-            self.root / "logs" / "dual_leg_live_trades.json",
-            [{"slug": "v2", "mode": "LIVE", "profile": "v2", "trade_result": "LOSS", "pnl": -3}],
-        )
-        _dump(
-            self.root / "logs" / "sons" / "son-btc-2legs-v2-newnew-a_trades.json",
-            [
-                {"slug": "np", "mode": "PAPER", "trade_result": "WIN", "pnl": 40},
-                {"slug": "nl", "mode": "LIVE", "trade_result": "WIN", "pnl": 8},
-            ],
-        )
-        rows = [
-            {"id": mb.V2_ID, "display_name": "BTC 2 legs V2"},
-            {"id": mb.NA_ID, "display_name": "V2 newnew A"},
-        ]
-        mb.attach_mode_books(self.root, rows)
-        vs = mb.live_pnl_battle(rows)
-        self.assertEqual(vs["sides"][0]["pnl"], -3.0)
-        self.assertEqual(vs["sides"][1]["pnl"], 8.0)
-        self.assertEqual(vs["leader_id"], mb.NA_ID)
-        self.assertEqual(vs["gap"], 11.0)
-        self.assertIn("領先 V2 newnew A", vs["verdict"])
-        self.assertIn("差距 +$11.00", vs["verdict"])
-
-    def test_live_pnl_battle_names_the_only_live_book(self) -> None:
-        _dump(
-            self.root / "logs" / "dual_leg_live_trades.json",
-            [{"slug": "v2", "mode": "LIVE", "profile": "v2", "trade_result": "WIN", "pnl": 21.4}],
-        )
-        rows = [
-            {"id": mb.V2_ID, "display_name": "BTC 2 legs V2"},
-            {"id": mb.NA_ID, "display_name": "V2 newnew A"},
-        ]
-        mb.attach_mode_books(self.root, rows)
-        vs = mb.live_pnl_battle(rows)
-        self.assertEqual(vs["sides"][0]["pnl_label"], "+$21.40")
-        self.assertEqual(vs["sides"][1]["pnl_label"], "未有真倉")
-        self.assertIsNone(vs["sides"][1]["pnl"])
-        self.assertIn("V2 newnew A 未有真倉", vs["verdict"])
-
-
 if __name__ == "__main__":
     unittest.main()

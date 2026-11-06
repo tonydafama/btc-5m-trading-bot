@@ -284,12 +284,7 @@ class PaperBoardTests(unittest.TestCase):
             "dual-leg-live-v2",
             "son-btc-2legs-v2-newnew-a",
         ])
-        vs = hl.get("vs") or {}
-        self.assertEqual([side.get("id") for side in vs.get("sides") or []], [
-            "dual-leg-live-v2",
-            "son-btc-2legs-v2-newnew-a",
-        ])
-        self.assertEqual(vs.get("metric"), "真倉 PnL")
+        self.assertNotIn("vs", hl)
         self.assertNotIn("son-btc-5m-ultimate-live", [row.get("id") for row in rows])
 
     def test_high_live_wallet_from_status_cache(self) -> None:

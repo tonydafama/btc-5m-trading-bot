@@ -343,21 +343,6 @@ details.sonu-paper-log-fold[open] > summary {
   color: #d5deea;
 }
 .hl-wrap .hl-sub { margin-top: .2rem; font-size: .74rem; color: var(--muted); line-height: 1.4; }
-.hl-vs {
-  border: 1px solid rgba(224,181,103,.45);
-  border-radius: 8px;
-  padding: .4rem .55rem .45rem;
-  background: rgba(8,12,18,.45);
-}
-.hl-vs-k { font-size: .68rem; font-weight: 700; letter-spacing: .04em; color: #f0d9a8; }
-.hl-vs table { width: 100%; border-collapse: collapse; font-size: .74rem; margin-top: .2rem; }
-.hl-vs th, .hl-vs td { text-align: right; padding: .16rem .28rem; }
-.hl-vs th:first-child, .hl-vs td:first-child { text-align: left; color: var(--dim); font-weight: 500; width: 3.2rem; }
-.hl-vs thead th { color: #d5deea; font-weight: 700; }
-.hl-vs thead th.is-lead { color: #f0d9a8; }
-.hl-vs td.pos { color: #3ecf8e; font-weight: 750; }
-.hl-vs td.neg { color: #f07178; font-weight: 750; }
-.hl-vs-lead { margin-top: .2rem; font-size: .72rem; color: #f0d9a8; }
 /* Radio-station LIVE ON: vivid #ff0000 when live; dim near-black when paper — beats gold theme */
 @keyframes hl-on-air-glow {
   0%, 100% {
@@ -1455,35 +1440,6 @@ summary.desk-fold-summary {
     return !!r.live_enabled;
   }
 
-  function liveVsHtml(hl) {
-    const vs = hl && hl.vs;
-    if (!vs || !Array.isArray(vs.sides) || vs.sides.length < 2) return '';
-    const head = vs.sides.map((side) => {
-      const lead = vs.leader_id && side.id === vs.leader_id ? ' class="is-lead"' : '';
-      return `<th${lead}>${esc(side.name || '')}</th>`;
-    }).join('');
-    const row = (label, pick) => {
-      const cells = vs.sides.map((side) => {
-        const raw = pick(side);
-        const cls = (label === 'PnL' && side.pnl != null) ? ` class="${pnlClass(side.pnl)}"` : '';
-        return `<td${cls}>${esc(String(raw == null || raw === '' ? '—' : raw))}</td>`;
-      }).join('');
-      return `<tr><th>${esc(label)}</th>${cells}</tr>`;
-    };
-    return `<div class="hl-vs" aria-label="V2 對 newnew 真倉 PnL">
-      <div class="hl-vs-k">${esc(vs.title || 'V2 vs newnew')} · ${esc(vs.metric || '真倉 PnL')}</div>
-      <table>
-        <thead><tr><th></th>${head}</tr></thead>
-        <tbody>
-          ${row('PnL', (s) => s.pnl_label)}
-          ${row('勝率', (s) => s.wr_label)}
-          ${row('戰績', (s) => s.wl_label)}
-        </tbody>
-      </table>
-      <div class="hl-vs-lead">${esc(vs.verdict || '')}</div>
-    </div>`;
-  }
-
   function renderHighLive(board) {
     const body = $('hl-body');
     const noteEl = $('hl-note');
@@ -1506,9 +1462,8 @@ summary.desk-fold-summary {
         badge.removeAttribute('aria-label');
       }
     }
-    const vsHtml = liveVsHtml(hl);
     if (!rows.length) {
-      body.innerHTML = vsHtml + '<div class="skel">未有 Live bot</div>';
+      body.innerHTML = '<div class="skel">未有 Live bot</div>';
     } else {
       const sortOrder = ['dual-leg-live-v2', 'son-btc-2legs-v2-newnew-a'];
       const sortRows = [...rows].sort((a, b) => {
@@ -1516,7 +1471,7 @@ summary.desk-fold-summary {
         const bi = sortOrder.indexOf(String(b.id || ''));
         return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
       });
-      body.innerHTML = vsHtml + sortRows.map((r) => {
+      body.innerHTML = sortRows.map((r) => {
         const livePill = rowLiveOnAir(r)
           ? '<span class="pill live">LIVE</span>'
           : (r.live_enabled
