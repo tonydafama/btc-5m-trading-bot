@@ -82,17 +82,20 @@ class ModeBookTests(unittest.TestCase):
             self.root / "logs" / "archive" / "shadow" / "dual_leg_live_trades.json",
             [{"slug": "na", "mode": "LIVE", "profile": "v2_live_shadow", "trade_result": "WIN", "pnl": 9}],
         )
+        latest = self.root / "logs" / "archive" / "parent_v2_golive_20261027-202517" / "dual_leg_live_trades.json"
+        latest.touch()
         books = mb.books_for_bot(self.root, mb.V2_ID)
         paper = books["paper"]["rows"][0]
-        live = next(row for row in books["live"]["rows"] if row["scope"] == "歷史")
-        self.assertEqual(books["live"]["rows"][0]["scope"], "今次")
+        scopes = [row["scope"] for row in books["live"]["rows"]]
+        prior = next(row for row in books["live"]["rows"] if row["scope"] == "上次")
+        self.assertEqual(scopes[0], "今次")
+        self.assertNotIn("歷史", scopes)
         self.assertEqual(books["live"]["when_label"], "今次未開始")
         self.assertEqual(paper["wr_label"], "50%")
         self.assertEqual(paper["pnl"], 2.0)
-        self.assertEqual((live["wins"], live["losses"], live["breakeven"]), (1, 0, 1))
-        self.assertEqual(live["pnl"], 2.0)
-        self.assertEqual(live["wr_label"], "100%")
-        self.assertIn("1 段", live["note"])
+        self.assertEqual((prior["wins"], prior["losses"], prior["breakeven"]), (1, 0, 1))
+        self.assertEqual(prior["pnl"], 2.0)
+        self.assertEqual(prior["wr_label"], "100%")
 
         na = mb.books_for_bot(self.root, mb.NA_ID)
         na_live = next(row for row in na["live"]["rows"] if row["scope"] == "歷史")
@@ -156,7 +159,7 @@ class ModeBookTests(unittest.TestCase):
         mb.attach_mode_books(self.root, [row])
         self.assertEqual(row["wr_label"], "100%")
         self.assertEqual(row["pnl_label"], "+$1.50")
-        hist = next(item for item in row["mode_books"]["live"]["rows"] if item["scope"] == "歷史")
+        hist = next(item for item in row["mode_books"]["live"]["rows"] if item["scope"] == "上次")
         self.assertEqual(hist["pnl"], -4.0)
         self.assertEqual(row["mode_books"]["live"]["when_label"], "今次未開始")
 
@@ -197,12 +200,33 @@ class ModeBookTests(unittest.TestCase):
         self.assertEqual(books["live"]["when_label"], "11/03 15:54 → 而家")
         self.assertEqual(books["live"]["rows"][0]["scope"], "今次")
         self.assertEqual(books["live"]["rows"][0]["pnl"], 0.0)
-        self.assertEqual(books["live"]["rows"][1]["scope"], "歷史")
+        self.assertEqual(books["live"]["rows"][1]["scope"], "上次")
         self.assertEqual(books["live"]["rows"][1]["pnl"], -1.0)
         row = {"id": mb.V2_ID, "live_enabled": True}
         mb.attach_mode_books(self.root, [row])
         self.assertEqual(row["pnl"], 0.0)
         self.assertEqual(row["settled_n"], 0)
+
+    def test_closed_live_book_is_its_own_section_above_history(self) -> None:
+        _dump(self.root / "logs" / "dual_leg_live_trades.json", [])
+        older = self.root / "logs" / "archive" / "older" / "dual_leg_live_trades.json"
+        newer = self.root / "logs" / "archive" / "v2_live_closed" / "dual_leg_live_trades.json"
+        _dump(
+            older,
+            [{"slug": "old", "mode": "LIVE", "profile": "v2", "trade_result": "WIN", "pnl": 21.4}],
+        )
+        _dump(
+            newer,
+            [{"slug": "last", "mode": "LIVE", "profile": "v2", "trade_result": "LOSS", "pnl": -36.59}],
+        )
+        newer.touch()
+        books = mb.books_for_bot(self.root, mb.V2_ID)
+        scopes = [row["scope"] for row in books["live"]["rows"]]
+        self.assertEqual(scopes, ["今次", "上次", "歷史"])
+        self.assertEqual(books["live"]["rows"][0]["settled_n"], 0)
+        self.assertIn("未開始", books["live"]["rows"][0]["note"])
+        self.assertEqual(books["live"]["rows"][1]["pnl"], -36.59)
+        self.assertEqual(books["live"]["rows"][2]["pnl"], 21.4)
 
     def test_v3_live_record_follows_history(self) -> None:
         _dump(
@@ -219,7 +243,7 @@ class ModeBookTests(unittest.TestCase):
         )
         books = mb.books_for_bot(self.root, mb.V2_ID)
         scopes = [line["scope"] for line in books["live"]["rows"]]
-        self.assertEqual(scopes, ["今次", "歷史", "V3"])
+        self.assertEqual(scopes, ["今次", "上次", "V3"])
         self.assertEqual(books["live"]["rows"][0]["pnl"], 5.0)
         self.assertNotIn("V3", books["live"]["rows"][0]["note"])
         self.assertEqual(books["live"]["rows"][1]["pnl"], -1.0)

@@ -388,7 +388,8 @@ def _paper_note(stats_rows: list[dict[str, Any]], *, prior: bool) -> str:
     return f"{head} · 未有結算"
 
 
-def _prior_paper(root: Path, filename: str, current: list[dict[str, Any]], pred: Callable[[dict[str, Any]], bool]) -> list[dict[str, Any]]:
+def _prior_closed(root: Path, filename: str, current: list[dict[str, Any]], pred: Callable[[dict[str, Any]], bool]) -> list[dict[str, Any]]:
+    """Newest archived book that still has settled rows, excluding the current file."""
     current_keys = {row_key(row) for row in current}
     for path in _archive_files(root, filename):
         rows = [row for row in _read_rows(path) if pred(row) and row_key(row) not in current_keys]
@@ -396,6 +397,10 @@ def _prior_paper(root: Path, filename: str, current: list[dict[str, Any]], pred:
         if stats["settled_n"] or stats["breakeven"]:
             return rows
     return []
+
+
+def _prior_paper(root: Path, filename: str, current: list[dict[str, Any]], pred: Callable[[dict[str, Any]], bool]) -> list[dict[str, Any]]:
+    return _prior_closed(root, filename, current, pred)
 
 
 def _parent_live(row: dict[str, Any]) -> bool:
@@ -430,12 +435,16 @@ def _live_lines(
     current_started: datetime | None = None,
     pnl_net_of_fees: bool = False,
     v3: list[dict[str, Any]] | None = None,
+    prior: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     lines: list[dict[str, Any]] = []
     current_stats = summarize(current)
     history_stats = summarize(history)
+    prior_rows = prior or []
+    prior_stats = summarize(prior_rows)
     current_n = current_stats["settled_n"] + current_stats["breakeven"]
     history_n = history_stats["settled_n"] + history_stats["breakeven"]
+    prior_n = prior_stats["settled_n"] + prior_stats["breakeven"]
     if current_n or current_open:
         if current_n:
             note = _book_note("今次真倉", current_stats, pnl_net_of_fees=pnl_net_of_fees)
@@ -446,6 +455,8 @@ def _live_lines(
         )
     else:
         lines.append(_line("今次", [], "今次未開始。Live 掣成功開真倉之後，呢度先會有新時段。", empty_live=True))
+    if prior_n:
+        lines.append(_line("上次", prior_rows, _book_note("上次真倉", prior_stats, pnl_net_of_fees=pnl_net_of_fees)))
     if history_n:
         be = f" · 打和 {history_stats['breakeven']} 唔計勝率" if history_stats["breakeven"] else ""
         hist_note = f"歷史真倉 {segments} 段{be}"
@@ -483,6 +494,9 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
         prior = _prior_paper(root, "dual_leg_btc_paper_trades.json", paper, _v2_paper)
         seen: set[str] = set()
         live_now, _ = _take([root / "logs" / "dual_leg_live_trades.json"], _parent_live, seen)
+        prior_live = _prior_closed(root, "dual_leg_live_trades.json", live_now, _parent_live)
+        for row in prior_live:
+            seen.add(row_key(row))
         history, segments = _take(_archive_files(root, "dual_leg_live_trades.json"), _parent_live, seen)
         v3_rows, _ = _take(_v3_live_files(root), _parent_live, seen)
         paper_since = _unit_active_since_hkt(OBSERVER_UNIT)
@@ -508,6 +522,7 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
                 current_started=live_since,
                 pnl_net_of_fees=True,
                 v3=v3_rows,
+                prior=prior_live,
             ),
         )
 
