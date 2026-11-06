@@ -276,7 +276,13 @@ def tail_dual_leg_v2_logs(
         raw_rows = _load_json_rows(path)
         ps = (paper_session or "").strip()
         if ps:
-            raw_rows = [r for r in raw_rows if str(r.get("session_id") or "").strip() == ps]
+            matched = [r for r in raw_rows if str(r.get("session_id") or "").strip() == ps]
+            # Legacy rows may omit session_id; then the open file is already this session.
+            if not matched:
+                legacy = [r for r in raw_rows if not str(r.get("session_id") or "").strip()]
+                raw_rows = legacy if legacy else raw_rows
+            else:
+                raw_rows = matched
         raw_rows = _sort_rows(raw_rows)
         # Newest last -> take tail, then reverse for display
         chunk = raw_rows[-limit * 3 :] if len(raw_rows) > limit * 3 else raw_rows

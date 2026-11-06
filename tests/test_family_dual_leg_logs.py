@@ -135,6 +135,21 @@ class FamilyDualLegLogsTests(unittest.TestCase):
             self.assertEqual(len(trades["lines"]), 1)
             self.assertEqual(trades["lines"][0]["slug"], "y")
 
+    def test_paper_legacy_rows_without_session_still_shown(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            path = root / "logs" / "dual_leg_btc_paper_trades.json"
+            path.parent.mkdir(parents=True)
+            sess = root / "logs" / "dual_leg_paper_session.json"
+            sess.write_text(json.dumps({"session_id": "paper-cur"}), encoding="utf-8")
+            payload = [
+                {"slug": "u", "logged_at_hkt": "2026-11-07 10:00:00 HKT", "pnl": 2.0},
+            ]
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            out = tail_dual_leg_v2_logs(mode="all", ledger="paper", limit=10, bot_root=root)
+            self.assertEqual(len(out["lines"]), 1)
+            self.assertEqual(out["lines"][0]["slug"], "u")
+
 
 if __name__ == "__main__":
     unittest.main()
