@@ -99,7 +99,7 @@
     <header>
       <div>
         <h1>Log · BTC 2 legs V2</h1>
-        <div class="sub">Parent V2 真倉事件（dual_leg_live_daemon.jsonl）+ Parent V2 紙上成交</div>
+        <div class="sub">只顯示<strong>今次 session</strong>：真倉 dual_leg_live_daemon.jsonl · 紙上 dual_leg_btc_paper_trades.json</div>
       </div>
       <a href="/"><button type="button" class="desk-btn">← Desk</button></a>
     </header>
@@ -329,7 +329,10 @@
     let liveAllRows = [];
     let liveStats = { fills: 0, skips: 0, total: 0 };
     let liveSource = '';
+    let liveSession = '';
     let paperRows = [];
+    let paperStats = { fills: 0, skips: 0, total: 0 };
+    let paperSession = '';
     let familyBots = null;
 
     function paintLiveHero() {
@@ -362,7 +365,12 @@
       const src = tailSource(tailPayload);
       if (src) liveSource = src;
       const foot = document.getElementById('page-foot');
-      if (foot && liveSource) foot.textContent = `source: ${liveSource}`;
+      if (foot && liveSource) {
+        const sid = (tailPayload && tailPayload.session_id) ? String(tailPayload.session_id) : '';
+        foot.textContent = sid
+          ? `source: ${liveSource} · live session ${sid}`
+          : `source: ${liveSource}`;
+      }
 
       const view = rowsForMode(liveAllRows, liveMode);
       if (liveMode === 'trades' && !view.length) {
@@ -383,6 +391,7 @@
       }
       if (payload && Array.isArray(payload.lines)) {
         liveAllRows = payload.lines;
+        liveSession = payload.session_id || '';
         liveStats = payload.stats ? normalizeTailStats(payload.stats) : countStats(liveAllRows);
         paintLiveUnit(payload);
         return;
@@ -394,9 +403,14 @@
 
     function paintPaper() {
       const view = rowsForMode(paperRows, paperMode);
-      const stats = countStats(paperRows);
+      const stats = (paperStats && paperStats.total != null)
+        ? { fills: paperStats.fills ?? 0, skips: paperStats.skips ?? 0, total: paperStats.total ?? 0 }
+        : countStats(paperRows);
       const meta = document.getElementById('paper-meta');
-      if (meta) meta.textContent = `成交 ${stats.fills} · skip ${stats.skips}`;
+      if (meta) {
+        const sid = paperSession ? ` · ${paperSession}` : '';
+        meta.textContent = `成交 ${stats.fills} · skip ${stats.skips}${sid}`;
+      }
       if (paperMode === 'trades' && !view.length) {
         renderRows('v2-paper-log-body', [], emptyTradesMsg(stats));
       } else {
@@ -408,8 +422,12 @@
       const payload = await fetchJson(`/api/dual-leg-log-tail?ledger=paper&mode=all&n=${TAIL_N}`);
       if (payload && Array.isArray(payload.lines)) {
         paperRows = payload.lines;
+        paperSession = payload.session_id || '';
+        paperStats = payload.stats ? normalizeTailStats(payload.stats) : countStats(payload.lines);
       } else {
         paperRows = [];
+        paperSession = '';
+        paperStats = { fills: 0, skips: 0, total: 0 };
       }
       paintPaper();
     }

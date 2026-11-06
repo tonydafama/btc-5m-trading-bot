@@ -12,10 +12,46 @@ from typing import Any
 
 LIVE_EVENT_FILENAME = "dual_leg_live_daemon.jsonl"
 PAPER_TRADES_FILENAME = "dual_leg_btc_paper_trades.json"
+PAPER_SESSION_FILENAME = "dual_leg_paper_session.json"
+V2_LIVE_ENV = "config/v2_parent_live_exec.env"
 
 
 def _root(bot_root: Path | None) -> Path:
     return bot_root if bot_root is not None else Path(__file__).resolve().parent.parent
+
+
+def _read_kv_session(path: Path, key: str) -> str:
+    if not path.is_file():
+        return ""
+    try:
+        for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            raw = line.strip()
+            if not raw or raw.startswith("#") or "=" not in raw:
+                continue
+            k, v = raw.split("=", 1)
+            if k.strip() == key:
+                return v.strip().strip('"').strip("'")
+    except OSError:
+        pass
+    return ""
+
+
+def _current_live_session_id(root: Path) -> str:
+    return _read_kv_session(root / V2_LIVE_ENV, "DUAL_LEG_LIVE_SESSION_ID")
+
+
+def _current_paper_session_id(root: Path) -> str:
+    path = root / "logs" / PAPER_SESSION_FILENAME
+    if path.is_file():
+        try:
+            obj = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(obj, dict):
+                sid = str(obj.get("session_id") or "").strip()
+                if sid:
+                    return sid
+        except (OSError, json.JSONDecodeError):
+            pass
+    return ""
 
 
 def _ts_key(row: dict[str, Any]) -> str:
@@ -29,10 +65,10 @@ def _ts_key(row: dict[str, Any]) -> str:
     )
 
 
-def _tail_jsonl(path: Path, limit: int) -> list[dict[str, Any]]:
-    if limit <= 0 or not path.is_file():
+def _tail_jsonl_raw(path: Path, max_lines: int) -> list[dict[str, Any]]:
+    if max_lines <= 0 or not path.is_file():
         return []
-    buf: deque[dict[str, Any]] = deque(maxlen=min(limit + 128, 2048))
+    buf: deque[dict[str, Any]] = deque(maxlen=max_lines)
     try:
         with path.open("r", encoding="utf-8", errors="ignore") as handle:
             for line in handle:
@@ -47,7 +83,41 @@ def _tail_jsonl(path: Path, limit: int) -> list[dict[str, Any]]:
                     buf.append(obj)
     except OSError:
         return []
-    return list(buf)[-limit:]
+    return list(buf)
+
+
+def _after_last_live_start(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    last_start = -1
+    for i, r in enumerate(rows):
+        if str(r.get("event") or "") == "live_daemon_start":
+            last_start = i
+    if last_start >= 0:
+        return rows[last_start:]
+    return rows
+
+
+def _filter_live_session_rows(rows: list[dict[str, Any]], session_id: str) -> list[dict[str, Any]]:
+    """Keep only the current live session.
+
+    Prefer rows tagged with ``session_id`` (new daemon). If none are tagged yet,
+    keep lines after the last ``live_daemon_start`` (one process run). If the log
+    records a ``live_daemon_start`` with matching ``session_id``, slice from there.
+    """
+    sid = (session_id or "").strip()
+    if not sid:
+        return _after_last_live_start(rows)
+    tagged = [r for r in rows if str(r.get("session_id") or "").strip() == sid]
+    if tagged:
+        return tagged
+    cut = 0
+    for i, r in enumerate(rows):
+        if str(r.get("event") or "") != "live_daemon_start":
+            continue
+        if str(r.get("session_id") or "").strip() == sid:
+            cut = i
+    if cut > 0:
+        return rows[cut:]
+    return _after_last_live_start(rows)
 
 
 def _load_json_rows(path: Path) -> list[dict[str, Any]]:
@@ -179,9 +249,14 @@ def tail_dual_leg_v2_logs(
     ledger_l = (ledger or "live").lower()
     limit = min(max(int(limit), 1), 300)
 
+    live_session = ""
+    paper_session = ""
     if ledger_l == "live":
         path = root / "logs" / LIVE_EVENT_FILENAME
-        rows = [_normalize_live_row(r) for r in _tail_jsonl(path, limit * 3)]
+        live_session = _current_live_session_id(root)
+        raw = _tail_jsonl_raw(path, max_lines=12000)
+        raw = _filter_live_session_rows(raw, live_session)
+        rows = [_normalize_live_row(r) for r in raw]
         rows = _sort_rows(rows)
         # Re-sort descending for display (newest first)
         rows.sort(key=_ts_key, reverse=True)
@@ -197,7 +272,11 @@ def tail_dual_leg_v2_logs(
         stats_src = rows
     else:
         path = root / "logs" / PAPER_TRADES_FILENAME
+        paper_session = _current_paper_session_id(root)
         raw_rows = _load_json_rows(path)
+        ps = (paper_session or "").strip()
+        if ps:
+            raw_rows = [r for r in raw_rows if str(r.get("session_id") or "").strip() == ps]
         raw_rows = _sort_rows(raw_rows)
         # Newest last -> take tail, then reverse for display
         chunk = raw_rows[-limit * 3 :] if len(raw_rows) > limit * 3 else raw_rows
@@ -250,6 +329,7 @@ def tail_dual_leg_v2_logs(
         "ledger": ledger_l,
         "mode": mode_l,
         "lines": rows,
+        "session_id": live_session if ledger_l == "live" else paper_session,
         "stats": {
             "fills": fills,
             "skips": skips,

@@ -63,6 +63,8 @@ The UI uses **`id === dual-leg-live-v2`** for the hero “LIVE ON” title.
 - **Live**: **`settles`** = `trade_settled` rows (one per closed trade, **PnL 在呢度**); **`posts`** = `entry` + `hedge` FOK posts; **`skips`** = `skip_*` / failed posts; **`total`** = lines returned (tail).
 - **Paper**: **`trades`** = filled/settled rows; **`skips`** = SKIP rows.
 
+Each response includes **`session_id`**: live = `DUAL_LEG_LIVE_SESSION_ID` from `config/v2_parent_live_exec.env`, paper = `session_id` from `logs/dual_leg_paper_session.json`. Only rows for that session are returned (live jsonl is also sliced from the last `live_daemon_start` when older lines lack `session_id`).
+
 ### Legacy: `GET /api/bot-log-tail?…`
 
 Still used elsewhere; `/logs` no longer depends on it.

@@ -83,9 +83,13 @@ def _write_json(path: Path, payload: Any) -> None:
 
 
 def _append_event(row: dict[str, Any]) -> None:
+    payload = dict(row)
+    sid = os.getenv("DUAL_LEG_LIVE_SESSION_ID")
+    if sid:
+        payload["session_id"] = sid
     EVENT_LOG.parent.mkdir(parents=True, exist_ok=True)
     with EVENT_LOG.open("a") as handle:
-        handle.write(json.dumps(row, default=str) + "\n")
+        handle.write(json.dumps(payload, default=str) + "\n")
 
 
 
@@ -327,6 +331,7 @@ def run_forever(poll_sec: float) -> int:
             "note": f"{profile_name.upper()} live FOK daemon · BTC only · no max-open gate",
             "decision_clock": "paper_checkpoints",
             "decision_checkpoints": list(PAPER_DECISION_CHECKPOINTS),
+            "session_id": os.getenv("DUAL_LEG_LIVE_SESSION_ID"),
         }
     )
     print(
