@@ -248,6 +248,37 @@ def _ledger_stats(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _live_exec_session_id(root: Path) -> str:
+    path = root / "config" / "v2_parent_live_exec.env"
+    if not path.is_file():
+        return ""
+    try:
+        lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+    except OSError:
+        return ""
+    for raw in lines:
+        line = raw.strip()
+        if line.startswith("DUAL_LEG_LIVE_SESSION_ID="):
+            return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return ""
+
+
+def _apply_live_display_epoch(root: Path, session_id: str, windows: int, entered: int) -> tuple[int, int]:
+    """Shift the visible funnel so a fresh live session starts at 0.
+
+    The daemon keeps a lifetime sample counter in the status file. A display
+    epoch records the counter at the moment this session's Desk was reset.
+    """
+    epoch = _read_json(root / "logs" / "dual_leg_live_display_epoch.json", {})
+    if not isinstance(epoch, dict):
+        return windows, entered
+    if not session_id or str(epoch.get("session_id") or "") != session_id:
+        return windows, entered
+    base_w = int(epoch.get("samples_baseline") or 0)
+    base_e = int(epoch.get("entered_baseline") or 0)
+    return max(0, windows - base_w), max(0, entered - base_e)
+
+
 def _gold_box_window_funnel(
     root: Path,
     *,
@@ -260,13 +291,25 @@ def _gold_box_window_funnel(
 
     if bot_id == V2_ID and live_active:
         st = _read_json(root / "logs" / "dual_leg_live_status.json", {})
+        if not isinstance(st, dict):
+            st = {}
+        session = str(st.get("session_id") or "")
+        exec_session = _live_exec_session_id(root)
+        # A leftover status file from a stopped session is not this live card.
+        if exec_session and session and session != exec_session:
+            return {
+                "considered": 0,
+                "filtered": 0,
+                "entered": 0,
+                "trades": 0,
+                "ledger": "live",
+            }
         windows = st.get("samples_total")
         entered = st.get("settled_trades")
         if entered is None:
             entered = st.get("posted_live_orders")
         if windows is not None:
-            w = int(windows)
-            e = int(entered or 0)
+            w, e = _apply_live_display_epoch(root, session, int(windows), int(entered or 0))
             return {
                 "considered": w,
                 "filtered": w,

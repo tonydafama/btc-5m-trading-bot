@@ -354,6 +354,45 @@ class PaperBoardTests(unittest.TestCase):
         self.assertEqual(wf["filtered"], 290)
         self.assertEqual(wf["entered"], 27)
 
+    def test_stale_live_status_does_not_paint_the_new_session(self) -> None:
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {
+                "session_id": "v2-live-20261105-224129",
+                "samples_total": 987,
+                "settled_trades": 17,
+            },
+        )
+        _write(
+            self.bot / "config" / "v2_parent_live_exec.env",
+            "DUAL_LEG_LIVE_SESSION_ID=v2-live-20261107-011629\n",
+        )
+        wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
+        self.assertEqual(wf["filtered"], 0)
+        self.assertEqual(wf["entered"], 0)
+        self.assertEqual(wf["trades"], 0)
+
+    def test_display_epoch_zeros_the_fresh_live_funnel(self) -> None:
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {
+                "session_id": "v2-live-20261107-011629",
+                "samples_total": 8,
+                "settled_trades": 0,
+            },
+        )
+        _write(
+            self.bot / "logs" / "dual_leg_live_display_epoch.json",
+            {
+                "session_id": "v2-live-20261107-011629",
+                "samples_baseline": 8,
+                "entered_baseline": 0,
+            },
+        )
+        wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
+        self.assertEqual(wf["filtered"], 0)
+        self.assertEqual(wf["entered"], 0)
+
     def test_high_live_board_fills_wallet_when_arg_none(self) -> None:
         _write(self.bot / "logs" / "wallet_cache.json", {"cash_usdc": 99.5})
         board = paper_board._high_live_board(
