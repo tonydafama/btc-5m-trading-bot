@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -1115,23 +1116,117 @@ def _fair_value_experiment(root: Path) -> dict[str, Any]:
     }
 
 
-def _wallet_cash_for_high_live(root: Path) -> float | None:
-    """Prefer live daemon status / on-disk cache so the gold box matches the bot ledger."""
-    status = _read_json(root / "logs" / "dual_leg_live_status.json", {})
-    raw = status.get("wallet_cash_usdc")
-    if raw is not None:
-        try:
-            return round(float(raw), 2)
-        except (TypeError, ValueError):
-            pass
+def _cash_amount(raw: Any) -> float | None:
+    if raw is None or raw == "":
+        return None
+    try:
+        return round(float(raw), 2)
+    except (TypeError, ValueError):
+        return None
+
+
+def _live_v2_unit_active() -> bool:
+    """Read-only. Never starts or enables the live unit."""
+    return _systemctl_state("dual-leg-live-v2.service") == "active"
+
+
+def _fetch_clob_wallet_readonly() -> dict[str, Any] | None:
+    """Current Polymarket collateral. Does not place orders or start a bot."""
+    try:
+        weather = Path("/root/weather-bot")
+        site = weather / "venv/lib/python3.12/site-packages"
+        for entry in (weather, site):
+            if entry.is_dir() and str(entry) not in sys.path:
+                sys.path.insert(0, str(entry))
+        from polymarket_api import PolymarketClient
+
+        data = PolymarketClient().fetch_wallet_status()
+    except Exception:
+        return None
+    if not isinstance(data, dict) or _cash_amount(data.get("cash_usdc")) is None:
+        return None
+    return data
+
+
+def _remember_wallet_cache(root: Path, data: dict[str, Any]) -> None:
+    payload = {
+        "funder": data.get("funder"),
+        "deposit_address": data.get("deposit_address"),
+        "cash_usdc": _cash_amount(data.get("cash_usdc")),
+        "portfolio_value": data.get("portfolio_value"),
+        "positions_open": data.get("positions_open"),
+        "total_equity": data.get("total_equity"),
+        "source": "clob",
+        "stale": False,
+        "fetched_at_hkt": datetime.now(HKT).strftime("%Y-%m-%d %H:%M:%S HKT"),
+    }
+    path = root / "logs" / "wallet_cache.json"
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def _wallet_view_for_high_live(root: Path) -> dict[str, Any]:
+    """Exchange cash for the Live box.
+
+    A stopped daemon's ``dual_leg_live_status.json`` is the last session, not
+    the current wallet. That file is used only while the live unit is active
+    and the exchange read failed.
+    """
+    live_on = _live_v2_unit_active()
+    fresh = _fetch_clob_wallet_readonly()
+    if fresh is not None:
+        _remember_wallet_cache(root, fresh)
+        cash = _cash_amount(fresh.get("cash_usdc"))
+        return {
+            "wallet_cash_usdc": cash,
+            "wallet_source": "clob",
+            "wallet_is_live_session": live_on,
+            "wallet_label": "真錢包" if live_on else "銀包",
+            "wallet_portfolio_usdc": _cash_amount(fresh.get("portfolio_value")),
+            "wallet_equity_usdc": _cash_amount(fresh.get("total_equity")),
+            "wallet_fetched_at_hkt": datetime.now(HKT).strftime("%Y-%m-%d %H:%M:%S HKT"),
+        }
     cache = _read_json(root / "logs" / "wallet_cache.json", {})
-    raw = cache.get("cash_usdc") or cache.get("available_usdc")
-    if raw is not None:
-        try:
-            return round(float(raw), 2)
-        except (TypeError, ValueError):
-            pass
-    return None
+    cached = _cash_amount(cache.get("cash_usdc") or cache.get("available_usdc"))
+    if cached is not None:
+        return {
+            "wallet_cash_usdc": cached,
+            "wallet_source": "cache",
+            "wallet_is_live_session": live_on,
+            "wallet_label": "真錢包" if live_on else "銀包",
+            "wallet_portfolio_usdc": _cash_amount(cache.get("portfolio_value")),
+            "wallet_equity_usdc": _cash_amount(cache.get("total_equity")),
+            "wallet_fetched_at_hkt": cache.get("fetched_at_hkt") or cache.get("updated_at_hkt"),
+        }
+    if live_on:
+        status = _read_json(root / "logs" / "dual_leg_live_status.json", {})
+        cash = _cash_amount(status.get("wallet_cash_usdc"))
+        if cash is not None:
+            return {
+                "wallet_cash_usdc": cash,
+                "wallet_source": "live_status",
+                "wallet_is_live_session": True,
+                "wallet_label": "真錢包",
+                "wallet_portfolio_usdc": None,
+                "wallet_equity_usdc": None,
+                "wallet_fetched_at_hkt": status.get("updated_at_hkt"),
+            }
+    return {
+        "wallet_cash_usdc": None,
+        "wallet_source": None,
+        "wallet_is_live_session": False,
+        "wallet_label": None,
+        "wallet_portfolio_usdc": None,
+        "wallet_equity_usdc": None,
+        "wallet_fetched_at_hkt": None,
+    }
+
+
+def _wallet_cash_for_high_live(root: Path) -> dict[str, Any]:
+    return _wallet_view_for_high_live(root)
 
 
 def _v2_golive_prep(root: Path, env: dict[str, str]) -> dict[str, Any]:
@@ -1345,9 +1440,22 @@ def _na_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
     return decorate_bet(root, row, env)
 
 
-def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | None = None) -> dict[str, Any]:
-    if wallet_cash_usdc is None:
-        wallet_cash_usdc = _wallet_cash_for_high_live(root)
+def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | dict[str, Any] | None = None) -> dict[str, Any]:
+    if isinstance(wallet_cash_usdc, dict):
+        wallet_view = wallet_cash_usdc
+    elif wallet_cash_usdc is None:
+        wallet_view = _wallet_view_for_high_live(root)
+    else:
+        cash = _cash_amount(wallet_cash_usdc)
+        wallet_view = {
+            "wallet_cash_usdc": cash,
+            "wallet_source": "caller",
+            "wallet_is_live_session": False,
+            "wallet_label": "銀包" if cash is not None else None,
+            "wallet_portfolio_usdc": None,
+            "wallet_equity_usdc": None,
+            "wallet_fetched_at_hkt": None,
+        }
 
     prep = _v2_golive_prep(root, env)
     from desk_bots import v2_mode_view
@@ -1384,7 +1492,13 @@ def _high_live_board(root: Path, env: dict[str, str], wallet_cash_usdc: float | 
         "entry_pause": pause,
         "blocked": None if any_live else "live_exec_dry_run_placeholder",
         "rows": rows,
-        "wallet_cash_usdc": wallet_cash_usdc,
+        "wallet_cash_usdc": wallet_view.get("wallet_cash_usdc"),
+        "wallet_source": wallet_view.get("wallet_source"),
+        "wallet_is_live_session": bool(wallet_view.get("wallet_is_live_session")),
+        "wallet_label": wallet_view.get("wallet_label"),
+        "wallet_portfolio_usdc": wallet_view.get("wallet_portfolio_usdc"),
+        "wallet_equity_usdc": wallet_view.get("wallet_equity_usdc"),
+        "wallet_fetched_at_hkt": wallet_view.get("wallet_fetched_at_hkt"),
     }
 
 

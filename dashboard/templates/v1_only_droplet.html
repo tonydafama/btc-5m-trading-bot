@@ -1156,12 +1156,6 @@ summary.desk-fold-summary {
     if (hl && hl.wallet_cash_usdc != null && hl.wallet_cash_usdc !== '') {
       return Number(hl.wallet_cash_usdc);
     }
-    if (_deskWalletCash != null && _deskWalletCash !== '') {
-      return Number(_deskWalletCash);
-    }
-    if (_sonuLiveTruth && _sonuLiveTruth.wallet_cash_usdc != null) {
-      return Number(_sonuLiveTruth.wallet_cash_usdc);
-    }
     return null;
   }
 
@@ -1535,8 +1529,9 @@ summary.desk-fold-summary {
     const walletEl = $('hl-wallet');
     if (walletEl) {
       const cash = resolveHlWalletCash(hl);
-      walletEl.textContent = (cash != null && Number.isFinite(cash))
-        ? ('真錢包 $' + cash.toFixed(2))
+      const label = hl && hl.wallet_label;
+      walletEl.textContent = (label && cash != null && Number.isFinite(cash))
+        ? (label + ' $' + cash.toFixed(2))
         : '';
     }
     const bits = [];

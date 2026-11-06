@@ -6,6 +6,7 @@ import json
 import os
 import sys
 import unittest
+from unittest import mock
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -287,14 +288,47 @@ class PaperBoardTests(unittest.TestCase):
         self.assertNotIn("vs", hl)
         self.assertNotIn("son-btc-5m-ultimate-live", [row.get("id") for row in rows])
 
-    def test_high_live_wallet_from_status_cache(self) -> None:
+    def test_high_live_wallet_ignores_stopped_session_cash(self) -> None:
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {"wallet_cash_usdc": 112.68, "realized_pnl_usd": -36.59, "updated_at_hkt": "2026-11-06 08:59:55 HKT"},
+        )
+        _write(
+            self.bot / "logs" / "wallet_cache.json",
+            {"cash_usdc": 57.69, "portfolio_value": 0, "total_equity": 57.69, "funder": "0x2c9c"},
+        )
+        board = self._build()
+        hl = board.get("high_live_board") or {}
+        self.assertEqual(hl.get("wallet_cash_usdc"), 57.69)
+        self.assertEqual(hl.get("wallet_source"), "cache")
+        self.assertFalse(hl.get("wallet_is_live_session"))
+        self.assertEqual(hl.get("wallet_label"), "銀包")
+
+    def test_high_live_wallet_hides_status_when_live_is_off(self) -> None:
         _write(
             self.bot / "logs" / "dual_leg_live_status.json",
             {"wallet_cash_usdc": 137.28, "realized_pnl_usd": 32.81},
         )
         board = self._build()
         hl = board.get("high_live_board") or {}
-        self.assertEqual(hl.get("wallet_cash_usdc"), 137.28)
+        self.assertIsNone(hl.get("wallet_cash_usdc"))
+        self.assertFalse(hl.get("wallet_is_live_session"))
+        self.assertIsNone(hl.get("wallet_label"))
+
+    def test_fresh_clob_cash_replaces_stopped_session(self) -> None:
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {"wallet_cash_usdc": 112.68},
+        )
+        _write(self.bot / "logs" / "wallet_cache.json", {"cash_usdc": 1})
+        fresh = {"cash_usdc": 57.69, "portfolio_value": 0, "total_equity": 57.69, "funder": "0x2c9c"}
+        with mock.patch.object(paper_board, "_fetch_clob_wallet_readonly", return_value=fresh):
+            board = self._build()
+        hl = board.get("high_live_board") or {}
+        self.assertEqual(hl.get("wallet_cash_usdc"), 57.69)
+        self.assertEqual(hl.get("wallet_source"), "clob")
+        self.assertEqual(hl.get("wallet_label"), "銀包")
+        self.assertFalse(hl.get("wallet_is_live_session"))
 
     def test_v2_live_funnel_from_status_samples(self) -> None:
         _write(
@@ -317,6 +351,9 @@ class PaperBoardTests(unittest.TestCase):
             None,
         )
         self.assertEqual(board.get("wallet_cash_usdc"), 99.5)
+        self.assertEqual(board.get("wallet_source"), "cache")
+        self.assertEqual(board.get("wallet_label"), "銀包")
+        self.assertFalse(board.get("wallet_is_live_session"))
 
 
 if __name__ == "__main__":
