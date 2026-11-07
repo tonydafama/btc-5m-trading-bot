@@ -42,7 +42,7 @@ class SonuLiveTruthTests(unittest.TestCase):
         board = pb._high_live_board(self.root, {"DUAL_LEG_LIVE_DRY_RUN": "1"}, None)
         self.assertFalse(board["any_live"])
         ids = [r["id"] for r in board["rows"]]
-        self.assertIn("son-btc-5m-ultimate-live", ids)
+        self.assertNotIn("son-btc-5m-ultimate-live", ids)
         self.assertIn("dual-leg-live-v2", ids)
 
 

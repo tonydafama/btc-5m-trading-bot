@@ -1047,6 +1047,32 @@ def api_bot_log_tail():
         )
 
 
+@app.route("/api/dual-leg-log-tail")
+def api_dual_leg_log_tail():
+    """Tail Parent V2 live daemon events (jsonl) or paper trades for /logs."""
+    ledger = (request.args.get("ledger") or "live").lower()
+    if ledger not in ("live", "paper"):
+        return jsonify({"error": "ledger must be live or paper"}), 400
+    mode = request.args.get("mode", "all")
+    limit_raw = request.args.get("n") or request.args.get("limit") or "40"
+    limit = min(int(limit_raw), 300)
+    try:
+        from family_dual_leg_logs import tail_dual_leg_v2_logs
+
+        return jsonify(tail_dual_leg_v2_logs(mode=mode, ledger=ledger, limit=limit, bot_root=ROOT))
+    except Exception:
+        return jsonify(
+            {
+                "bot": "dual-leg-live-v2" if ledger == "live" else "dual-leg-paper-v2",
+                "ledger": ledger,
+                "mode": mode,
+                "lines": [],
+                "stats": {"fills": 0, "skips": 0, "trades": 0, "total": 0},
+                "source": None,
+            }
+        )
+
+
 @app.route("/api/crypto15m/trades")
 def api_crypto15m_trades():
     limit = min(int(request.args.get("limit", 30)), 200)
@@ -1101,35 +1127,71 @@ def _crypto15m_control_payload() -> dict[str, Any]:
 
 
 def _family_bots_payload() -> dict[str, Any]:
-    """Droplet-shaped roster for /logs: { ok, n, bots:[{ id, display_name, status, … }] }."""
-    ctrl = _crypto15m_control_payload()
-    mode = str(ctrl.get("mode") or "paper").lower()
-    paused = bool(ctrl.get("paused"))
-    seat_short = "真倉 ON" if mode == "live" else "紙上預備"
-    run_short = "暫停" if paused else "跑緊"
-    status_line = f"{seat_short} · {run_short}"
+    """Minimal roster for /logs: Parent V2 live + Parent V2 paper."""
+    from desk_bots import V2_LIVE_UNIT, _unit_active, v2_exec_is_real, v2_mode_view
+    from mode_books import OBSERVER_UNIT
+
+    merged: dict[str, str] = {}
+    try:
+        from paper_board import merged_env
+
+        merged = merged_env(ROOT, os.environ)
+    except Exception:
+        merged = {}
+
+    v2 = v2_mode_view(ROOT, merged)
+    live_on = bool(v2.get("live_active"))
+    live_on_air = bool(v2.get("live_on_air"))
+    pause_active = bool((v2.get("entry_pause") or {}).get("active")) and live_on
+    exec_real = v2_exec_is_real(ROOT, merged)
+
+    live_running = _unit_active(V2_LIVE_UNIT)
+    paper_running = _unit_active(OBSERVER_UNIT)
+
+    if live_on and live_running and exec_real:
+        live_status = (
+            "LIVE ON · 18:00-24:00 暫停開新倉" if pause_active else "LIVE ON · BTC 2 legs V2"
+        )
+        live_mode = "live"
+    elif live_running:
+        live_status = "單位跑緊 · 檢查 DRY_RUN / exec 檔"
+        live_mode = "unknown"
+    else:
+        live_status = "真倉 OFF"
+        live_mode = "paper"
+
+    paper_status = "Parent V2 paper · 跑緊" if paper_running else "Observer 未跑"
+    paper_obj = v2.get("paper_ledger") or {}
+    session_note = ""
+    if isinstance(paper_obj, dict) and paper_obj.get("session_id"):
+        session_note = str(paper_obj.get("session_id"))
+    if not session_note:
+        session_note = str(merged.get("DUAL_LEG_PAPER_SESSION_ID") or "").strip()
+
     bots: list[dict[str, Any]] = [
         {
-            "id": "son-btc-5m-ultimate-live",
-            "display_name": "終極5m · Live",
-            "status": status_line,
-            "mode": mode,
-            "paused": paused,
-            "running": not paused,
-        }
+            "id": "dual-leg-live-v2",
+            "display_name": "BTC 2 legs V2 · Live",
+            "status": live_status,
+            "status_line": live_status,
+            "mode": live_mode,
+            "live": live_on_air,
+            "live_enabled": live_on,
+            "exec_is_real_live": exec_real,
+            "running": live_running,
+            "paused": pause_active,
+        },
+        {
+            "id": "dual-leg-paper-v2",
+            "display_name": "BTC 2 legs V2 · Paper",
+            "status": paper_status,
+            "status_line": f"{paper_status} · {session_note or '—'}",
+            "mode": "paper",
+            "live": False,
+            "running": paper_running,
+            "session_id": session_note,
+        },
     ]
-    try:
-        rows = _crypto15m_recent_trades(80, None, False, sonu_only=False)
-        seen: set[str] = set()
-        for r in rows:
-            name = str(r.get("bot") or r.get("asset") or "").strip()
-            if not name or name in seen:
-                continue
-            seen.add(name)
-            slug = name.lower().replace(" ", "-")
-            bots.append({"id": slug, "display_name": name, "status": "paper"})
-    except Exception:
-        pass
     return {"ok": True, "n": len(bots), "bots": bots}
 
 

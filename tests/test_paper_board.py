@@ -6,6 +6,7 @@ import json
 import os
 import sys
 import unittest
+from unittest import mock
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -280,9 +281,175 @@ class PaperBoardTests(unittest.TestCase):
         hl = board.get("high_live_board") or {}
         self.assertFalse(hl.get("any_live"))
         rows = hl.get("rows") or []
-        self.assertGreaterEqual(len(rows), 2)
-        self.assertEqual(rows[0].get("id"), "son-btc-5m-ultimate-live")
-        self.assertEqual(rows[1].get("display_name"), "BTC 2 legs V2")
+        self.assertEqual([row.get("id") for row in rows], [
+            "dual-leg-live-v2",
+            "son-btc-2legs-v2-newnew-a",
+        ])
+        self.assertNotIn("vs", hl)
+        self.assertNotIn("son-btc-5m-ultimate-live", [row.get("id") for row in rows])
+
+    def test_high_live_wallet_ignores_stopped_session_cash(self) -> None:
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {"wallet_cash_usdc": 112.68, "realized_pnl_usd": -36.59, "updated_at_hkt": "2026-11-06 08:59:55 HKT"},
+        )
+        _write(
+            self.bot / "logs" / "wallet_cache.json",
+            {"cash_usdc": 57.69, "portfolio_value": 0, "total_equity": 57.69, "funder": "0x2c9c"},
+        )
+        board = self._build()
+        hl = board.get("high_live_board") or {}
+        self.assertEqual(hl.get("wallet_cash_usdc"), 57.69)
+        self.assertEqual(hl.get("wallet_source"), "cache")
+        self.assertFalse(hl.get("wallet_is_live_session"))
+        self.assertEqual(hl.get("wallet_label"), "銀包")
+
+    def test_high_live_wallet_hides_status_when_live_is_off(self) -> None:
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {"wallet_cash_usdc": 137.28, "realized_pnl_usd": 32.81},
+        )
+        board = self._build()
+        hl = board.get("high_live_board") or {}
+        self.assertIsNone(hl.get("wallet_cash_usdc"))
+        self.assertFalse(hl.get("wallet_is_live_session"))
+        self.assertIsNone(hl.get("wallet_label"))
+
+    def test_fresh_clob_cash_replaces_stopped_session(self) -> None:
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {"wallet_cash_usdc": 112.68},
+        )
+        _write(self.bot / "logs" / "wallet_cache.json", {"cash_usdc": 1})
+        fresh = {"cash_usdc": 57.69, "portfolio_value": 0, "total_equity": 57.69, "funder": "0x2c9c"}
+        with mock.patch.object(paper_board, "_fetch_clob_wallet_readonly", return_value=fresh):
+            board = self._build()
+        hl = board.get("high_live_board") or {}
+        self.assertEqual(hl.get("wallet_cash_usdc"), 57.69)
+        self.assertEqual(hl.get("wallet_source"), "clob")
+        self.assertEqual(hl.get("wallet_label"), "銀包")
+        self.assertFalse(hl.get("wallet_is_live_session"))
+
+    def test_fresh_paper_counters_stay_zero_beside_stopped_live(self) -> None:
+        _write(self.bot / "logs" / "dual_leg_btc_paper_trades.json", [])
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {"samples_total": 987, "settled_trades": 17, "realized_pnl_usd": -36.59},
+        )
+        board = paper_board._high_live_board(self.bot, {"DUAL_LEG_LIVE_DRY_RUN": "1"}, {"wallet_cash_usdc": None})
+        row = next(item for item in board["rows"] if item["id"] == "dual-leg-live-v2")
+        self.assertEqual(row["trades_windows_line"], "Trades 0 單 · 0 窗 · 過濾 0")
+        self.assertEqual(row["trade_count"], 0)
+
+    def test_v2_live_funnel_skipped_windows_not_samples(self) -> None:
+        """窗/過濾 = 考慮 − 入場; never daemon checkpoint samples (798)."""
+        _write(
+            self.bot / "config" / "v2_parent_live_exec.env",
+            "DUAL_LEG_LIVE_SESSION_ID=sess-a\n",
+        )
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {
+                "session_id": "sess-a",
+                "samples_total": 798,
+                "windows_considered": 50,
+                "settled_trades": 2,
+            },
+        )
+        _write(
+            self.bot / "logs" / "dual_leg_live_trades.json",
+            [
+                {"slug": "btc-updown-5m-one", "session_id": "sess-a", "pnl": 1},
+                {"slug": "btc-updown-5m-two", "session_id": "sess-a", "pnl": -1},
+            ],
+        )
+        wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
+        self.assertEqual(wf["considered"], 50)
+        self.assertEqual(wf["filtered"], 48)
+        self.assertEqual(wf["entered"], 2)
+
+    def test_v2_live_funnel_open_state_not_counted_as_skipped(self) -> None:
+        """Open state is not a finished 窗; 窗 counts no-entry rounds only."""
+        _write(
+            self.bot / "config" / "v2_parent_live_exec.env",
+            "DUAL_LEG_LIVE_SESSION_ID=sess-a\n",
+        )
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {
+                "session_id": "sess-a",
+                "windows_considered": 100,
+                "settled_trades": 14,
+            },
+        )
+        rows = [
+            {
+                "slug": f"btc-updown-5m-{i}",
+                "session_id": "sess-a",
+                "pnl": 0.5 if i % 2 else -0.3,
+            }
+            for i in range(14)
+        ]
+        _write(self.bot / "logs" / "dual_leg_live_trades.json", rows)
+        _write(
+            self.bot / "logs" / "dual_leg_live_state.json",
+            {"btc-updown-5m-open": {"session_id": "sess-a", "status": "one_leg"}},
+        )
+        wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
+        self.assertEqual(wf["entered"], 14)
+        self.assertEqual(wf["considered"], 100)
+        self.assertEqual(wf["filtered"], 86)
+
+    def test_stale_live_status_does_not_paint_the_new_session(self) -> None:
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {
+                "session_id": "v2-live-20261105-224129",
+                "samples_total": 987,
+                "settled_trades": 17,
+            },
+        )
+        _write(
+            self.bot / "config" / "v2_parent_live_exec.env",
+            "DUAL_LEG_LIVE_SESSION_ID=v2-live-20261107-011629\n",
+        )
+        wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
+        self.assertEqual(wf["filtered"], 0)
+        self.assertEqual(wf["entered"], 0)
+        self.assertEqual(wf["trades"], 0)
+
+    def test_display_epoch_zeros_the_fresh_live_funnel(self) -> None:
+        _write(
+            self.bot / "logs" / "dual_leg_live_display_epoch.json",
+            {
+                "session_id": "v2-live-20261107-011629",
+                "considered_baseline": 8,
+                "entered_baseline": 0,
+            },
+        )
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {
+                "session_id": "v2-live-20261107-011629",
+                "windows_considered": 8,
+                "settled_trades": 0,
+            },
+        )
+        wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
+        self.assertEqual(wf["filtered"], 0)
+        self.assertEqual(wf["entered"], 0)
+
+    def test_high_live_board_fills_wallet_when_arg_none(self) -> None:
+        _write(self.bot / "logs" / "wallet_cache.json", {"cash_usdc": 99.5})
+        board = paper_board._high_live_board(
+            self.bot,
+            {"DUAL_LEG_LIVE_DRY_RUN": "1"},
+            None,
+        )
+        self.assertEqual(board.get("wallet_cash_usdc"), 99.5)
+        self.assertEqual(board.get("wallet_source"), "cache")
+        self.assertEqual(board.get("wallet_label"), "銀包")
+        self.assertFalse(board.get("wallet_is_live_session"))
 
 
 if __name__ == "__main__":
