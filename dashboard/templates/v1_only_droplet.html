@@ -1486,9 +1486,10 @@ summary.desk-fold-summary {
         const twLine = r.trades_windows_line || (() => {
           const wf = r.window_funnel || {};
           const n = (r.trade_count != null ? r.trade_count : 0);
-          const m = (wf.considered != null ? wf.considered : (r.scan_count != null ? r.scan_count : 0));
-          const k = (wf.filtered != null ? wf.filtered : Math.max(0, Number(m) - Number(wf.entered != null ? wf.entered : n)));
-          return 'Trades ' + n + ' 單 · ' + m + ' 窗 · 過濾 ' + k;
+          const ent = (wf.entered != null ? wf.entered : n);
+          const skipped = (wf.filtered != null ? wf.filtered : Math.max(0, Number(wf.considered != null ? wf.considered : (r.scan_count != null ? r.scan_count : 0)) - Number(ent)));
+          const k = (wf.filtered != null ? wf.filtered : skipped);
+          return 'Trades ' + n + ' 單 · ' + skipped + ' 窗 · 過濾 ' + k;
         })();
         const wf = r.window_funnel || {};
         const winF = (wf.filtered != null ? wf.filtered : (wf.considered != null ? wf.considered : (r.scan_count != null ? r.scan_count : '—')));

@@ -341,19 +341,8 @@ class PaperBoardTests(unittest.TestCase):
         self.assertEqual(row["trades_windows_line"], "Trades 0 單 · 0 窗 · 過濾 0")
         self.assertEqual(row["trade_count"], 0)
 
-    def test_v2_live_funnel_from_status_samples(self) -> None:
-        _write(
-            self.bot / "logs" / "dual_leg_live_status.json",
-            {"samples_total": 290, "settled_trades": 27, "wallet_cash_usdc": 100},
-        )
-        _write(self.bot / "config" / "v2_parent_live_exec.env", "")
-        # Force live_active path requires systemd; test helper directly
-        wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
-        self.assertEqual(wf["filtered"], 290)
-        self.assertEqual(wf["entered"], 27)
-
-    def test_v2_live_funnel_uses_unique_slugs_not_samples(self) -> None:
-        """窗 = unique market slugs, not daemon checkpoint samples (798 vs 11)."""
+    def test_v2_live_funnel_skipped_windows_not_samples(self) -> None:
+        """窗/過濾 = 考慮 − 入場; never daemon checkpoint samples (798)."""
         _write(
             self.bot / "config" / "v2_parent_live_exec.env",
             "DUAL_LEG_LIVE_SESSION_ID=sess-a\n",
@@ -363,6 +352,7 @@ class PaperBoardTests(unittest.TestCase):
             {
                 "session_id": "sess-a",
                 "samples_total": 798,
+                "windows_considered": 50,
                 "settled_trades": 2,
             },
         )
@@ -374,18 +364,23 @@ class PaperBoardTests(unittest.TestCase):
             ],
         )
         wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
-        self.assertEqual(wf["filtered"], 2)
+        self.assertEqual(wf["considered"], 50)
+        self.assertEqual(wf["filtered"], 48)
         self.assertEqual(wf["entered"], 2)
 
-    def test_v2_live_funnel_ignores_open_state_slug(self) -> None:
-        """窗 must not exceed 單 when state still holds the current (unsettled) window."""
+    def test_v2_live_funnel_open_state_not_counted_as_skipped(self) -> None:
+        """Open state is not a finished 窗; 窗 counts no-entry rounds only."""
         _write(
             self.bot / "config" / "v2_parent_live_exec.env",
             "DUAL_LEG_LIVE_SESSION_ID=sess-a\n",
         )
         _write(
             self.bot / "logs" / "dual_leg_live_status.json",
-            {"session_id": "sess-a", "samples_total": 400, "settled_trades": 14},
+            {
+                "session_id": "sess-a",
+                "windows_considered": 100,
+                "settled_trades": 14,
+            },
         )
         rows = [
             {
@@ -402,7 +397,8 @@ class PaperBoardTests(unittest.TestCase):
         )
         wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
         self.assertEqual(wf["entered"], 14)
-        self.assertEqual(wf["filtered"], 14)
+        self.assertEqual(wf["considered"], 100)
+        self.assertEqual(wf["filtered"], 86)
 
     def test_stale_live_status_does_not_paint_the_new_session(self) -> None:
         _write(
@@ -424,19 +420,19 @@ class PaperBoardTests(unittest.TestCase):
 
     def test_display_epoch_zeros_the_fresh_live_funnel(self) -> None:
         _write(
-            self.bot / "logs" / "dual_leg_live_status.json",
-            {
-                "session_id": "v2-live-20261107-011629",
-                "samples_total": 8,
-                "settled_trades": 0,
-            },
-        )
-        _write(
             self.bot / "logs" / "dual_leg_live_display_epoch.json",
             {
                 "session_id": "v2-live-20261107-011629",
-                "samples_baseline": 8,
+                "considered_baseline": 8,
                 "entered_baseline": 0,
+            },
+        )
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {
+                "session_id": "v2-live-20261107-011629",
+                "windows_considered": 8,
+                "settled_trades": 0,
             },
         )
         wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)

@@ -263,6 +263,43 @@ def _live_exec_session_id(root: Path) -> str:
     return ""
 
 
+_SKIP_JSONL_EVENTS = frozenset({"live_daemon_start", "live_daemon_stop", "loop_error"})
+
+
+def _live_jsonl_slugs_this_session(root: Path, exec_session: str) -> set[str]:
+    """Distinct market slugs mentioned in this session's live daemon jsonl."""
+    path = root / "logs" / "dual_leg_live_daemon.jsonl"
+    if not path.is_file():
+        return set()
+    sess = (exec_session or "").strip()
+    slugs: set[str] = set()
+    try:
+        with path.open("r", encoding="utf-8", errors="ignore") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(row, dict):
+                    continue
+                if sess:
+                    row_sid = str(row.get("session_id") or "").strip()
+                    if row_sid and row_sid != sess:
+                        continue
+                ev = str(row.get("event") or "")
+                if ev in _SKIP_JSONL_EVENTS:
+                    continue
+                slug = str(row.get("slug") or "").strip()
+                if slug:
+                    slugs.add(slug)
+    except OSError:
+        return set()
+    return slugs
+
+
 def _live_settled_slugs_this_session(root: Path, exec_session: str) -> set[str]:
     """Distinct 5m market slugs with a **settled** live trade this session.
 
@@ -297,26 +334,69 @@ def _apply_live_display_epoch(
     *,
     windows_are_slugs: bool,
 ) -> tuple[int, int]:
-    """Shift the visible funnel so a fresh live session starts at 0.
+    """Legacy helper; prefer ``_apply_live_funnel_epoch`` for live V2 funnel."""
 
-    For **slug-based** window counts, only subtract ``windows_baseline`` when set
-    (new resets). Legacy epochs used ``samples_baseline`` for daemon sample
-    counts — do not apply that baseline to slugs or the 窗 line goes wrong.
-    """
+    c, e = _apply_live_funnel_epoch(root, session_id, raw_windows, raw_entered)
+    if not windows_are_slugs:
+        epoch = _read_json(root / "logs" / "dual_leg_live_display_epoch.json", {})
+        if (
+            isinstance(epoch, dict)
+            and session_id
+            and str(epoch.get("session_id") or "") == session_id
+            and epoch.get("windows_baseline") is None
+            and epoch.get("considered_baseline") is None
+        ):
+            base_w = int(epoch.get("samples_baseline") or 0)
+            return max(0, raw_windows - base_w), e
+    return c, e
+
+
+def _apply_live_funnel_epoch(
+    root: Path, session_id: str, raw_considered: int, raw_entered: int
+) -> tuple[int, int]:
+    """Shift 考慮／入場 counters for a display reset without mutating logs."""
     epoch = _read_json(root / "logs" / "dual_leg_live_display_epoch.json", {})
     if not isinstance(epoch, dict):
-        return raw_windows, raw_entered
+        return raw_considered, raw_entered
     if not session_id or str(epoch.get("session_id") or "") != session_id:
-        return raw_windows, raw_entered
+        return raw_considered, raw_entered
     base_e = int(epoch.get("entered_baseline") or 0)
+    base_c = epoch.get("considered_baseline")
+    if base_c is None:
+        base_c = epoch.get("windows_baseline")
     e = max(0, raw_entered - base_e)
-    if windows_are_slugs:
-        wb = epoch.get("windows_baseline")
-        if wb is None:
-            return raw_windows, e
-        return max(0, raw_windows - int(wb)), e
-    base_w = int(epoch.get("samples_baseline") or 0)
-    return max(0, raw_windows - base_w), e
+    if base_c is None:
+        return raw_considered, e
+    return max(0, raw_considered - int(base_c)), e
+
+
+def _v2_window_funnel_from_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """考慮 = distinct windows in ledger; 過濾/窗 = 考慮 − 入場 (no entry)."""
+    by_key: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        key = str(row.get("slug") or row.get("market_id") or row.get("window_id") or "").strip()
+        if not key:
+            continue
+        prev = by_key.get(key)
+        if prev is None or row.get("entered") or _is_entered(row):
+            by_key[key] = row
+    considered = len(by_key)
+    entered = sum(
+        1
+        for row in by_key.values()
+        if row.get("entered") is True
+        or _is_settled(row)
+        or (row.get("pnl") is not None and _is_entered(row))
+    )
+    filtered = max(0, considered - entered)
+    return {
+        "considered": considered,
+        "filtered": filtered,
+        "entered": entered,
+        "trades": entered,
+    }
 
 
 def _gold_box_window_funnel(
@@ -326,7 +406,7 @@ def _gold_box_window_funnel(
     live_active: bool,
     ledger_rows: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Window funnel for gold-box cards. 考慮 equals 過濾 (same window count); UI shows 過濾 + 入場 only."""
+    """Gold-box funnel: 考慮 = windows seen; 窗/過濾 = 考慮 − 入場; 入場 = trades."""
     from desk_bots import V2_ID
 
     if bot_id == V2_ID and live_active:
@@ -344,57 +424,37 @@ def _gold_box_window_funnel(
                 "trades": 0,
                 "ledger": "live",
             }
-        sess_for_slugs = session or exec_session
-        slug_set = _live_settled_slugs_this_session(root, sess_for_slugs)
-        entered = st.get("settled_trades")
-        if entered is None:
-            entered = st.get("posted_live_orders")
-        # Prefer settled slug count (one 5m window per 單); falls back to status samples if empty.
-        if slug_set:
-            raw_e = int(entered if entered is not None else len(slug_set))
-            raw_w = len(slug_set)
-            if raw_e and raw_w != raw_e:
-                # Status and ledger disagree — keep 單/窗 aligned on settled count.
-                raw_w = raw_e
-            w, e = _apply_live_display_epoch(
-                root, session, raw_w, raw_e, windows_are_slugs=True
-            )
-            return {
-                "considered": w,
-                "filtered": w,
-                "entered": e,
-                "trades": e,
-                "ledger": "live",
-            }
-        windows = st.get("samples_total")
-        if windows is not None:
-            w, e = _apply_live_display_epoch(
-                root,
-                session,
-                int(windows),
-                int(entered or 0),
-                windows_are_slugs=False,
-            )
-            return {
-                "considered": w,
-                "filtered": w,
-                "entered": e,
-                "trades": e,
-                "ledger": "live",
-            }
+        sess = session or exec_session
+        raw_entered = int(st.get("settled_trades") or st.get("posted_live_orders") or 0)
+        entered_slugs = _live_settled_slugs_this_session(root, sess)
+        if not raw_entered and entered_slugs:
+            raw_entered = len(entered_slugs)
+        jsonl_slugs = _live_jsonl_slugs_this_session(root, sess)
+        raw_considered = int(st.get("windows_considered") or 0)
+        raw_considered = max(raw_considered, len(jsonl_slugs), len(entered_slugs), raw_entered)
+        considered, entered = _apply_live_funnel_epoch(root, session, raw_considered, raw_entered)
+        skipped = max(0, considered - entered)
+        return {
+            "considered": considered,
+            "filtered": skipped,
+            "entered": entered,
+            "trades": entered,
+            "ledger": "live",
+        }
 
     rows = list(ledger_rows or [])
     if not rows and bot_id == V2_ID:
         path = root / "logs" / ("dual_leg_live_trades.json" if live_active else "dual_leg_btc_paper_trades.json")
         rows = _file_rows(path) if path.is_file() else []
-    stats = _ledger_stats(rows) if rows else {"trade_count": 0, "scan_count": 0}
-    windows = int(stats.get("scan_count") or len(rows))
-    entered = int(stats.get("trade_count") or 0)
+    if rows:
+        funnel = _v2_window_funnel_from_rows(rows)
+        funnel["ledger"] = "live" if live_active else "paper"
+        return funnel
     return {
-        "considered": windows,
-        "filtered": windows,
-        "entered": entered,
-        "trades": entered,
+        "considered": 0,
+        "filtered": 0,
+        "entered": 0,
+        "trades": 0,
         "ledger": "live" if live_active else "paper",
     }
 
@@ -1409,7 +1469,7 @@ def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
         change = "Paper prep · 真倉 OFF"
     trades = int(stats.get("trade_count") or 0)
     considered = int(stats.get("scan_count") or trades)
-    filtered = considered
+    filtered = max(0, considered - trades)
     row = {
         "id": SONU_BOT_ID,
         "display_name": "終極5m" if real_live else "終極5m · Live預備",
@@ -1429,14 +1489,14 @@ def _son_u_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:
         "pnl": round(float(stats.get("pnl") or 0), 2),
         "pnl_label": _money(float(stats.get("pnl") or 0)),
         "trade_count": trades,
-        "count_label": f"{trades} 單 · {considered} 窗",
+        "count_label": f"{trades} 單 · {filtered} 窗" if filtered or trades else f"{trades} 單",
         "scan_count": considered,
         "settled_n": settled,
         "wins": wins,
         "losses": losses,
         "wr_label": _fmt_wr(100.0 * wins / settled) if settled else "未有結算",
         "capital_usd": 100.0,
-        "trades_windows_line": f"Trades {trades} 單 · {considered} 窗 · 過濾 {filtered}",
+        "trades_windows_line": f"Trades {trades} 單 · {filtered} 窗 · 過濾 {filtered}",
         "window_funnel": {
             "considered": considered,
             "filtered": filtered,

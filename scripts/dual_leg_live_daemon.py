@@ -311,6 +311,7 @@ def run_forever(poll_sec: float) -> int:
 
     started = now_hkt()
     samples = 0
+    considered_slugs: set[str] = set()
     errors = 0
     last_slug = None
     open_price = None
@@ -384,6 +385,7 @@ def run_forever(poll_sec: float) -> int:
                 time.sleep(decision_poll_sec(t_rem, poll_sec))
                 continue
             seen_decision_cps.add(cp_hit)
+            considered_slugs.add(market.slug)
 
             btc = fetch_btc_usd()
             px = float(btc["price"])
@@ -701,6 +703,7 @@ def run_forever(poll_sec: float) -> int:
                     "open_positions": len(state),
                     "open_slugs": list(state.keys()),
                     "samples_total": samples,
+                    "windows_considered": len(considered_slugs),
                     "errors": errors,
                     "wallet_cash_usdc": cash_disp,
                     "realized_pnl_usd": realized_pnl,
