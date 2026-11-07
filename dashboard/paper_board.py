@@ -263,12 +263,11 @@ def _live_exec_session_id(root: Path) -> str:
     return ""
 
 
-def _live_unique_slugs_this_session(root: Path, exec_session: str) -> set[str]:
-    """Market slugs touched this live session (trades rows + open state).
+def _live_settled_slugs_this_session(root: Path, exec_session: str) -> set[str]:
+    """Distinct 5m market slugs with a **settled** live trade this session.
 
-    ``samples_total`` counts decision *samples* (checkpoint ticks), which is much
-    larger than ``Trades N 單`` — use slug-union for the gold-box funnel so the
-    窗/過濾 lines match how many 5m windows were involved.
+    ``samples_total`` counts checkpoint polls (hundreds+). Open ``state.json``
+    slugs and unsettled trade rows must not inflate 窗 above 單 (settled count).
     """
     slugs: set[str] = set()
     sess = (exec_session or "").strip()
@@ -282,21 +281,11 @@ def _live_unique_slugs_this_session(root: Path, exec_session: str) -> set[str]:
                 row_sid = str(row.get("session_id") or "").strip()
                 if row_sid and row_sid != sess:
                     continue
+            if row.get("pnl") is None:
+                continue
             slug = str(row.get("slug") or "").strip()
             if slug:
                 slugs.add(slug)
-
-    state = _read_json(root / "logs" / "dual_leg_live_state.json", {})
-    if isinstance(state, dict):
-        for slug_key, row in state.items():
-            sk = str(slug_key or "").strip()
-            if not sk:
-                continue
-            if isinstance(row, dict) and sess:
-                row_sid = str(row.get("session_id") or "").strip()
-                if row_sid and row_sid != sess:
-                    continue
-            slugs.add(sk)
     return slugs
 
 
@@ -356,14 +345,17 @@ def _gold_box_window_funnel(
                 "ledger": "live",
             }
         sess_for_slugs = session or exec_session
-        slug_set = _live_unique_slugs_this_session(root, sess_for_slugs)
+        slug_set = _live_settled_slugs_this_session(root, sess_for_slugs)
         entered = st.get("settled_trades")
         if entered is None:
             entered = st.get("posted_live_orders")
-        # Prefer unique 5m window (slug) count; falls back to status samples if no data yet.
+        # Prefer settled slug count (one 5m window per 單); falls back to status samples if empty.
         if slug_set:
+            raw_e = int(entered if entered is not None else len(slug_set))
             raw_w = len(slug_set)
-            raw_e = int(entered or 0)
+            if raw_e and raw_w != raw_e:
+                # Status and ledger disagree — keep 單/窗 aligned on settled count.
+                raw_w = raw_e
             w, e = _apply_live_display_epoch(
                 root, session, raw_w, raw_e, windows_are_slugs=True
             )

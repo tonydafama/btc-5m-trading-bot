@@ -377,6 +377,33 @@ class PaperBoardTests(unittest.TestCase):
         self.assertEqual(wf["filtered"], 2)
         self.assertEqual(wf["entered"], 2)
 
+    def test_v2_live_funnel_ignores_open_state_slug(self) -> None:
+        """窗 must not exceed 單 when state still holds the current (unsettled) window."""
+        _write(
+            self.bot / "config" / "v2_parent_live_exec.env",
+            "DUAL_LEG_LIVE_SESSION_ID=sess-a\n",
+        )
+        _write(
+            self.bot / "logs" / "dual_leg_live_status.json",
+            {"session_id": "sess-a", "samples_total": 400, "settled_trades": 14},
+        )
+        rows = [
+            {
+                "slug": f"btc-updown-5m-{i}",
+                "session_id": "sess-a",
+                "pnl": 0.5 if i % 2 else -0.3,
+            }
+            for i in range(14)
+        ]
+        _write(self.bot / "logs" / "dual_leg_live_trades.json", rows)
+        _write(
+            self.bot / "logs" / "dual_leg_live_state.json",
+            {"btc-updown-5m-open": {"session_id": "sess-a", "status": "one_leg"}},
+        )
+        wf = paper_board._gold_box_window_funnel(self.bot, bot_id="dual-leg-live-v2", live_active=True)
+        self.assertEqual(wf["entered"], 14)
+        self.assertEqual(wf["filtered"], 14)
+
     def test_stale_live_status_does_not_paint_the_new_session(self) -> None:
         _write(
             self.bot / "logs" / "dual_leg_live_status.json",
