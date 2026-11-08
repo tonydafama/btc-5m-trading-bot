@@ -194,7 +194,11 @@ def bet_view(
     bet = current_bet_size(root, bot_id, env)
     stake = stake_usd_for(bot_id, bet)
     capital = float(spec["capital_usd"])
-    if bot_id == SONU_ID and wallet_cash_usdc is not None:
+    if bot_id == V2_ID:
+        snap = v2_section_start_capital(root)
+        if snap is not None:
+            capital = snap
+    elif bot_id == SONU_ID and wallet_cash_usdc is not None:
         capital = round(float(wallet_cash_usdc), 2)
     return {
         "bet_size": bet,
@@ -309,6 +313,43 @@ def v2_strategy_display_name(root: Path) -> str:
 
 def v2_bot_display_name(root: Path) -> str:
     return v2_strategy_display_name(root)
+
+
+def v2_live_session_id(root: Path) -> str:
+    file_env = _read_kv_file(root / V2_LIVE_ENV)
+    return (file_env.get("DUAL_LEG_LIVE_SESSION_ID") or "").strip()
+
+
+def v2_section_start_capital(root: Path) -> float | None:
+    """Section 本金: CLOB cash snapshotted at live section start (fixed for the section)."""
+    import json
+
+    sess_id = v2_live_session_id(root)
+    for path in (
+        root / "config" / "dual_leg_v2_live_session.json",
+        root / "logs" / "dual_leg_live_status.json",
+        root / "logs" / "dual_leg_v2_live_meta.json",
+    ):
+        if not path.is_file():
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        if sess_id and str(data.get("session_id") or "") not in ("", sess_id):
+            continue
+        raw = data.get("section_start_capital_usd")
+        if raw is None:
+            raw = data.get("initial_capital_usd")
+        if raw is None:
+            continue
+        try:
+            return round(float(raw), 2)
+        except (TypeError, ValueError):
+            continue
+    return None
 
 
 def v2_exec_is_real(root: Path, env: dict[str, str] | None = None) -> bool:

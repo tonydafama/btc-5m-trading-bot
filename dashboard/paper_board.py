@@ -1589,7 +1589,16 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
         "window_funnel": wf,
         "unit": "dual-leg-live-v2",
     }
-    return decorate_bet(root, row, env)
+    row = decorate_bet(root, row, env)
+    try:
+        from desk_bots import v2_section_start_capital
+
+        snap = v2_section_start_capital(root)
+        if snap is not None:
+            row["capital_usd"] = snap
+    except Exception:
+        pass
+    return row
 
 
 def _na_high_live_row(root: Path, env: dict[str, str]) -> dict[str, Any]:

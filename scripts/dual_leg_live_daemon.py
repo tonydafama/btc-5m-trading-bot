@@ -316,6 +316,11 @@ def run_forever(poll_sec: float) -> int:
             posted_live_orders += int(row.get("legs_posted") or 0)
 
     started = now_hkt()
+    prev_status = _read_json(STATUS_PATH, {})
+    if not isinstance(prev_status, dict):
+        prev_status = {}
+    section_cap = prev_status.get("section_start_capital_usd")
+    section_cap_at = prev_status.get("section_start_at_hkt")
     samples = 0
     considered_slugs: set[str] = set()
     errors = 0
@@ -746,6 +751,8 @@ def run_forever(poll_sec: float) -> int:
                     ),
                     "session_id": os.getenv("DUAL_LEG_LIVE_SESSION_ID") or None,
                     "strategy_label": strategy_label,
+                    "section_start_capital_usd": section_cap,
+                    "section_start_at_hkt": section_cap_at,
                     "unit_usd": unit,
                     "pair_lock_usd": round(unit * 2, 2),
                     "max_concurrent_pairs_gate": False,
