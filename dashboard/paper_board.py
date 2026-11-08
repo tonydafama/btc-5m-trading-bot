@@ -1439,7 +1439,7 @@ def _v2_golive_prep(root: Path, env: dict[str, str]) -> dict[str, Any]:
 
         strategy_label = v2_strategy_display_name(root)
     except Exception:
-        strategy_label = "BTC 2 legs V2"
+        strategy_label = "V2 21+ Rg80"
     return {
         "ok": True,
         "service": "dual-leg-live-v2",
@@ -1555,7 +1555,7 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
     # 0 is a real fresh-session count. Do not replace it with the stopped live book.
     entered = int(wf["entered"]) if wf.get("entered") is not None else int(settled or 0)
     windows = int(wf["filtered"]) if wf.get("filtered") is not None else 0
-    strat = mode.get("strategy_label") or prep.get("strategy_label") or "BTC 2 legs V2"
+    strat = mode.get("strategy_label") or prep.get("strategy_label") or "V2 21+ Rg80"
     row = {
         "id": "dual-leg-live-v2",
         "display_name": strat,

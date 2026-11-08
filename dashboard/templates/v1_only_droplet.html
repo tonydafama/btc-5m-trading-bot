@@ -1217,7 +1217,9 @@ summary.desk-fold-summary {
         bet_size: db.bet_size != null ? db.bet_size : out.bet_size,
         rule_line: db.rule_line || out.rule_line,
         capital_usd: db.capital_usd != null ? db.capital_usd : out.capital_usd,
-        display_name: db.display_name || out.display_name,
+        display_name: (id === 'dual-leg-live-v2' && out.display_name)
+          ? out.display_name
+          : (db.display_name || out.display_name),
         label_tc: db.label_tc || out.label_tc,
       });
     }

@@ -3,7 +3,7 @@
 Bet size is the number typed on that bot's own field:
 
 - 終極5m (v2 5m btc): stake = bet size × 1.  10 → $10
-- BTC 2 legs V2:       stake = bet size × 2.  10 → $20 (two legs)
+- V2 21+ Rg80 (parent): stake = bet size × 2.  10 → $20 (two legs)
 
 Switching one bot never writes the other bot's armed flag.
 Real orders stay off while the exec path is still a DRY_RUN placeholder.
@@ -39,7 +39,7 @@ BOT_SPECS: dict[str, dict[str, Any]] = {
     },
     V2_ID: {
         "id": V2_ID,
-        "display_name": "BTC 2 legs V2",
+        "display_name": "V2 21+ Rg80",
         "rule_label": "v2",
         "multiplier": 2,
         "default_bet_size": 10.0,
@@ -224,7 +224,7 @@ def decorate_bet(
 
 V2_LIVE_UNIT = "dual-leg-live-v2.service"
 V2_LIVE_ENV = "config/v2_parent_live_exec.env"
-V2_STRATEGY_LABEL_DEFAULT = "BTC 2 legs V2"
+V2_STRATEGY_LABEL_DEFAULT = "V2 21+ Rg80"
 
 
 def _unit_active(unit: str) -> bool:
@@ -290,9 +290,25 @@ def _write_kv_file(path: Path, updates: dict[str, str]) -> None:
 
 def v2_strategy_display_name(root: Path) -> str:
     """Desk-visible live strategy label (e.g. V2 21+ Rg80)."""
+    import json
+
+    status_path = root / "logs" / "dual_leg_live_status.json"
+    if status_path.is_file():
+        try:
+            st = json.loads(status_path.read_text(encoding="utf-8"))
+            if isinstance(st, dict):
+                label = (st.get("strategy_label") or "").strip()
+                if label:
+                    return label
+        except (OSError, ValueError, json.JSONDecodeError):
+            pass
     file_env = _read_kv_file(root / V2_LIVE_ENV)
     label = (file_env.get("DUAL_LEG_LIVE_STRATEGY_LABEL") or "").strip()
     return label or V2_STRATEGY_LABEL_DEFAULT
+
+
+def v2_bot_display_name(root: Path) -> str:
+    return v2_strategy_display_name(root)
 
 
 def v2_exec_is_real(root: Path, env: dict[str, str] | None = None) -> bool:
@@ -321,7 +337,7 @@ def live_conflict_message(root: Path, bot_id: str) -> str | None:
     except Exception:
         pass
     if bot_id != V2_ID and v2_unit_is_live(root):
-            names.append("BTC 2 legs V2")
+            names.append(v2_bot_display_name(root))
     try:
         from v2_newnew_live_truth import live_active as na_on
 
@@ -449,13 +465,14 @@ def set_bet_size(root: Path, bot_id: str, raw: Any) -> dict[str, Any]:
     _persist_bet_env(root, bot_id, bet)
     spec = BOT_SPECS[bot_id]
     view = bet_view(root, bot_id)
+    label = v2_bot_display_name(root) if bot_id == V2_ID else spec["display_name"]
     view.update(
         {
             "ok": True,
             "bot_id": bot_id,
-            "display_name": spec["display_name"],
+            "display_name": label,
             "message_tc": (
-                f"{spec['display_name']} 注碼已儲存：bet size {fmt_num(bet)} → {view['rule_line']}"
+                f"{label} 注碼已儲存：bet size {fmt_num(bet)} → {view['rule_line']}"
             ),
         }
     )
@@ -464,6 +481,7 @@ def set_bet_size(root: Path, bot_id: str, raw: Any) -> dict[str, Any]:
 
 def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -> dict[str, Any]:
     current = v2_mode_view(root)
+    v2_name = v2_bot_display_name(root)
     env_path = root / V2_LIVE_ENV
     if action == "to_paper":
         _systemctl("disable", "--now", V2_LIVE_UNIT)
@@ -488,8 +506,8 @@ def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -
                 "bot_id": V2_ID,
                 "action": action,
                 "desk_mode": "paper",
-                "display_name": BOT_SPECS[V2_ID]["display_name"],
-                "message_tc": "BTC 2 legs V2 已切換 → Paper（真倉 OFF）",
+                "display_name": v2_name,
+                "message_tc": f"{v2_name} 已切換 → Paper（真倉 OFF）",
             }
         )
         return out
@@ -536,7 +554,7 @@ def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -
             "bot_id": V2_ID,
             "action": action,
             "error": "live_unit_down",
-            "error_tc": "BTC 2 legs V2 live unit 未啟動，仍然 Paper",
+            "error_tc": f"{v2_name} live unit 未啟動，仍然 Paper",
         }
     out.update(
         {
@@ -544,8 +562,8 @@ def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -
             "bot_id": V2_ID,
             "action": action,
             "desk_mode": "live",
-            "display_name": BOT_SPECS[V2_ID]["display_name"],
-            "message_tc": "BTC 2 legs V2 已切換 → Live（真倉 ON）",
+            "display_name": v2_name,
+            "message_tc": f"{v2_name} 已切換 → Live（真倉 ON）",
         }
     )
     return out
@@ -674,10 +692,11 @@ def desk_status(root: Path, *, wallet_cash_usdc: float | None = None, env: dict[
         (NA_ID, na_mode, na),
     ):
         spec = BOT_SPECS[bot_id]
+        label = v2_bot_display_name(root) if bot_id == V2_ID else spec["display_name"]
         bots.append(
             {
                 "id": bot_id,
-                "display_name": spec["display_name"],
+                "display_name": label,
                 "mode": mode,
                 "label_tc": extra.get("label_tc"),
                 "live_active": bool(extra.get("live_active")),
