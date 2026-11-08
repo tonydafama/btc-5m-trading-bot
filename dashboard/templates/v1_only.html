@@ -358,6 +358,14 @@
       grid-template-columns:repeat(2,minmax(0,1fr));
     }
     .desk-split-note { font-size:.75rem; color:var(--muted); margin-top:.35rem; }
+    .desk-pause-remark {
+      margin: .45rem 0 0;
+      font-size: .78rem;
+      line-height: 1.45;
+      font-weight: 650;
+      color: #e6c15a;
+    }
+    .desk-pause-remark.is-active { color: #ffb020; }
     .desk-bot {
       border-radius:16px; padding:.8rem .8rem .7rem; text-align:left;
       background:#0c1016; border:1px solid rgba(255,255,255,.08);
@@ -412,6 +420,52 @@
     .desk-wallet-line {
       margin-top:.7rem; font-size:.75rem; color:var(--muted);
       padding:.45rem .6rem; border-radius:10px; background:rgba(0,0,0,.25);
+    }
+    .desk-mode-books {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: .45rem;
+      margin-top: .55rem;
+    }
+    .desk-book {
+      border-radius: 10px;
+      padding: .45rem .55rem .42rem;
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .desk-book.is-paper { border-color: rgba(52,211,153,.35); }
+    .desk-book.is-live { border-color: rgba(248,113,113,.38); }
+    .desk-book-k { font-size: .68rem; font-weight: 800; letter-spacing: .02em; }
+    .desk-book.is-paper .desk-book-k { color: var(--green); }
+    .desk-book.is-live .desk-book-k { color: #fca5a5; }
+    .desk-book-line {
+      display: grid;
+      grid-template-columns: 2.2rem minmax(2.4rem, .75fr) minmax(3.8rem, 1fr) minmax(4.2rem, 1.1fr);
+      gap: .2rem;
+      align-items: baseline;
+      margin-top: .28rem;
+      font-weight: 750;
+      font-size: .78rem;
+    }
+    .desk-book-line .scope { color: var(--muted); font-size: .62rem; font-weight: 700; }
+    .desk-book-line .wr { color: #f0d9a8; }
+    .desk-book-when {
+      margin-top: .14rem;
+      font-family: ui-monospace, monospace;
+      font-size: .64rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      line-height: 1.35;
+    }
+    .desk-book-rowwhen {
+      margin-top: .2rem;
+      font-family: ui-monospace, monospace;
+      font-size: .6rem;
+      color: var(--muted);
+    }
+    .desk-book-note { margin-top: .1rem; color: var(--muted); font-size: .6rem; line-height: 1.35; }
+    @media (max-width: 720px) {
+      .desk-mode-books { grid-template-columns: 1fr; }
     }
     .high-live-row {
       border:1px solid rgba(224,181,103,.32); border-radius:12px; padding:.55rem .65rem;
@@ -614,6 +668,7 @@
       <div class="sonu-paper-caption hidden" id="c15m-paper-caption">PAPER · ON-AIR 熄咗</div>
       <div class="hint" id="c15m-mode-sub">兩個 bot 各自有掣。轉一個，另一個唔會跟。</div>
       <p class="desk-split-note">注碼分開儲存。終極5m：bet size 10 = 每注 $10。V2 兩腿：bet size 10 = 每注 $20。</p>
+      <p class="desk-pause-remark" id="v2-entry-pause-remark">BTC 2 legs V2：香港時間 18:00–24:00 暫停開新倉，00:00 再開始。已開倉會自己行完。</p>
       <div class="desk-bot-grid high-live-rows" id="high-live-rows" aria-label="兩個 bot 獨立控制">
         <article class="desk-bot desk-bot-5m" data-bot-id="son-btc-5m-ultimate-live" data-multiplier="1" data-rule="v2 5m btc" data-display-name="終極5m" data-mode="paper">
           <div class="desk-bot-head">
@@ -656,6 +711,7 @@
             <div class="desk-stat"><span class="k">注碼</span><span class="v" data-stat="stake">$10/注</span></div>
             <div class="desk-stat"><span class="k">本金</span><span class="v" data-stat="capital">$100</span></div>
           </div>
+          <div class="desk-mode-books" data-mode-books-host hidden></div>
         </article>
         <article class="desk-bot desk-bot-v2" data-bot-id="dual-leg-live-v2" data-multiplier="2" data-rule="v2" data-display-name="BTC 2 legs V2" data-mode="paper">
           <div class="desk-bot-head">
@@ -698,6 +754,7 @@
             <div class="desk-stat"><span class="k">注碼</span><span class="v" data-stat="stake">$20/注</span></div>
             <div class="desk-stat"><span class="k">本金</span><span class="v" data-stat="capital">$100</span></div>
           </div>
+          <div class="desk-mode-books" data-mode-books-host hidden></div>
         </article>
       </div>
       <div class="desk-wallet-line" id="desk-wallet-line">真錢包 —</div>
@@ -1673,6 +1730,49 @@
       }
     }
 
+    function deskPnlClass(pnl) {
+      if (pnl == null || pnl === '') return 'mut';
+      const n = Number(pnl);
+      if (!Number.isFinite(n)) return 'mut';
+      return n >= 0 ? 'pos' : 'neg';
+    }
+
+    function paintDeskModeBooks(card, row) {
+      const host = card && card.querySelector('[data-mode-books-host]');
+      if (!host) return;
+      const books = row && row.mode_books;
+      if (!books || !books.paper || !books.live) {
+        host.hidden = true;
+        host.innerHTML = '';
+        return;
+      }
+      const band = (key, klass) => {
+        const block = books[key] || {};
+        const rows = Array.isArray(block.rows) ? block.rows : [];
+        const stamp = [block.when_label, block.duration_label].filter(Boolean).join(' · ');
+        const lines = rows.map((b) => {
+          const pnlCls = deskPnlClass(b.pnl);
+          const rowStamp = (rows.length > 1 && b.when_label)
+            ? `<div class="desk-book-rowwhen">${esc([b.when_label, b.duration_label].filter(Boolean).join(' · '))}</div>`
+            : '';
+          return `${rowStamp}<div class="desk-book-line">
+              <span class="scope">${esc(b.scope || '')}</span>
+              <span class="wr">${esc(String(b.wr_label || '未有結算'))}</span>
+              <span class="${pnlCls}">${esc(String(b.pnl_label || money(b.pnl)))}</span>
+              <span>${esc(String(b.wl_label || '0W/0L'))}</span>
+            </div>
+            <div class="desk-book-note">${esc(String(b.note || ''))}</div>`;
+        }).join('');
+        return `<div class="desk-book ${klass}">
+            <div class="desk-book-k">${esc(block.title || key)}</div>
+            ${stamp ? `<div class="desk-book-when">${esc(stamp)}</div>` : ''}
+            ${lines}
+          </div>`;
+      };
+      host.hidden = false;
+      host.innerHTML = band('live', 'is-live') + band('paper', 'is-paper');
+    }
+
     function hydrateDeskCard(card, row) {
       if (!card || !row) return;
       const mode = row.mode || (row.live_enabled ? 'live' : (row.live_armed ? 'prep' : 'paper'));
@@ -1710,6 +1810,22 @@
       const stakeEl = card.querySelector('[data-stake]');
       if (ruleEl && row.rule_line) ruleEl.textContent = row.rule_line;
       if (stakeEl && row.stake_usd != null) stakeEl.textContent = '$' + row.stake_usd;
+      paintDeskModeBooks(card, row);
+    }
+
+    function paintEntryPauseRemark() {
+      const el = $('v2-entry-pause-remark');
+      if (!el) return;
+      const hour = Number(new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Hong_Kong',
+        hour: '2-digit',
+        hourCycle: 'h23',
+      }).format(new Date()));
+      const active = hour >= 18 && hour <= 23;
+      el.classList.toggle('is-active', active);
+      el.textContent = active
+        ? '而家暫停開新倉（香港時間 18:00–24:00），00:00 再開始。已開倉會自己行完。'
+        : 'BTC 2 legs V2：香港時間 18:00–24:00 暫停開新倉，00:00 再開始。已開倉會自己行完。';
     }
 
     function hydrateDeskBots(hl, sonULive) {
@@ -1727,9 +1843,15 @@
       document.querySelectorAll('#high-live-rows article.desk-bot').forEach((card) => {
         hydrateDeskCard(card, byId[card.dataset.botId]);
       });
+      paintEntryPauseRemark();
       const walletLine = $('desk-wallet-line');
       if (walletLine) {
-        const cash = ($('wallet-cash') && $('wallet-cash').textContent) || '—';
+        let cash = '—';
+        if (hl && hl.wallet_cash_usdc != null) {
+          cash = usd(hl.wallet_cash_usdc);
+        } else if ($('wallet-cash') && $('wallet-cash').textContent) {
+          cash = $('wallet-cash').textContent;
+        }
         const blocked = hl && hl.blocked ? ('阻擋：' + hl.blocked) : '冇阻擋';
         const real = hl && hl.any_live ? '真倉 ON' : '真倉未開';
         walletLine.textContent = '真錢包 ' + cash + ' · ' + blocked + ' · ' + real;
@@ -2166,7 +2288,8 @@
       trades = Array.isArray(trades) ? trades : (trades?.rows || []);
       daily = daily || { btc: [], eth: [], total: [] };
       stakePlan = stakePlan || {};
-      account.wallet_cash = wallet.cash_usdc || wallet.available_usdc || account.wallet_cash;
+      const hlWallet = allPaper && allPaper.high_live_board && allPaper.high_live_board.wallet_cash_usdc;
+      account.wallet_cash = wallet.cash_usdc || wallet.available_usdc || hlWallet || account.wallet_cash;
       $('updated').textContent = new Date().toLocaleTimeString('zh-HK');
       $('btc-mode').textContent = 'BTC ' + (wallet.trading_mode || '—').toUpperCase();
       $('eth-mode').textContent = 'ETH ' + (wallet.eth_trading_mode || '—').toUpperCase();
