@@ -302,6 +302,29 @@ def _unit_active_since_hkt(unit: str) -> datetime | None:
     return parsed
 
 
+def _read_json(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _read_kv_file(path: Path) -> dict[str, str]:
+    out: dict[str, str] = {}
+    if not path.is_file():
+        return out
+    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        raw = line.strip()
+        if not raw or raw.startswith("#") or "=" not in raw:
+            continue
+        key, value = raw.split("=", 1)
+        out[key.strip()] = value.strip().strip('"').strip("'")
+    return out
+
+
 def _read_rows(path: Path) -> list[dict[str, Any]]:
     if not path.is_file():
         return []
@@ -512,14 +535,25 @@ def books_for_bot(root: Path, bot_id: str) -> dict[str, Any]:
         if prior:
             paper_lines.append(_line("上次", prior, _paper_note(prior, prior=True)))
         live_since = _unit_active_since_hkt(V2_LIVE_UNIT)
+        exec_env = _read_kv_file(root / "config" / "v2_parent_live_exec.env")
+        armed_prep = str(exec_env.get("V2_LIVE_ARMED_PREP") or "0").strip() == "1"
+        prep_started: datetime | None = None
+        if armed_prep and live_since is None:
+            sess = _read_json(root / "config" / "dual_leg_v2_live_session.json")
+            raw = str(sess.get("started_at_hkt") or "")
+            if raw:
+                try:
+                    prep_started = datetime.strptime(raw.replace(" HKT", ""), "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    prep_started = None
         return _pack(
             paper_lines,
             _live_lines(
                 live_now,
                 history,
                 segments,
-                current_open=live_since is not None,
-                current_started=live_since,
+                current_open=live_since is not None or armed_prep,
+                current_started=live_since or prep_started,
                 pnl_net_of_fees=True,
                 v3=v3_rows,
                 prior=prior_live,
@@ -617,7 +651,13 @@ def attach_mode_books(root: Path, rows: list[dict[str, Any]]) -> None:
         except Exception:
             continue
         row["mode_books"] = books
-        active = "live" if row.get("live_enabled") else "paper"
+        prep_armed = bool(row.get("live_armed") or row.get("live_armed_prep") or row.get("mode") == "prep")
+        if row.get("live_enabled"):
+            active = "live"
+        elif bot_id == V2_ID and prep_armed:
+            active = "live"
+        else:
+            active = "paper"
         lines = ((books.get(active) or {}).get("rows") or [])
         if not lines:
             continue
@@ -631,7 +671,7 @@ def attach_mode_books(root: Path, rows: list[dict[str, Any]]) -> None:
 
         head_settled = _settled_n(head)
         # A fresh open session stays at zero. Closed empty books still fall back.
-        if head_settled == 0 and not head.get("open"):
+        if head_settled == 0 and not head.get("open") and not prep_armed:
             for line in lines:
                 if line is head:
                     continue

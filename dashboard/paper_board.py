@@ -263,6 +263,19 @@ def _live_exec_session_id(root: Path) -> str:
     return ""
 
 
+def _read_kv_env(path: Path) -> dict[str, str]:
+    out: dict[str, str] = {}
+    if not path.is_file():
+        return out
+    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        raw = line.strip()
+        if not raw or raw.startswith("#") or "=" not in raw:
+            continue
+        key, value = raw.split("=", 1)
+        out[key.strip()] = value.strip().strip('"').strip("'")
+    return out
+
+
 _SKIP_JSONL_EVENTS = frozenset({"live_daemon_start", "live_daemon_stop", "loop_error"})
 
 
@@ -287,7 +300,7 @@ def _live_jsonl_slugs_this_session(root: Path, exec_session: str) -> set[str]:
                     continue
                 if sess:
                     row_sid = str(row.get("session_id") or "").strip()
-                    if row_sid and row_sid != sess:
+                    if row_sid != sess:
                         continue
                 ev = str(row.get("event") or "")
                 if ev in _SKIP_JSONL_EVENTS:
@@ -409,7 +422,13 @@ def _gold_box_window_funnel(
     """Gold-box funnel: 考慮 = windows seen; 窗/過濾 = 考慮 − 入場; 入場 = trades."""
     from desk_bots import V2_ID
 
-    if bot_id == V2_ID and live_active:
+    if bot_id == V2_ID:
+        exec_env = _read_kv_env(root / "config" / "v2_parent_live_exec.env")
+        armed_prep = str(exec_env.get("V2_LIVE_ARMED_PREP") or "0").strip() == "1"
+    else:
+        armed_prep = False
+
+    if bot_id == V2_ID and (live_active or armed_prep):
         st = _read_json(root / "logs" / "dual_leg_live_status.json", {})
         if not isinstance(st, dict):
             st = {}
@@ -1415,10 +1434,17 @@ def _v2_golive_prep(root: Path, env: dict[str, str]) -> dict[str, Any]:
             stats = _ledger_stats(_file_rows(trades_path))
             pnl = stats.get("pnl")
             settled = stats.get("trade_count")
+    try:
+        from desk_bots import v2_strategy_display_name
+
+        strategy_label = v2_strategy_display_name(root)
+    except Exception:
+        strategy_label = "BTC 2 legs V2"
     return {
         "ok": True,
         "service": "dual-leg-live-v2",
         "profile": "v2",
+        "strategy_label": strategy_label,
         "dry_run": dry_run,
         "DUAL_LEG_LIVE_DRY_RUN": "1" if dry_run else "0",
         "live_enabled": False,
@@ -1426,7 +1452,8 @@ def _v2_golive_prep(root: Path, env: dict[str, str]) -> dict[str, Any]:
         "realized_pnl_usd": pnl,
         "settled_trades": settled,
         "status_zh": "真倉 OFF · DRY_RUN · 曾live rehearsal",
-        "note": meta.get("note") or "Parent V2 · DRY_RUN=1 · 唔會自動 go-live",
+        "note": meta.get("note")
+        or f"{strategy_label} · DRY_RUN=1 · legacy poll clock · Rg80 armed · 唔會自動 go-live",
         "waiting_for_command": "go_live",
     }
 
@@ -1519,15 +1546,21 @@ def _v2_high_live_row(prep: dict[str, Any], root: Path, env: dict[str, str]) -> 
     settled = prep.get("settled_trades")
     mode = v2_mode_view(root, env)
     live_on = bool(mode["live_active"])
-    wf = _gold_box_window_funnel(root, bot_id="dual-leg-live-v2", live_active=live_on)
+    prep_armed = bool(mode.get("live_armed") or mode.get("live_armed_prep"))
+    wf = _gold_box_window_funnel(
+        root,
+        bot_id="dual-leg-live-v2",
+        live_active=live_on or prep_armed,
+    )
     # 0 is a real fresh-session count. Do not replace it with the stopped live book.
     entered = int(wf["entered"]) if wf.get("entered") is not None else int(settled or 0)
     windows = int(wf["filtered"]) if wf.get("filtered") is not None else 0
+    strat = mode.get("strategy_label") or prep.get("strategy_label") or "BTC 2 legs V2"
     row = {
         "id": "dual-leg-live-v2",
-        "display_name": "BTC 2 legs V2",
+        "display_name": strat,
         "desk_section": "high_live",
-        "family": "BTC 2 legs V2",
+        "family": strat,
         "role": "parent",
         "launched": bool(mode["live_active"] or mode["live_armed"]),
         "live_enabled": bool(mode["live_active"]),

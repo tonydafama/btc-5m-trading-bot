@@ -224,6 +224,7 @@ def decorate_bet(
 
 V2_LIVE_UNIT = "dual-leg-live-v2.service"
 V2_LIVE_ENV = "config/v2_parent_live_exec.env"
+V2_STRATEGY_LABEL_DEFAULT = "BTC 2 legs V2"
 
 
 def _unit_active(unit: str) -> bool:
@@ -287,6 +288,13 @@ def _write_kv_file(path: Path, updates: dict[str, str]) -> None:
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
+def v2_strategy_display_name(root: Path) -> str:
+    """Desk-visible live strategy label (e.g. V2 21+ Rg80)."""
+    file_env = _read_kv_file(root / V2_LIVE_ENV)
+    label = (file_env.get("DUAL_LEG_LIVE_STRATEGY_LABEL") or "").strip()
+    return label or V2_STRATEGY_LABEL_DEFAULT
+
+
 def v2_exec_is_real(root: Path, env: dict[str, str] | None = None) -> bool:
     file_env = _read_kv_file(root / V2_LIVE_ENV)
     if file_env:
@@ -334,7 +342,9 @@ def v2_mode_view(root: Path, env: dict[str, str] | None = None) -> dict[str, Any
     from dual_leg_live import entry_pause_view
 
     exec_real = v2_exec_is_real(root, env)
-    armed = _truthy(_env_get(root, env, "V2_LIVE_ARMED_PREP", "0"))
+    file_env = _read_kv_file(root / V2_LIVE_ENV)
+    armed_raw = file_env.get("V2_LIVE_ARMED_PREP") or _env_get(root, env, "V2_LIVE_ARMED_PREP", "0")
+    armed = _truthy(armed_raw)
     live_active = bool(v2_unit_is_live(root))
     pause = entry_pause_view()
     pause_active = bool(pause.get("active")) and live_active
@@ -359,8 +369,10 @@ def v2_mode_view(root: Path, env: dict[str, str] | None = None) -> dict[str, Any
         status_label = "RUNNING · paper"
         change = "Paper · 真倉 OFF"
         label_tc = "而家模式：Paper（紙上）"
+    strat = v2_strategy_display_name(root)
     return {
         "mode": mode,
+        "strategy_label": strat,
         "live_active": live_active,
         "live_on_air": live_on_air,
         "entry_pause": pause,

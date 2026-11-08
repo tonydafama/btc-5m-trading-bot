@@ -190,9 +190,98 @@ def paper_decision_checkpoint(t_remaining: float, seen: set[int]) -> int | None:
 
 def decision_poll_sec(t_remaining: float, idle_poll_sec: float) -> float:
     """Idle poll until the paper watch window, then poll fast enough to hit each band."""
-    if float(t_remaining) <= PAPER_DECISION_WATCH_SEC:
-        return PAPER_DECISION_POLL_SEC
+    if live_uses_paper_checkpoints():
+        if float(t_remaining) <= PAPER_DECISION_WATCH_SEC:
+            return PAPER_DECISION_POLL_SEC
     return float(idle_poll_sec)
+
+
+def _live_exec_env_path() -> Path:
+    explicit = (os.getenv("DUAL_LEG_LIVE_ENV_FILE") or "").strip()
+    if explicit:
+        return Path(explicit)
+    return Path("/root/btc-5m-bot/config/v2_parent_live_exec.env")
+
+
+def _live_env_flag(key: str, default: str = "") -> str:
+    raw = os.getenv(key)
+    if raw is not None and str(raw).strip() != "":
+        return str(raw).strip()
+    found = _env_file_value(_live_exec_env_path(), key)
+    return str(found).strip() if found is not None else default
+
+
+def live_uses_paper_checkpoints() -> bool:
+    """legacy_poll = old live loop (~T-291 entries); paper_checkpoints = T-75..T-5 bands."""
+    clock = (_live_env_flag("DUAL_LEG_LIVE_DECISION_CLOCK", "paper_checkpoints") or "").lower()
+    return clock not in ("legacy_poll", "legacy", "v2_21", "v2-21")
+
+
+def live_decision_clock_label() -> str:
+    return "legacy_poll" if not live_uses_paper_checkpoints() else "paper_checkpoints"
+
+
+def live_strategy_label(default: str = "BTC 2 legs V2") -> str:
+    label = _live_env_flag("DUAL_LEG_LIVE_STRATEGY_LABEL", "")
+    return label or default
+
+
+RG80_MIN_USD_DEFAULT = 80.0
+
+
+def rg80_enabled() -> bool:
+    return _live_env_flag("DUAL_LEG_LIVE_RG80", "0").lower() in ("1", "true", "yes", "on")
+
+
+def rg80_min_usd() -> float:
+    raw = _live_env_flag("DUAL_LEG_LIVE_RG80_MIN_USD", "")
+    if not raw:
+        return RG80_MIN_USD_DEFAULT
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return RG80_MIN_USD_DEFAULT
+
+
+@dataclass
+class Rg80Gate:
+    """Pause new entries when Binance 5m range_usd is low; resume after 2 windows >= threshold."""
+
+    min_usd: float = RG80_MIN_USD_DEFAULT
+    paused: bool = False
+    consec_ok: int = 0
+    _window_evaluated: bool = False
+
+    def on_new_window(self) -> None:
+        self._window_evaluated = False
+
+    def note_window_evaluated(self, range_usd: float | None) -> None:
+        if range_usd is None or self._window_evaluated:
+            return
+        self._window_evaluated = True
+        if not self.paused:
+            return
+        if float(range_usd) >= self.min_usd:
+            self.consec_ok += 1
+        else:
+            self.consec_ok = 0
+        if self.consec_ok >= 2:
+            self.paused = False
+            self.consec_ok = 0
+
+    def blocks_new_entry(self, range_usd: float | None) -> bool:
+        if not rg80_enabled():
+            return False
+        self.note_window_evaluated(range_usd)
+        if self.paused:
+            return True
+        if range_usd is None:
+            return False
+        if float(range_usd) < self.min_usd:
+            self.paused = True
+            self.consec_ok = 0
+            return True
+        return False
 
 
 def now_hkt() -> str:
