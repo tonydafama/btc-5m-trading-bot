@@ -1128,7 +1128,7 @@ def _crypto15m_control_payload() -> dict[str, Any]:
 
 def _family_bots_payload() -> dict[str, Any]:
     """Minimal roster for /logs: Parent V2 live + Parent V2 paper."""
-    from desk_bots import V2_LIVE_UNIT, _unit_active, v2_exec_is_real, v2_mode_view
+    from desk_bots import V2_LIVE_UNIT, _unit_active, v2_exec_is_real, v2_mode_view, v2_strategy_display_name
     from mode_books import OBSERVER_UNIT
 
     merged: dict[str, str] = {}
@@ -1148,9 +1148,10 @@ def _family_bots_payload() -> dict[str, Any]:
     live_running = _unit_active(V2_LIVE_UNIT)
     paper_running = _unit_active(OBSERVER_UNIT)
 
+    v2_label = v2_strategy_display_name(ROOT)
     if live_on and live_running and exec_real:
         live_status = (
-            "LIVE ON · 18:00-24:00 暫停開新倉" if pause_active else "LIVE ON · BTC 2 legs V2"
+            f"LIVE ON · 18:00-24:00 暫停開新倉" if pause_active else f"LIVE ON · {v2_label}"
         )
         live_mode = "live"
     elif live_running:
@@ -1171,7 +1172,8 @@ def _family_bots_payload() -> dict[str, Any]:
     bots: list[dict[str, Any]] = [
         {
             "id": "dual-leg-live-v2",
-            "display_name": "BTC 2 legs V2 · Live",
+            "display_name": f"{v2_label} · Live",
+            "strategy_label": v2_label,
             "status": live_status,
             "status_line": live_status,
             "mode": live_mode,
@@ -1183,7 +1185,8 @@ def _family_bots_payload() -> dict[str, Any]:
         },
         {
             "id": "dual-leg-paper-v2",
-            "display_name": "BTC 2 legs V2 · Paper",
+            "display_name": f"{v2_label} · Paper",
+            "strategy_label": v2_label,
             "status": paper_status,
             "status_line": f"{paper_status} · {session_note or '—'}",
             "mode": "paper",
@@ -1192,7 +1195,7 @@ def _family_bots_payload() -> dict[str, Any]:
             "session_id": session_note,
         },
     ]
-    return {"ok": True, "n": len(bots), "bots": bots}
+    return {"ok": True, "n": len(bots), "bots": bots, "strategy_label": v2_label}
 
 
 @app.route("/api/family-bots")

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Log · BTC 2 legs V2</title>
+  <title>Log · V2 21+ Rg80</title>
   <style>
     :root {
       --bg:#06080c; --panel:#111820; --border:#2a3544;
@@ -29,10 +29,10 @@
       }
       .reload { align-self:flex-start; }
       .log-card { padding:.5rem .55rem; }
-      .log-line { flex-direction:column; align-items:flex-start; gap:.35rem; }
-      .log-ts { font-size:.75rem; }
-      .log-body { font-size:.8rem; line-height:1.4; flex:none; width:100%; }
-      .log-body .slug { word-break:break-all; display:block; margin-top:.15rem; }
+      .log-line { gap:.35rem .4rem; }
+      .log-ts { font-size:.72rem; min-width:4.5rem; }
+      .log-mode { font-size:.68rem; }
+      .log-detail { font-size:.78rem; }
       .fold-toolbar { flex-wrap:wrap; }
       .fold-meta { margin-left:0; width:100%; font-size:.7rem; }
     }
@@ -75,8 +75,24 @@
       margin-bottom:.45rem; background:#0a0f16;
     }
     .log-card.fill-card { border-color:rgba(62,232,138,.35); background:#0a1410; }
-    .log-line { display:flex; flex-wrap:wrap; align-items:flex-start; gap:.45rem .55rem; font-size:.86rem; }
-    .log-ts { font-variant-numeric:tabular-nums; font-weight:700; color:#b8c8dc; flex:0 0 auto; font-size:.8rem; }
+    .log-line {
+      display:flex; flex-wrap:nowrap; align-items:center; gap:.4rem .55rem;
+      font-size:.84rem; overflow:hidden; min-height:1.65rem;
+    }
+    .log-ts {
+      font-variant-numeric:tabular-nums; font-weight:700; color:#b8c8dc;
+      flex:0 0 auto; font-size:.78rem; min-width:4.75rem;
+    }
+    .log-mode {
+      flex:0 0 auto; font-size:.7rem; font-weight:750; color:var(--muted);
+      letter-spacing:.04em; min-width:2.4rem;
+    }
+    .log-detail {
+      flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden;
+      text-overflow:ellipsis; color:var(--text);
+    }
+    .log-detail .slug { font-weight:650; color:#dbe6f5; }
+    .log-detail .reason { color:#a8b8cc; font-weight:500; }
     .tag {
       display:inline-flex; align-items:center; padding:.15rem .5rem; border-radius:6px;
       font-size:.72rem; font-weight:800; letter-spacing:.06em; flex:0 0 auto;
@@ -86,10 +102,7 @@
     .tag.loss { color:#fff; background:var(--red); }
     .tag.fail { color:#1a1000; background:var(--orange); }
     .tag.info { color:#dceaf8; background:rgba(94,179,255,.22); border:1px solid rgba(94,179,255,.35); }
-    .log-body { flex:1 1 12rem; min-width:0; color:var(--text); word-break:break-word; line-height:1.35; }
-    .log-body .slug { font-weight:650; }
-    .log-body .reason { color:#c5d2e0; }
-    .log-pnl { font-weight:800; font-variant-numeric:tabular-nums; margin-right:.35rem; }
+    .log-pnl { font-weight:800; font-variant-numeric:tabular-nums; flex:0 0 auto; margin-left:.15rem; }
     .log-pnl.pos { color:var(--green); }
     .log-pnl.neg { color:var(--red); }
     .log-pnl.flat { color:var(--muted); }
@@ -121,14 +134,14 @@
   <div class="wrap">
     <header>
       <div>
-        <h1>Log · BTC 2 legs V2</h1>
+        <h1 id="page-title">Log · V2 21+ Rg80</h1>
         <div class="sub"><strong>今次 session</strong>：真倉 jsonl · 紙上 trades</div>
       </div>
       <a href="/"><button type="button" class="desk-btn">← Desk</button></a>
     </header>
 
     <section class="hero" id="live-hero" aria-label="V2 Live">
-      <h2 class="hero-title" id="live-hero-title">BTC 2 legs V2 · Live</h2>
+      <h2 class="hero-title" id="live-hero-title">V2 21+ Rg80 · Live</h2>
       <div class="hero-status" id="live-status-line">載入中…</div>
       <div class="toolbar">
         <div class="seg" role="tablist">
@@ -142,7 +155,7 @@
     </section>
 
     <details class="fold" id="paper-fold" open>
-      <summary>Paper · BTC 2 legs V2</summary>
+      <summary id="paper-fold-title">Paper · V2 21+ Rg80</summary>
       <div class="fold-toolbar">
         <button type="button" class="active" data-paper-mode="all">全部</button>
         <button type="button" data-paper-mode="trades">成交</button>
@@ -157,7 +170,22 @@
   <script>
     /* CORE LOG HELPERS — Do NOT delete parseLine / statusTag / renderRows when patching Son U lock. */
     const V2_LIVE_BOT = 'dual-leg-live-v2';
+    const V2_LABEL_DEFAULT = 'V2 21+ Rg80';
     const TAIL_N = 40;
+    let v2StrategyLabel = V2_LABEL_DEFAULT;
+
+    function v2Label() {
+      return v2StrategyLabel || V2_LABEL_DEFAULT;
+    }
+
+    function paintPageTitles() {
+      const label = v2Label();
+      const h1 = document.getElementById('page-title');
+      if (h1) h1.textContent = `Log · ${label}`;
+      const paperSum = document.getElementById('paper-fold-title');
+      if (paperSum) paperSum.textContent = `Paper · ${label}`;
+      document.title = `Log · ${label}`;
+    }
 
     function parseLine(raw) {
       if (raw == null) return null;
@@ -267,6 +295,32 @@
       return `<span class="log-pnl ${cls}">${sign}$${Math.abs(v).toFixed(2)}</span>`;
     }
 
+    function ledgerModeForRow(row, containerId) {
+      const id = String(containerId || '');
+      if (id.includes('paper')) return 'PAPER';
+      return 'LIVE';
+    }
+
+    function compactDetail(row) {
+      const r = parseLine(row) || {};
+      const ev = String(r.event || '');
+      const slug = shortSlug(r.slug || ev || '—');
+      let tail = '';
+      if (ev === 'skip_rg80') {
+        const rng = r.range_usd != null ? `range $${Number(r.range_usd).toFixed(0)}` : 'Rg80';
+        tail = `${rng} · min $${r.rg80_min_usd != null ? r.rg80_min_usd : 80}`;
+      } else if (ev === 'entry' || ev === 'hedge') {
+        tail = r.reason ? String(r.reason).slice(0, 120) : ev.toUpperCase();
+      } else if (r.reason) {
+        tail = String(r.reason);
+      } else if (ev) {
+        tail = ev;
+      }
+      if (tail === slug) tail = '';
+      const text = [slug, tail].filter(Boolean).join(' · ');
+      return text.length > 160 ? text.slice(0, 159) + '…' : text;
+    }
+
     function renderRows(container, rows, emptyMsg) {
       const el = typeof container === 'string' ? document.getElementById(container) : container;
       if (!el) return;
@@ -275,24 +329,22 @@
         el.innerHTML = emptyMsg ? `<div class="empty">${emptyMsg}</div>` : '';
         return;
       }
+      const modeDefault = ledgerModeForRow(null, el.id);
       el.innerHTML = list.map((row) => {
         const tag = statusTag(row);
         const ts = (row.timestamp_hkt || '').replace(' HKT', '').slice(11, 19) || (row.timestamp_hkt || '').slice(0, 19);
-        const slugRaw = row.slug || row.event || '—';
-        const slug = shortSlug(slugRaw);
+        const mode = modeDefault;
+        const name = v2Label();
+        const detail = compactDetail(row);
         const pnl = pnlHtml(row);
-        let reason = row.reason && String(row.reason) !== String(slugRaw) ? String(row.reason) : '';
-        if (!reason && row.event) reason = String(row.event);
-        if (pnl && reason.indexOf('PnL ') === 0) reason = reason.replace(/^PnL [^·]+·\s*/, '');
-        const maxR = (window.innerWidth && window.innerWidth < 480) ? 90 : 180;
-        if (reason.length > maxR) reason = reason.slice(0, maxR - 1) + '…';
         const fillClass = ['FILL', 'WIN', 'LOSS', 'SET', 'ENTRY', 'HEDGE'].includes(tag.label) ? ' fill-card' : '';
-        const reasonHtml = reason ? ` · <span class="reason">${reason}</span>` : '';
         return `<article class="log-card${fillClass}">
-          <div class="log-line">
+          <div class="log-line" title="${name} · ${detail}">
             <span class="log-ts">${ts || '—'}</span>
             <span class="${tag.className}">${tag.label}</span>
-            <span class="log-body">${pnl}<span class="slug">${slug}</span>${reasonHtml}</span>
+            <span class="log-mode">${mode}</span>
+            <span class="log-detail"><span class="slug">${name}</span>${detail ? ` · <span class="reason">${detail}</span>` : ''}</span>
+            ${pnl || ''}
           </div>
         </article>`;
       }).join('');
@@ -382,9 +434,10 @@
       const on = bot && String(bot.status || bot.status_line || '').includes('LIVE ON');
       if (hero) hero.classList.toggle('inactive', !on);
       if (title) {
-        title.textContent = on ? 'LIVE ON · BTC 2 legs V2' : 'BTC 2 legs V2 · Live';
-        title.style.color = on ? '' : '';
+        const label = v2Label();
+        title.textContent = on ? `LIVE ON · ${label}` : `${label} · Live`;
       }
+      paintPageTitles();
     }
 
     function paintLiveUnit(tailPayload) {
@@ -421,8 +474,12 @@
       ]);
       if (bots) {
         familyBots = bots;
+        if (bots.strategy_label) v2StrategyLabel = String(bots.strategy_label);
+        const liveBot = findV2LiveBot(bots);
+        if (liveBot && liveBot.strategy_label) v2StrategyLabel = String(liveBot.strategy_label);
         paintLiveHero();
       }
+      if (payload && payload.strategy_label) v2StrategyLabel = String(payload.strategy_label);
       if (payload && Array.isArray(payload.lines)) {
         liveAllRows = payload.lines;
         liveSession = payload.session_id || '';

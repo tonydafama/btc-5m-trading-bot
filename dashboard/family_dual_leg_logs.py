@@ -193,6 +193,12 @@ def _normalize_live_row(row: dict[str, Any]) -> dict[str, Any]:
         else:
             note_parts = [f"結算 {out.get('trade_result') or '—'}", oc or "", slug or "—"]
         out["log_pnl_usd"] = pnl_f
+    elif ev == "skip_rg80":
+        rng = out.get("range_usd")
+        note_parts = [
+            f"Rg80 · range {rng}" if rng is not None else "Rg80",
+            f"paused={out.get('rg80_paused')}",
+        ]
     elif out.get("error"):
         note_parts.append(str(out.get("error")))
     elif out.get("skip_reasons"):
@@ -330,8 +336,17 @@ def tail_dual_leg_v2_logs(
             elif r.get("entered") is False:
                 skips += 1
 
+    try:
+        from desk_bots import v2_strategy_display_name
+
+        strategy_label = v2_strategy_display_name(root)
+    except Exception:
+        strategy_label = "V2 21+ Rg80"
+
     return {
         "bot": "dual-leg-live-v2" if ledger_l == "live" else "dual-leg-paper-v2",
+        "strategy_label": strategy_label,
+        "display_name": strategy_label,
         "ledger": ledger_l,
         "mode": mode_l,
         "lines": rows,
