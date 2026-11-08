@@ -976,7 +976,8 @@ summary.desk-fold-summary {
   }
   /* === end a2d0add desk-fold JS === */
 
-  const FAM_ORDER = ['BTC 5m new new', 'BTC 5m A', 'BTC 2 legs V2'];
+  const V2_PARENT_LABEL = 'V2 21+ Rg80';
+  const FAM_ORDER = ['BTC 5m new new', 'BTC 5m A', V2_PARENT_LABEL];
   let _board = null;
   let _busy = false;
   const _logLoaded = new Set();
@@ -1019,11 +1020,28 @@ summary.desk-fold-summary {
     return /READY|未開/.test(s) || row.role === 'son';
   }
   function familyKey(row) {
+    const id = String(row.id || row.bot_id || '');
     const f = String(row.family || '');
+    const dn = String(row.display_name || '');
     if (f.includes('new new')) return 'BTC 5m new new';
     if (f === 'BTC 5m A' || f.endsWith(' A')) return 'BTC 5m A';
-    if (f.includes('2 legs') || f.includes('V2')) return 'BTC 2 legs V2';
+    if (
+      id === 'dual-leg-live-v2' ||
+      id === 'parent-btc-2legs-v2' ||
+      dn.includes('21+ Rg80') ||
+      f.includes('21+ Rg80') ||
+      f === V2_PARENT_LABEL
+    ) return V2_PARENT_LABEL;
+    if (f.includes('2 legs') || (f.includes('V2') && !f.includes('new new'))) return V2_PARENT_LABEL;
     return f || '—';
+  }
+  function deskConfirmName(botId) {
+    if (botId === 'dual-leg-live-v2') return V2_PARENT_LABEL;
+    if (botId === 'son-btc-2legs-v2-newnew-a') return 'V2 newnew A · abort';
+    if (botId === 'son-btc-5m-ultimate-live') return '終極5m';
+    const row = (_board && _board.high_live_board && _board.high_live_board.rows || []).find((r) => String(r.id) === botId);
+    if (row && row.display_name) return String(row.display_name);
+    return botId;
   }
   function shortChange(row) {
     return String(row.change || row.note || row.code || '').replace(/\s+/g, ' ').trim().slice(0, 72);
@@ -1233,7 +1251,10 @@ summary.desk-fold-summary {
   }
   function deskBotMeta(r) {
     const id = String(r.id || '');
-    if (id === 'dual-leg-live-v2') return { mult: 2, rule: 'v2', name: 'BTC 2 legs V2', cls: 'desk-v2' };
+    if (id === 'dual-leg-live-v2') {
+      const label = String(r.display_name || '').trim() || V2_PARENT_LABEL;
+      return { mult: 2, rule: 'v2', name: label, cls: 'desk-v2' };
+    }
     if (id === 'son-btc-2legs-v2-newnew-a') return { mult: 2, rule: 'v2 newnew', name: 'V2 newnew A · abort', cls: 'desk-na' };
     if (id === 'son-btc-5m-ultimate-live') return { mult: 1, rule: 'v2 5m btc', name: '終極5m', cls: 'desk-5m' };
     return null;
@@ -1363,7 +1384,7 @@ summary.desk-fold-summary {
       const action = modeBtn.dataset.botAction;
       if (action === 'to_paper' && mode === 'paper') return;
       if (action === 'to_live' && mode === 'live') return;
-      const name = botId === 'dual-leg-live-v2' ? 'BTC 2 legs V2' : '終極5m';
+      const name = deskConfirmName(botId);
       const execReal = _sonuLiveTruth && _sonuLiveTruth.exec_is_real_live && !_sonuLiveTruth.exec_dry_run_placeholder;
       const msg = action === 'to_live'
         ? (execReal
@@ -1797,7 +1818,7 @@ summary.desk-fold-summary {
     const foldHint = {
       'BTC 5m new new': '（newnew 家族 · 預設摺起）',
       'BTC 5m A': '（5m A 家族 · 預設摺起）',
-      'BTC 2 legs V2': '（V2 雙腿家族 · 預設摺起）',
+      [V2_PARENT_LABEL]: '（V2 21+ Rg80 · 雙腿家族 · 預設摺起）',
     };
     $('families').innerHTML = FAM_ORDER.map((f, idx) => {
       const pack = byFam[f] || { parent: null, sons: [] };
