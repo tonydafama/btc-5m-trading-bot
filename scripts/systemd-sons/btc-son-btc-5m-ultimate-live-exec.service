@@ -1,0 +1,21 @@
+[Unit]
+Description=終極5m Son U LIVE exec — single-leg 5m FOK (REAL_MONEY · DRY_RUN=0)
+After=network.target
+Documentation=file:///root/btc-5m-bot/logs/SON_U_LIVE_PREP_CHECKLIST.md
+
+[Service]
+Type=simple
+WorkingDirectory=/root/btc-5m-bot
+EnvironmentFile=-/root/btc-5m-bot/.env
+EnvironmentFile=-/root/btc-5m-bot/configs/sons/son-btc-5m-ultimate-live.env
+EnvironmentFile=-/root/btc-5m-bot/config/sonu_live_exec.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/root/btc-5m-bot
+ExecStart=/root/btc-5m-bot/venv/bin/python /root/btc-5m-bot/scripts/son_u_live_exec_daemon.py --son-id son-btc-5m-ultimate-live
+Restart=on-failure
+RestartSec=12
+MemoryMax=768M
+MemorySwapMax=0
+
+[Install]
+WantedBy=multi-user.target

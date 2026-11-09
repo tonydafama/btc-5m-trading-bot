@@ -3,7 +3,7 @@
 Bet size is the number typed on that bot's own field:
 
 - 終極5m (v2 5m btc): stake = bet size × 1.  10 → $10
-- BTC 2 legs V2:       stake = bet size × 2.  10 → $20 (two legs)
+- V2 21+ Rg80 (parent): stake = bet size × 2.  10 → $20 (two legs)
 
 Switching one bot never writes the other bot's armed flag.
 Real orders stay off while the exec path is still a DRY_RUN placeholder.
@@ -20,6 +20,7 @@ HKT = ZoneInfo("Asia/Hong_Kong")
 
 SONU_ID = "son-btc-5m-ultimate-live"
 V2_ID = "dual-leg-live-v2"
+NA_ID = "son-btc-2legs-v2-newnew-a"
 
 MIN_BET = 0.5
 MAX_BET = 500.0
@@ -38,13 +39,23 @@ BOT_SPECS: dict[str, dict[str, Any]] = {
     },
     V2_ID: {
         "id": V2_ID,
-        "display_name": "BTC 2 legs V2",
+        "display_name": "V2 21+ Rg80",
         "rule_label": "v2",
         "multiplier": 2,
         "default_bet_size": 10.0,
         "capital_usd": 100.0,
         "bet_env": "V2_BET_SIZE",
         "stake_env": "V2_STAKE_USD",
+    },
+    NA_ID: {
+        "id": NA_ID,
+        "display_name": "V2 newnew A · abort",
+        "rule_label": "v2 newnew",
+        "multiplier": 2,
+        "default_bet_size": 6.0,
+        "capital_usd": 100.0,
+        "bet_env": "V2_NEWNEW_BET_SIZE",
+        "stake_env": "V2_NEWNEW_STAKE_USD",
     },
 }
 
@@ -172,10 +183,23 @@ def current_bet_size(root: Path, bot_id: str, env: dict[str, str] | None = None)
         return float(spec["default_bet_size"])
 
 
-def bet_view(root: Path, bot_id: str, env: dict[str, str] | None = None) -> dict[str, Any]:
+def bet_view(
+    root: Path,
+    bot_id: str,
+    env: dict[str, str] | None = None,
+    *,
+    wallet_cash_usdc: float | None = None,
+) -> dict[str, Any]:
     spec = BOT_SPECS[bot_id]
     bet = current_bet_size(root, bot_id, env)
     stake = stake_usd_for(bot_id, bet)
+    capital = float(spec["capital_usd"])
+    if bot_id == V2_ID:
+        snap = v2_section_start_capital(root)
+        if snap is not None:
+            capital = snap
+    elif bot_id == SONU_ID and wallet_cash_usdc is not None:
+        capital = round(float(wallet_cash_usdc), 2)
     return {
         "bet_size": bet,
         "bet_multiplier": int(spec["multiplier"]),
@@ -184,33 +208,214 @@ def bet_view(root: Path, bot_id: str, env: dict[str, str] | None = None) -> dict
         "per_leg_usd": fmt_num(bet if int(spec["multiplier"]) == 2 else stake),
         "rule_label": spec["rule_label"],
         "rule_line": rule_line(bot_id, bet),
-        "capital_usd": float(spec["capital_usd"]),
+        "capital_usd": capital,
     }
 
 
-def decorate_bet(root: Path, row: dict[str, Any], env: dict[str, str] | None = None) -> dict[str, Any]:
+def decorate_bet(
+    root: Path,
+    row: dict[str, Any],
+    env: dict[str, str] | None = None,
+    *,
+    wallet_cash_usdc: float | None = None,
+) -> dict[str, Any]:
     bot_id = str(row.get("id") or "")
     if bot_id not in BOT_SPECS:
         return row
-    row.update(bet_view(root, bot_id, env))
+    row.update(bet_view(root, bot_id, env, wallet_cash_usdc=wallet_cash_usdc))
     return row
 
 
+V2_LIVE_UNIT = "dual-leg-live-v2.service"
+V2_LIVE_ENV = "config/v2_parent_live_exec.env"
+V2_STRATEGY_LABEL_DEFAULT = "V2 21+ Rg80"
+
+
+def _unit_active(unit: str) -> bool:
+    base = unit[:-8] if unit.endswith(".service") else unit
+    try:
+        import subprocess
+
+        proc = subprocess.run(
+            ["systemctl", "is-active", base],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            check=False,
+        )
+        return proc.stdout.strip() == "active"
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def _systemctl(*args: str) -> None:
+    import subprocess
+
+    try:
+        subprocess.run(["systemctl", *args], check=False, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
+def _read_kv_file(path: Path) -> dict[str, str]:
+    found: dict[str, str] = {}
+    if not path.is_file():
+        return found
+    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        raw = line.strip()
+        if not raw or raw.startswith("#") or "=" not in raw:
+            continue
+        key, value = raw.split("=", 1)
+        found[key.strip()] = value.strip().strip('"').strip("'")
+    return found
+
+
+def _write_kv_file(path: Path, updates: dict[str, str]) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
+    found: set[str] = set()
+    out: list[str] = []
+    for line in lines:
+        raw = line.strip()
+        if not raw or raw.startswith("#") or "=" not in raw:
+            out.append(line)
+            continue
+        key = raw.split("=", 1)[0].strip()
+        if key in updates:
+            out.append(f"{key}={updates[key]}")
+            found.add(key)
+        else:
+            out.append(line)
+    for key, value in updates.items():
+        if key not in found:
+            out.append(f"{key}={value}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(out) + "\n", encoding="utf-8")
+
+
+def v2_strategy_display_name(root: Path) -> str:
+    """Desk-visible live strategy label (e.g. V2 21+ Rg80)."""
+    import json
+
+    status_path = root / "logs" / "dual_leg_live_status.json"
+    if status_path.is_file():
+        try:
+            st = json.loads(status_path.read_text(encoding="utf-8"))
+            if isinstance(st, dict):
+                label = (st.get("strategy_label") or "").strip()
+                if label:
+                    return label
+        except (OSError, ValueError, json.JSONDecodeError):
+            pass
+    file_env = _read_kv_file(root / V2_LIVE_ENV)
+    label = (file_env.get("DUAL_LEG_LIVE_STRATEGY_LABEL") or "").strip()
+    return label or V2_STRATEGY_LABEL_DEFAULT
+
+
+def v2_bot_display_name(root: Path) -> str:
+    return v2_strategy_display_name(root)
+
+
+def v2_live_session_id(root: Path) -> str:
+    file_env = _read_kv_file(root / V2_LIVE_ENV)
+    return (file_env.get("DUAL_LEG_LIVE_SESSION_ID") or "").strip()
+
+
+def v2_section_start_capital(root: Path) -> float | None:
+    """Section 本金: CLOB cash snapshotted at live section start (fixed for the section)."""
+    import json
+
+    sess_id = v2_live_session_id(root)
+    for path in (
+        root / "config" / "dual_leg_v2_live_session.json",
+        root / "logs" / "dual_leg_live_status.json",
+        root / "logs" / "dual_leg_v2_live_meta.json",
+    ):
+        if not path.is_file():
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        if sess_id and str(data.get("session_id") or "") not in ("", sess_id):
+            continue
+        raw = data.get("section_start_capital_usd")
+        if raw is None:
+            raw = data.get("initial_capital_usd")
+        if raw is None:
+            continue
+        try:
+            return round(float(raw), 2)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
 def v2_exec_is_real(root: Path, env: dict[str, str] | None = None) -> bool:
-    dry = _env_get(root, env, "DUAL_LEG_LIVE_DRY_RUN", "1")
-    real_money = _env_get(root, env, "DUAL_LEG_REAL_MONEY", "0")
+    file_env = _read_kv_file(root / V2_LIVE_ENV)
+    if file_env:
+        dry = file_env.get("DUAL_LEG_LIVE_DRY_RUN", "1")
+        real_money = file_env.get("REAL_MONEY", "0")
+    else:
+        dry = _env_get(root, env, "DUAL_LEG_LIVE_DRY_RUN", "1")
+        real_money = _env_get(root, env, "DUAL_LEG_REAL_MONEY", "0")
     return (not _truthy(dry)) and _truthy(real_money)
 
 
+def v2_unit_is_live(root: Path) -> bool:
+    return v2_exec_is_real(root) and _unit_active(V2_LIVE_UNIT)
+
+
+def live_conflict_message(root: Path, bot_id: str) -> str | None:
+    """One shared ~$100 wallet. Refuse a second real-live bot."""
+    names: list[str] = []
+    try:
+        from sonu_live_truth import live_active as sonu_on
+
+        if bot_id != SONU_ID and sonu_on(root):
+            names.append("終極5m")
+    except Exception:
+        pass
+    if bot_id != V2_ID and v2_unit_is_live(root):
+            names.append(v2_bot_display_name(root))
+    try:
+        from v2_newnew_live_truth import live_active as na_on
+
+        if bot_id != NA_ID and na_on(root):
+            names.append("V2 newnew A")
+    except Exception:
+        pass
+    if not names:
+        return None
+    who = "、".join(names)
+    return (
+        f"{who} 已經真倉。三個 bot 共用約 $100 銀包，唔建議同時 live。"
+        "請先將亮緊紅燈嗰個切去 Paper。"
+    )
+
+
 def v2_mode_view(root: Path, env: dict[str, str] | None = None) -> dict[str, Any]:
+    from dual_leg_live import entry_pause_view
+
     exec_real = v2_exec_is_real(root, env)
-    armed = _truthy(_env_get(root, env, "V2_LIVE_ARMED_PREP", "0"))
-    live_active = bool(exec_real and armed)
+    file_env = _read_kv_file(root / V2_LIVE_ENV)
+    armed_raw = file_env.get("V2_LIVE_ARMED_PREP") or _env_get(root, env, "V2_LIVE_ARMED_PREP", "0")
+    armed = _truthy(armed_raw)
+    live_active = bool(v2_unit_is_live(root))
+    pause = entry_pause_view()
+    pause_active = bool(pause.get("active")) and live_active
+    live_on_air = live_active and not pause_active
     if live_active:
         mode = "live"
-        status_label = "跑緊 · 真倉 ON"
-        change = "Live · 真倉 ON"
-        label_tc = "而家模式：Live（真倉 ON）"
+        if pause_active:
+            status_label = "跑緊 · 真倉 · 18:00-24:00 暫停開新倉"
+            change = "Live · 暫停開新倉 · 00:00 再開"
+            label_tc = "而家模式：Live（暫停開新倉 · 00:00 再開）"
+        else:
+            status_label = "跑緊 · 真倉 ON"
+            change = "Live · 真倉 ON"
+            label_tc = "而家模式：Live（真倉 ON）"
     elif armed:
         mode = "prep"
         status_label = "紙上 armed · 真倉 OFF"
@@ -218,12 +423,16 @@ def v2_mode_view(root: Path, env: dict[str, str] | None = None) -> dict[str, Any
         label_tc = "PREP · 紙上 armed · 真倉未開"
     else:
         mode = "paper"
-        status_label = "曾live · 紙上 rehearsal · 真倉 OFF"
-        change = "Paper · DRY_RUN · 真倉 OFF"
+        status_label = "RUNNING · paper"
+        change = "Paper · 真倉 OFF"
         label_tc = "而家模式：Paper（紙上）"
+    strat = v2_strategy_display_name(root)
     return {
         "mode": mode,
+        "strategy_label": strat,
         "live_active": live_active,
+        "live_on_air": live_on_air,
+        "entry_pause": pause,
         "live_armed": armed and not live_active,
         "live_armed_prep": armed and not exec_real,
         "exec_is_real_live": exec_real,
@@ -231,6 +440,41 @@ def v2_mode_view(root: Path, env: dict[str, str] | None = None) -> dict[str, Any
         "status_label": status_label,
         "change": change,
         "label_tc": label_tc,
+        "paper_ledger": {} if live_active else v2_paper_ledger(root),
+    }
+
+
+def v2_paper_ledger(root: Path) -> dict[str, Any]:
+    """Parent V2 paper book written by the observer. Empty when the file is missing."""
+    path = root / "logs" / "dual_leg_btc_paper_trades.json"
+    try:
+        import json
+
+        raw = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
+    except (OSError, json.JSONDecodeError):
+        raw = []
+    if not isinstance(raw, list):
+        raw = []
+    closed = [row for row in raw if isinstance(row, dict)]
+    pnl = 0.0
+    for row in closed:
+        try:
+            pnl += float(row.get("pnl") if row.get("pnl") is not None else row.get("pnl_usd") or 0)
+        except (TypeError, ValueError):
+            pass
+    session = ""
+    for row in reversed(closed):
+        session = str(row.get("session_id") or "")
+        if session:
+            break
+    count = len(closed)
+    return {
+        "trade_count": count,
+        "pnl": round(pnl, 2),
+        "session_id": session,
+        "count_label": f"{count} 單",
+        "trades_windows_line": f"Trades {count} 單 · paper",
+        "status_label": "RUNNING · paper",
     }
 
 
@@ -240,8 +484,13 @@ def _persist_bet_env(root: Path, bot_id: str, bet: float) -> None:
     _write_dotenv_key(root, spec["bet_env"], fmt_num(bet))
     _write_dotenv_key(root, spec["stake_env"], fmt_num(stake))
     if bot_id == V2_ID:
-        _write_dotenv_key(root, "DUAL_LEG_UNIT_USD", fmt_num(bet))
+        per_leg = fmt_num(bet)
+        _write_dotenv_key(root, "DUAL_LEG_UNIT_USD", per_leg)
+        _write_dotenv_key(root, "DUAL_LEG_LIVE_UNIT_USD", per_leg)
         _write_dotenv_key(root, "DUAL_LEG_TOTAL_STAKE_USD", fmt_num(stake))
+        # The live unit re-reads this file each new window. The systemd unit
+        # must not pin DUAL_LEG_LIVE_UNIT_USD, or that pin beats the file.
+        _write_kv_file(root / V2_LIVE_ENV, {"DUAL_LEG_LIVE_UNIT_USD": per_leg})
 
 
 def set_bet_size(root: Path, bot_id: str, raw: Any) -> dict[str, Any]:
@@ -257,13 +506,14 @@ def set_bet_size(root: Path, bot_id: str, raw: Any) -> dict[str, Any]:
     _persist_bet_env(root, bot_id, bet)
     spec = BOT_SPECS[bot_id]
     view = bet_view(root, bot_id)
+    label = v2_bot_display_name(root) if bot_id == V2_ID else spec["display_name"]
     view.update(
         {
             "ok": True,
             "bot_id": bot_id,
-            "display_name": spec["display_name"],
+            "display_name": label,
             "message_tc": (
-                f"{spec['display_name']} 注碼已儲存：bet size {fmt_num(bet)} → {view['rule_line']}"
+                f"{label} 注碼已儲存：bet size {fmt_num(bet)} → {view['rule_line']}"
             ),
         }
     )
@@ -272,57 +522,89 @@ def set_bet_size(root: Path, bot_id: str, raw: Any) -> dict[str, Any]:
 
 def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -> dict[str, Any]:
     current = v2_mode_view(root)
+    v2_name = v2_bot_display_name(root)
+    env_path = root / V2_LIVE_ENV
     if action == "to_paper":
+        _systemctl("disable", "--now", V2_LIVE_UNIT)
+        _write_kv_file(
+            env_path,
+            {
+                "TRADING_MODE": "paper",
+                "REAL_MONEY": "0",
+                "DRY_RUN": "1",
+                "DUAL_LEG_LIVE_DRY_RUN": "1",
+                "DUAL_LEG_LIVE_PROFILE": "v2",
+                "DUAL_LEG_LIVE_ENTRY_PAUSE": "0",
+            },
+        )
         _write_dotenv_key(root, "V2_LIVE_ARMED_PREP", "0")
         _write_dotenv_key(root, "DUAL_LEG_TRADING_MODE", "paper")
+        _systemctl("daemon-reload")
         out = v2_mode_view(root)
         out.update(
             {
                 "ok": True,
                 "bot_id": V2_ID,
                 "action": action,
-                "display_name": BOT_SPECS[V2_ID]["display_name"],
-                "message_tc": "BTC 2 legs V2 已切換 → Paper（真倉 OFF）",
+                "desk_mode": "paper",
+                "display_name": v2_name,
+                "message_tc": f"{v2_name} 已切換 → Paper（真倉 OFF）",
             }
         )
         return out
 
-    if v2_exec_is_real(root):
-        if wallet_cash_usdc is not None and float(wallet_cash_usdc) < MIN_LIVE_WALLET:
-            return {
-                **current,
-                "ok": False,
-                "bot_id": V2_ID,
-                "action": action,
-                "error": "wallet_gate",
-                "error_tc": (
-                    f"銀包 ${float(wallet_cash_usdc):.2f} 未達 ${MIN_LIVE_WALLET:.0f}，V2 唔會開真倉"
-                ),
-            }
-        _write_dotenv_key(root, "V2_LIVE_ARMED_PREP", "1")
-        _write_dotenv_key(root, "DUAL_LEG_TRADING_MODE", "live")
-        out = v2_mode_view(root)
-        out.update(
-            {
-                "ok": True,
-                "bot_id": V2_ID,
-                "action": action,
-                "display_name": BOT_SPECS[V2_ID]["display_name"],
-                "message_tc": "BTC 2 legs V2 已請求 Live 真倉",
-            }
-        )
-        return out
-
+    conflict = live_conflict_message(root, V2_ID)
+    if conflict:
+        return {**current, "ok": False, "bot_id": V2_ID, "action": action, "error": "live_conflict", "error_tc": conflict}
+    if wallet_cash_usdc is not None and float(wallet_cash_usdc) < MIN_LIVE_WALLET:
+        return {
+            **current,
+            "ok": False,
+            "bot_id": V2_ID,
+            "action": action,
+            "error": "wallet_gate",
+            "error_tc": f"銀包 ${float(wallet_cash_usdc):.2f} 未達 ${MIN_LIVE_WALLET:.0f}，V2 唔會開真倉",
+        }
+    bet = current_bet_size(root, V2_ID)
+    _write_kv_file(
+        env_path,
+        {
+            "TRADING_MODE": "live",
+            "REAL_MONEY": "1",
+            "DRY_RUN": "0",
+            "DUAL_LEG_LIVE_DRY_RUN": "0",
+            "DUAL_LEG_LIVE_PROFILE": "v2",
+            "DUAL_LEG_LIVE_UNIT_USD": fmt_num(bet),
+            "DUAL_LEG_LIVE_ENTRY_PAUSE": "0",
+        },
+    )
     _write_dotenv_key(root, "V2_LIVE_ARMED_PREP", "1")
-    _write_dotenv_key(root, "DUAL_LEG_TRADING_MODE", "paper")
+    _write_dotenv_key(root, "DUAL_LEG_TRADING_MODE", "live")
+    _systemctl("daemon-reload")
+    _systemctl("enable", "--now", V2_LIVE_UNIT)
     out = v2_mode_view(root)
+    if not out.get("live_active"):
+        _write_kv_file(
+            env_path,
+            {"TRADING_MODE": "paper", "REAL_MONEY": "0", "DRY_RUN": "1", "DUAL_LEG_LIVE_DRY_RUN": "1"},
+        )
+        _systemctl("disable", "--now", V2_LIVE_UNIT)
+        return {
+            **current,
+            "ok": False,
+            "bot_id": V2_ID,
+            "action": action,
+            "error": "live_unit_down",
+            "error_tc": f"{v2_name} live unit 未啟動，仍然 Paper",
+        }
     out.update(
         {
             "ok": True,
             "bot_id": V2_ID,
             "action": action,
-            "display_name": BOT_SPECS[V2_ID]["display_name"],
-            "message_tc": "BTC 2 legs V2 已 armed prep（紙上）· 真倉未開，唔會動真錢",
+            "desk_mode": "live",
+            "display_name": v2_name,
+            "message_tc": f"{v2_name} 已切換 → Live（真倉 ON）",
         }
     )
     return out
@@ -331,6 +613,17 @@ def _apply_v2_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -
 def _apply_sonu_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -> dict[str, Any]:
     from sonu_live_truth import apply_live_control_action
 
+    if action == "to_live":
+        conflict = live_conflict_message(root, SONU_ID)
+        if conflict:
+            return {
+                "ok": False,
+                "bot_id": SONU_ID,
+                "action": action,
+                "error": "live_conflict",
+                "error_tc": conflict,
+                "display_name": BOT_SPECS[SONU_ID]["display_name"],
+            }
     mapped = "to_live" if action == "to_live" else "to_paper"
     out = apply_live_control_action(root, mapped, wallet_cash_usdc=wallet_cash_usdc)
     if out.get("live_active"):
@@ -351,6 +644,30 @@ def _apply_sonu_mode(root: Path, action: str, *, wallet_cash_usdc: float | None)
     return out
 
 
+def _apply_na_mode(root: Path, action: str, *, wallet_cash_usdc: float | None) -> dict[str, Any]:
+    from v2_newnew_live_truth import apply_live_control_action
+
+    if action == "to_live":
+        conflict = live_conflict_message(root, NA_ID)
+        if conflict:
+            return {
+                "ok": False,
+                "bot_id": NA_ID,
+                "action": action,
+                "error": "live_conflict",
+                "error_tc": conflict,
+                "display_name": BOT_SPECS[NA_ID]["display_name"],
+            }
+    mapped = "to_live" if action == "to_live" else "to_paper"
+    out = apply_live_control_action(root, mapped, wallet_cash_usdc=wallet_cash_usdc)
+    desk_mode = "live" if out.get("live_active") else "paper"
+    out["bot_id"] = NA_ID
+    out["desk_mode"] = desk_mode
+    out["mode"] = desk_mode
+    out["display_name"] = BOT_SPECS[NA_ID]["display_name"]
+    return out
+
+
 def apply_mode(root: Path, bot_id: str, action: str, *, wallet_cash_usdc: float | None = None) -> dict[str, Any]:
     action = (action or "").strip().lower()
     if bot_id not in BOT_SPECS:
@@ -364,6 +681,8 @@ def apply_mode(root: Path, bot_id: str, action: str, *, wallet_cash_usdc: float 
         }
     if bot_id == V2_ID:
         return _apply_v2_mode(root, action, wallet_cash_usdc=wallet_cash_usdc)
+    if bot_id == NA_ID:
+        return _apply_na_mode(root, action, wallet_cash_usdc=wallet_cash_usdc)
     return _apply_sonu_mode(root, action, wallet_cash_usdc=wallet_cash_usdc)
 
 
@@ -397,21 +716,33 @@ def desk_status(root: Path, *, wallet_cash_usdc: float | None = None, env: dict[
     else:
         sonu_mode = "paper"
     v2 = v2_mode_view(root, env)
+    try:
+        from v2_newnew_live_truth import live_control_payload as na_payload
+
+        na = na_payload(root, wallet_cash_usdc=wallet_cash_usdc)
+    except Exception:
+        na = {"mode": "paper", "live_active": False, "label_tc": "Live預備 · 真倉 OFF"}
+    if na.get("live_active"):
+        na_mode = "live"
+    else:
+        na_mode = "paper"
     bots = []
     for bot_id, mode, extra in (
         (SONU_ID, sonu_mode, sonu),
         (V2_ID, v2["mode"], v2),
+        (NA_ID, na_mode, na),
     ):
         spec = BOT_SPECS[bot_id]
+        label = v2_bot_display_name(root) if bot_id == V2_ID else spec["display_name"]
         bots.append(
             {
                 "id": bot_id,
-                "display_name": spec["display_name"],
+                "display_name": label,
                 "mode": mode,
                 "label_tc": extra.get("label_tc"),
                 "live_active": bool(extra.get("live_active")),
                 "exec_dry_run_placeholder": bool(extra.get("exec_dry_run_placeholder", not extra.get("exec_is_real_live", False))),
-                **bet_view(root, bot_id, env),
+                **bet_view(root, bot_id, env, wallet_cash_usdc=wallet_cash_usdc),
             }
         )
     return {"ok": True, "bots": bots, "wallet_cash_usdc": wallet_cash_usdc}
