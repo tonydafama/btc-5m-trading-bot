@@ -1096,6 +1096,12 @@ def resolve_live_profile(default: str = "v1") -> tuple[str, DualLegProfile]:
     """V2 profile with env-file overrides for live go-live knobs."""
     name = live_profile_name(default)
     profile = PROFILES[name]
+    raw_ask = _live_env_scalar("DUAL_LEG_LIVE_MAX_ASK")
+    if raw_ask:
+        try:
+            profile = replace(profile, max_ask=float(raw_ask))
+        except (TypeError, ValueError):
+            pass
     raw_opp = _live_env_scalar("DUAL_LEG_LIVE_MAX_OPPOSITE_ASK")
     if raw_opp:
         try:
