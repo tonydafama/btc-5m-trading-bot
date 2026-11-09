@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import os
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -1071,6 +1071,47 @@ def read_live_unit_usd(default: float = 6.0) -> float:
 def live_profile_name(default: str = "v1") -> str:
     name = (os.getenv("DUAL_LEG_LIVE_PROFILE", default) or default).strip().lower()
     return name if name in PROFILES else default
+
+
+def _live_env_scalar(key: str, default: str | None = None) -> str | None:
+    raw = os.getenv(key)
+    if raw is not None and str(raw).strip() != "":
+        return str(raw).strip()
+    found = _env_file_value(_live_exec_env_path(), key)
+    if found is not None and str(found).strip() != "":
+        return str(found).strip()
+    return default
+
+
+def live_require_path_hedge() -> bool:
+    return (_live_env_scalar("DUAL_LEG_LIVE_REQUIRE_PATH_HEDGE", "0") or "0").lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
+def resolve_live_profile(default: str = "v1") -> tuple[str, DualLegProfile]:
+    """V2 profile with env-file overrides for live go-live knobs."""
+    name = live_profile_name(default)
+    profile = PROFILES[name]
+    raw_opp = _live_env_scalar("DUAL_LEG_LIVE_MAX_OPPOSITE_ASK")
+    if raw_opp:
+        try:
+            profile = replace(profile, max_opposite_ask=float(raw_opp))
+        except (TypeError, ValueError):
+            pass
+    req_opp = (_live_env_scalar("REQUIRE_OPP_BEFORE_LEG1", "0") or "0").lower()
+    if req_opp in ("1", "true", "yes", "on"):
+        profile = replace(profile, require_opp_before_leg1=True)
+        raw_max = _live_env_scalar("OPP_BEFORE_LEG1_MAX")
+        if raw_max:
+            try:
+                profile = replace(profile, opp_before_leg1_max=float(raw_max))
+            except (TypeError, ValueError):
+                pass
+    return name, profile
 
 
 def profile_to_dict(profile: DualLegProfile) -> dict[str, Any]:

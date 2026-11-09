@@ -447,7 +447,16 @@
         const tailNote = (liveStats.total != null && liveStats.total >= TAIL_N)
           ? ` <span style="color:var(--muted);font-weight:600">（本頁最近 ${TAIL_N} 行）</span>`
           : '';
-        statsEl.innerHTML = `已結算 <strong>${liveStats.settles ?? 0}</strong> · 下單 <strong>${liveStats.posts ?? 0}</strong> · 略過 ${liveStats.skips ?? 0}${tailNote}`;
+        const olSet = liveStats.one_leg_settled_n ?? 0;
+        const olOpen = liveStats.one_leg_open_n ?? 0;
+        const olPnl = liveStats.one_leg_settled_pnl_usd;
+        const olPnlTxt = (olPnl != null && olPnl !== '')
+          ? ` · 單腿結算 <strong>${olSet}</strong>（$${Number(olPnl).toFixed(2)}）`
+          : (olSet ? ` · 單腿結算 <strong>${olSet}</strong>` : '');
+        const olOpenTxt = olOpen ? ` · 持倉單腿 <strong>${olOpen}</strong>` : '';
+        const hf = liveStats.hedge_failed_events;
+        const hfTxt = (hf != null && hf > 0) ? ` · 對沖失敗 ${hf}` : '';
+        statsEl.innerHTML = `已結算 <strong>${liveStats.settles ?? 0}</strong> · 下單 <strong>${liveStats.posts ?? 0}</strong> · 略過 ${liveStats.skips ?? 0}${olPnlTxt}${olOpenTxt}${hfTxt}${tailNote}`;
       }
       const src = tailSource(tailPayload);
       if (src) liveSource = src;

@@ -29,7 +29,6 @@ sys.path.insert(0, str(ROOT))
 # Do NOT force DRY_RUN here — live path needs 0. Shadow forces 1 in its own process.
 from dual_leg_live import (  # noqa: E402
     FokOrderIntent,
-    PROFILES,
     assert_btc_only,
     build_fok_buy_intent,
     dry_run_enabled,
@@ -41,8 +40,9 @@ from dual_leg_live import (  # noqa: E402
     entry_pause_view,
     execute_fok_intent,
     live_decision_clock_label,
-    live_profile_name,
+    live_require_path_hedge,
     live_strategy_label,
+    resolve_live_profile,
     live_unit_usd,
     live_uses_paper_checkpoints,
     new_entry_paused,
@@ -285,8 +285,7 @@ def run_forever(poll_sec: float) -> int:
         print("REFUSING: DUAL_LEG_LIVE_DRY_RUN must be 0 for live daemon", file=sys.stderr)
         return 2
 
-    profile_name = live_profile_name("v1")
-    profile = PROFILES[profile_name]
+    profile_name, profile = resolve_live_profile("v1")
     unit = live_unit_usd(6.0)
 
     cash = _wallet_cash()
@@ -328,6 +327,7 @@ def run_forever(poll_sec: float) -> int:
     open_price = None
     paused_logged: set[str] = set()
     rg80_logged: set[str] = set()
+    stranded_logged: set[str] = set()
     seen_decision_cps: set[int] = set()
     last_housekeep = 0.0
     use_paper_cp = live_uses_paper_checkpoints()
@@ -518,6 +518,30 @@ def run_forever(poll_sec: float) -> int:
                         f"[live] RG80 skip {market.slug} range={range_usd} paused={rg80_gate.paused}",
                         flush=True,
                     )
+            _block_stranded = False
+            if (
+                row is None
+                and ev.get("would_enter_leg1")
+                and live_require_path_hedge()
+                and not _block_rg80
+            ):
+                w2 = ev.get("would_leg2") if isinstance(ev.get("would_leg2"), dict) else {}
+                path_ok = bool(w2.get("path_hedgeable_opposite"))
+                stranded = bool(w2.get("stranded_risk")) or not path_ok
+                if stranded:
+                    _block_stranded = True
+                    if market.slug not in stranded_logged:
+                        stranded_logged.add(market.slug)
+                        _append_event(
+                            {
+                                "event": "skip_stranded_hedge",
+                                "timestamp_hkt": now_hkt(),
+                                "slug": market.slug,
+                                "path_hedgeable_opposite": path_ok,
+                                "stranded_risk": w2.get("stranded_risk"),
+                                "hedge_skip_reasons": (w2.get("hedge_skip_reasons") or [])[:6],
+                            }
+                        )
             _block_opp_before = False
             if (
                 row is None
@@ -560,6 +584,7 @@ def run_forever(poll_sec: float) -> int:
                 and not _block_opp_before
                 and not _block_entry_pause
                 and not _block_rg80
+                and not _block_stranded
             ):
                 cash_now = _wallet_cash()
                 if cash_now is not None and cash_now < unit:
@@ -772,6 +797,26 @@ def run_forever(poll_sec: float) -> int:
                         if t.get("pnl") is None
                         and str(t.get("close_reason") or "") == "window_rolled_pending_outcome"
                     ),
+                    "one_leg_risk": {
+                        "settled_one_leg_n": sum(
+                            1
+                            for t in trades
+                            if t.get("pnl") is not None and int(t.get("legs_filled") or 0) < 2
+                        ),
+                        "settled_one_leg_pnl_usd": round(
+                            sum(
+                                float(t.get("pnl") or 0)
+                                for t in trades
+                                if t.get("pnl") is not None and int(t.get("legs_filled") or 0) < 2
+                            ),
+                            2,
+                        ),
+                        "open_one_leg_n": sum(
+                            1
+                            for row in state.values()
+                            if isinstance(row, dict) and row.get("status") == "one_leg"
+                        ),
+                    },
                     "started_at_hkt": started,
                     "poll_sec": poll_sec,
                     "decision_clock": clock_label,

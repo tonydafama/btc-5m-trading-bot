@@ -96,6 +96,54 @@ def _after_last_live_start(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return rows
 
 
+def live_one_leg_risk_summary(root: Path, session_id: str = "") -> dict[str, Any]:
+    """Settled / open single-leg exposure for the active live session."""
+    sid = (session_id or _current_live_session_id(root)).strip()
+    trades_path = root / "logs" / "dual_leg_live_trades.json"
+    state_path = root / "logs" / "dual_leg_live_state.json"
+    rows: list[dict[str, Any]] = []
+    if trades_path.is_file():
+        try:
+            raw = json.loads(trades_path.read_text(encoding="utf-8"))
+            if isinstance(raw, list):
+                rows = [r for r in raw if isinstance(r, dict)]
+        except (OSError, json.JSONDecodeError):
+            pass
+    if sid:
+        tagged = [r for r in rows if str(r.get("session_id") or "").strip() == sid]
+        if tagged:
+            rows = tagged
+    settled_one = [
+        r
+        for r in rows
+        if r.get("pnl") is not None and int(r.get("legs_filled") or r.get("legs_posted") or 0) < 2
+    ]
+    open_one = 0
+    if state_path.is_file():
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            if isinstance(state, dict):
+                open_one = sum(
+                    1 for row in state.values() if isinstance(row, dict) and row.get("status") == "one_leg"
+                )
+        except (OSError, json.JSONDecodeError):
+            pass
+    hedge_fail = 0
+    event_path = root / "logs" / LIVE_EVENT_FILENAME
+    if event_path.is_file() and sid:
+        for row in _filter_live_session_rows(_tail_jsonl_raw(event_path, 8000), sid):
+            if str(row.get("event") or "") == "hedge_failed":
+                hedge_fail += 1
+    pnl_one = sum(float(r.get("pnl") or 0) for r in settled_one)
+    return {
+        "session_id": sid or None,
+        "settled_one_leg_n": len(settled_one),
+        "settled_one_leg_pnl_usd": round(pnl_one, 2),
+        "open_one_leg_n": open_one,
+        "hedge_failed_events": hedge_fail,
+    }
+
+
 def _filter_live_session_rows(rows: list[dict[str, Any]], session_id: str) -> list[dict[str, Any]]:
     """Keep only the current live session.
 
@@ -198,6 +246,11 @@ def _normalize_live_row(row: dict[str, Any]) -> dict[str, Any]:
         note_parts = [
             f"Rg80 · range {rng}" if rng is not None else "Rg80",
             f"paused={out.get('rg80_paused')}",
+        ]
+    elif ev == "skip_stranded_hedge":
+        note_parts = [
+            "單腿風險 · 對沖路徑未過",
+            f"path_ok={out.get('path_hedgeable_opposite')}",
         ]
     elif out.get("error"):
         note_parts.append(str(out.get("error")))
@@ -343,6 +396,8 @@ def tail_dual_leg_v2_logs(
     except Exception:
         strategy_label = "V2 21+ Rg80"
 
+    one_leg_risk = live_one_leg_risk_summary(root, live_session) if ledger_l == "live" else None
+
     return {
         "bot": "dual-leg-live-v2" if ledger_l == "live" else "dual-leg-paper-v2",
         "strategy_label": strategy_label,
@@ -351,6 +406,7 @@ def tail_dual_leg_v2_logs(
         "mode": mode_l,
         "lines": rows,
         "session_id": live_session if ledger_l == "live" else paper_session,
+        "one_leg_risk": one_leg_risk,
         "stats": {
             "fills": fills,
             "skips": skips,
@@ -359,6 +415,10 @@ def tail_dual_leg_v2_logs(
             "posts": posts,
             "info": info,
             "total": len(stats_src),
+            "one_leg_settled_n": (one_leg_risk or {}).get("settled_one_leg_n"),
+            "one_leg_open_n": (one_leg_risk or {}).get("open_one_leg_n"),
+            "one_leg_settled_pnl_usd": (one_leg_risk or {}).get("settled_one_leg_pnl_usd"),
+            "hedge_failed_events": (one_leg_risk or {}).get("hedge_failed_events"),
         },
         "source": path.name if path.is_file() else None,
         "source_file": path.name if path.is_file() else None,
