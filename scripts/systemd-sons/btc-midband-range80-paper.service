@@ -1,0 +1,26 @@
+[Unit]
+Description=先有波幅，先買中間價 Mid-band Range80 PAPER only (DRY_RUN=1 REAL_MONEY=0)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/btc-5m-bot
+# Do NOT load the shared .env. EnvironmentFile would override the pins below
+# and could pick up another strategy's live flags.
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/root/btc-5m-bot
+Environment=DRY_RUN=1
+Environment=REAL_MONEY=0
+Environment=TRADING_MODE=paper
+Environment=DUAL_LEG_LIVE_DRY_RUN=1
+Environment=MIDBAND_RANGE80_PAPER=1
+Environment=MIDBAND_REAL_MONEY=0
+EnvironmentFile=-/root/btc-5m-bot/config/midband_range80_paper.env
+ExecStart=/root/btc-5m-bot/venv/bin/python /root/btc-5m-bot/scripts/midband_range80_paper_daemon.py --poll-sec 1
+Restart=on-failure
+RestartSec=8
+MemoryMax=384M
+MemorySwapMax=0
+
+[Install]
+WantedBy=multi-user.target
