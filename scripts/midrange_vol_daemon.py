@@ -82,6 +82,7 @@ def run_loop() -> None:
                 prior_range = prior.get("range_usd")
                 track = {}
                 entered = False
+                state["last_skip_key"] = None
                 append_event(
                     {
                         "event": "window_open",
