@@ -39,10 +39,19 @@ fi
 
 OVERRIDE=/etc/systemd/system/btc-5m-dashboard.service.d/override.conf
 mkdir -p "$(dirname "$OVERRIDE")"
-if grep -q MIDVOL_PRIMARY_DASHBOARD "$OVERRIDE" 2>/dev/null; then
-  sed -i 's|^Environment=MIDVOL_PRIMARY_DASHBOARD=.*|Environment=MIDVOL_PRIMARY_DASHBOARD=1|' "$OVERRIDE"
-else
-  printf '\nEnvironment=MIDVOL_PRIMARY_DASHBOARD=1\n' >>"$OVERRIDE"
+for kv in MIDVOL_PRIMARY_DASHBOARD=1 FAMILY_DEFAULT_LIVE_BOT=midrange-vol-live; do
+  key="${kv%%=*}"
+  if grep -q "^Environment=${key}=" "$OVERRIDE" 2>/dev/null; then
+    sed -i "s|^Environment=${key}=.*|Environment=${kv}|" "$OVERRIDE"
+  else
+    printf '\nEnvironment=%s\n' "$kv" >>"$OVERRIDE"
+  fi
+done
+# Pull latest midvol branch code when deploying from main checkout
+if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git -C "$ROOT" fetch origin cursor/midrange-vol-7a71 2>/dev/null || true
+  git -C "$ROOT" checkout cursor/midrange-vol-7a71 2>/dev/null || true
+  git -C "$ROOT" pull --ff-only origin cursor/midrange-vol-7a71 2>/dev/null || true
 fi
 
 systemctl restart btc-5m-dashboard.service
