@@ -24,6 +24,13 @@ if [ ! -f "$KEY_PATH" ]; then
 fi
 
 if [ ! -f "$KEY_PATH" ]; then
+  store="/cursor/stores/self/ssh/btc_droplet_ed25519"
+  if [ -f "$store" ]; then
+    cp "$store" "$KEY_PATH"
+    chmod 600 "$KEY_PATH"
+  fi
+fi
+if [ ! -f "$KEY_PATH" ]; then
   # Legacy agent upload path (older cloud runs).
   legacy="/home/ubuntu/.cursor/projects/agent-repos-btc-5m-trading-bot/uploads/cursor_cloud_droplet_key_fca7"
   if [ -f "$legacy" ]; then
