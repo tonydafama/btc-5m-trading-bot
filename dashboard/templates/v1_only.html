@@ -851,6 +851,50 @@
       <div class="hint" id="c15m-observer-hint" style="margin-top:.45rem">—</div>
     </div>
 
+    <details class="paper-run-fold" id="midband-range80-fold" open data-mode="paper">
+      <summary class="desk-fold-summary">
+        <span class="desk-fold-left">
+          <span class="desk-fold-title">先有波幅，先買中間價</span>
+          <span class="desk-fold-hint">Mid-band Range80 · Paper / prep · 真倉 OFF</span>
+        </span>
+        <span class="desk-fold-right desk-fold-meta" id="midband-fold-badge">PAPER · 待入金</span>
+      </summary>
+      <div class="paper-run-body">
+        <article class="desk-bot" id="midband-range80-card" data-bot-id="midband-range80" data-mode="paper" data-display-name="先有波幅，先買中間價">
+          <div class="desk-bot-head">
+            <div>
+              <div class="desk-bot-kicker">BTC 5m · 單邊 · 無對沖 · 持有到結算</div>
+              <h3>先有波幅，先買中間價</h3>
+            </div>
+            <span class="desk-chip paper" id="midband-mode-chip" data-mode-chip>PAPER</span>
+          </div>
+          <p class="desk-bot-status" id="midband-status">已接線 · Paper / prep · 真倉 OFF · 本金待入金</p>
+          <p class="hint" id="midband-rules">只睇剩餘 40–75 秒 · 上一根 Binance 5 分鐘高−低 ≥ $80 · 買第一邊可成交 ask 0.72–0.88 · 任一邊 ask &gt; 0.94 跳過該窗 · 兩邊仍在 0.45–0.55 唔買 · 每窗一注 $3</p>
+          <div class="desk-stats">
+            <div class="desk-stat"><span class="k">PnL</span><span class="v" id="midband-pnl">$0.00</span></div>
+            <div class="desk-stat"><span class="k">單數</span><span class="v" id="midband-count">0</span></div>
+            <div class="desk-stat"><span class="k">注碼</span><span class="v" id="midband-stake">$3/注</span></div>
+            <div class="desk-stat"><span class="k">本金</span><span class="v" id="midband-capital">待入金</span></div>
+            <div class="desk-stat"><span class="k">Session</span><span class="v" id="midband-session">—</span></div>
+            <div class="desk-stat"><span class="k">燈</span><span class="v" id="midband-lamp">LIVE OFF</span></div>
+          </div>
+          <p class="hint" id="midband-deposit">入金地址 deposit <code>0x8081D24BAc2456e5526F9C6eF80CC9e8269A259F</code>。交易錢包 <code>0x2c9c171cf9ba62187e2f4c252929894e47c8f9b3</code>。而家唔會當已有本金。</p>
+          <div class="desk-bot-actions">
+            <button type="button" class="mode-toggle-btn is-active" id="midband-btn-paper" data-midband-action="to_paper">
+              <span class="mode-lamp lamp-green" id="midband-lamp-paper"></span>
+              <span class="mode-label">模式：Paper（紙上）</span>
+            </button>
+            <button type="button" class="mode-toggle-btn" id="midband-btn-live" data-midband-action="to_live">
+              <span class="mode-lamp lamp-yellow" id="midband-lamp-live"></span>
+              <span class="mode-label">未入金 · 不開真倉</span>
+            </button>
+          </div>
+          <p class="desk-bot-hint" id="midband-hint">Paper / prep。撳 Live 只會拒絕，唔會改 DRY_RUN，亦唔會郁其他 bot。</p>
+          <p class="hint"><a href="/logs#midband-range80">Log → 呢張卡</a></p>
+        </article>
+      </div>
+    </details>
+
     <details class="paper-run-fold" id="paper-run-fold">
       <summary class="desk-fold-summary paper-run-summary">
         <span class="desk-fold-left">
@@ -2267,7 +2311,7 @@
     }
 
     async function refresh() {
-      let [wallet, account, btc, eth, control, tier, trades, daily, stakePlan, timetable, c15m, c15mControl, sonULive, dualLeg, dualLegTrades, services, allPaper] = await Promise.all([
+      let [wallet, account, btc, eth, control, tier, trades, daily, stakePlan, timetable, c15m, c15mControl, sonULive, dualLeg, dualLegTrades, services, allPaper, midband] = await Promise.all([
         getJson('/api/wallet', {}), getJson('/api/account-pnl', {}), getJson('/api/summary', {}),
         getJson('/api/eth-summary', {}), getJson('/api/bot-control', {}), getJson('/api/tier-pause', {}),
         getJson('/api/overview-trades?limit=' + tradeLimit, []), getJson('/api/daily-pnl', { btc: [], eth: [], total: [] }),
@@ -2278,6 +2322,7 @@
         getJson('/api/dual-leg/summary', {}), getJson('/api/dual-leg/trades?limit=50', []),
         getJson('/api/services-status', {}),
         getJson('/api/all-paper-strategies', null),
+        getJson('/api/midband-range80', null),
       ]);
       account = account || {};
       wallet = wallet || {};
@@ -2323,6 +2368,48 @@
       renderCumulChart(daily);
       renderCrypto15m(c15m, c15mControl, sonULive, allPaper && allPaper.high_live_board);
       renderDualLeg(dualLeg, dualLegTrades);
+      renderMidband(midband);
+    }
+
+    function renderMidband(row) {
+      row = row || {};
+      const status = $('midband-status');
+      if (status) status.textContent = row.status_label || '已接線 · Paper / prep · 真倉 OFF · 本金待入金';
+      const pnl = $('midband-pnl');
+      if (pnl) pnl.textContent = (row.pnl == null) ? '$0.00' : money(row.pnl);
+      const count = $('midband-count');
+      if (count) count.textContent = String(row.trade_count == null ? 0 : row.trade_count);
+      const capital = $('midband-capital');
+      if (capital) capital.textContent = row.capital_label || '待入金';
+      const session = $('midband-session');
+      if (session) session.textContent = row.session_id || '—';
+      const chip = $('midband-mode-chip');
+      if (chip) {
+        chip.textContent = 'PAPER';
+        chip.className = 'desk-chip paper';
+      }
+      const lamp = $('midband-lamp');
+      if (lamp) lamp.textContent = 'LIVE OFF';
+      const rules = $('midband-rules');
+      if (rules && row.rules_tc) rules.textContent = row.rules_tc;
+      const card = $('midband-range80-card');
+      if (card) card.dataset.mode = 'paper';
+    }
+
+    async function postMidband(action) {
+      const hint = $('midband-hint');
+      try {
+        const res = await fetch('/api/midband-range80', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: action }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (hint) hint.textContent = data.message_tc || data.error_tc || 'Paper / prep';
+        renderMidband(data);
+      } catch (e) {
+        if (hint) hint.textContent = '連唔到後端 · 仍然當 Paper';
+      }
     }
 
     document.querySelectorAll('[data-release]').forEach((btn) => {
@@ -2333,6 +2420,19 @@
     });
 
     bindDeskControls();
+    const midbandCard = document.getElementById('midband-range80-card');
+    if (midbandCard) {
+      midbandCard.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('[data-midband-action]');
+        if (!btn) return;
+        const action = btn.dataset.midbandAction;
+        if (action === 'to_live') {
+          const hint = document.getElementById('midband-hint');
+          if (hint) hint.textContent = '未入金，拒絕開真倉。唔會改 DRY_RUN。';
+        }
+        postMidband(action);
+      });
+    }
     refresh();
     setInterval(refresh, 30000);
   </script>

@@ -138,7 +138,10 @@ class PaperBoardTests(unittest.TestCase):
         self.assertNotIn("APR", by_id["funding-carry-loop"]["description"])
 
         names = [row["name"] for row in board["paper"]]
-        self.assertEqual(names, ["BTC 5m Package2+", "ETH 5m Package2+", "BTC+ETH 15m"])
+        self.assertEqual(
+            names,
+            ["BTC 5m Package2+", "ETH 5m Package2+", "BTC+ETH 15m", "先有波幅，先買中間價"],
+        )
         btc = board["paper"][0]
         self.assertEqual(btc["mode"], "PAPER")
         self.assertEqual(btc["trade_count"], 2)
@@ -155,7 +158,15 @@ class PaperBoardTests(unittest.TestCase):
 
         self.assertEqual(board["hero"]["title"], "全部 Paper · 冇 live 真下單")
         self.assertEqual(board["hero"]["bots_running"], 2)
-        self.assertEqual(board["hero"]["paper_count"], 3)
+        self.assertEqual(board["hero"]["paper_count"], 4)
+        midband = board["paper"][3]
+        self.assertEqual(midband["id"], "midband-range80")
+        self.assertEqual(midband["mode"], "PAPER")
+        self.assertEqual(midband["trade_count"], 0)
+        self.assertEqual(midband["pnl"], 0)
+        self.assertFalse(midband["real_money"])
+        self.assertIn("待入金", midband["note"])
+        self.assertIn("真倉 OFF", midband["note"])
         self.assertEqual(board["hero"]["experiment_count"], 2)
         self.assertFalse(board["hero"]["any_live"])
 

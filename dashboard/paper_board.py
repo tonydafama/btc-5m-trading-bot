@@ -742,6 +742,29 @@ def _file_rows(path: Path) -> list[dict[str, Any]]:
     return _as_rows(_read_json(path, []))
 
 
+def _midband_range80_paper(root: Path) -> dict[str, Any]:
+    """Own ledger. Missing file is a clean paper book, not a fake funded balance."""
+    try:
+        from midband_range80_desk import paper_board_row_stats
+    except ImportError:
+        from dashboard.midband_range80_desk import paper_board_row_stats
+
+    stats = paper_board_row_stats(root)
+    sid = stats.get("session_id") or "未開 session"
+    note = (
+        f"Paper / prep · 真倉 OFF · 本金待入金 · 單邊 $3 · session {sid} · "
+        "唔係 Parent V2，亦唔係 newnew-A"
+    )
+    return _paper_row(
+        row_id="midband-range80",
+        name="先有波幅，先買中間價",
+        stats=stats,
+        last_activity=str(stats.get("last_activity") or ""),
+        note=note,
+        count_label=f"{int(stats.get('trade_count') or 0)} 單",
+    )
+
+
 def _btc_paper(root: Path, *, live_bot: bool) -> dict[str, Any]:
     path = root / "logs" / "trade_log_paper.json"
     state = root / "logs" / "new_strategy_state.json"
@@ -1748,6 +1771,7 @@ def build_all_paper_strategies(
     dual_summary = _resolve_summary(loaders, "dual_leg", "dual_leg_paper", "summary")
     if _dual_leg_enabled(modes, dual_summary, root):
         paper.append(_dual_leg_paper(root, dual_summary))
+    paper.append(_midband_range80_paper(root))
 
     scanner_running = any(row["id"] == "funding-carry-loop" and row["status"] == "running" for row in bots)
     experiments = [

@@ -1203,6 +1203,18 @@ def api_family_bots():
     return jsonify(_family_bots_payload())
 
 
+@app.route("/api/midband-range80", methods=["GET", "POST"])
+def api_midband_range80():
+    """Paper card for 先有波幅，先買中間價. POST to_live is refused."""
+    from midband_range80_desk import apply_action, status_payload
+
+    if request.method == "GET":
+        return jsonify(status_payload(ROOT))
+    data = request.get_json(silent=True) or {}
+    out = apply_action(ROOT, str(data.get("action") or ""))
+    return jsonify(out), (200 if out.get("ok") else 400)
+
+
 @app.route("/api/desk/bots", methods=["GET"])
 def api_desk_bots():
     from desk_bots import desk_status
