@@ -1,0 +1,20 @@
+[Unit]
+Description=BTC 5m Midrange-Vol (先有波幅·中間價) single-leg
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/btc-5m-bot
+EnvironmentFile=-/root/btc-5m-bot/.env
+EnvironmentFile=-/root/btc-5m-bot/config/midrange_vol_live.env
+Environment=PYTHONUNBUFFERED=1
+Environment=MIDVOL_TRADING_MODE=live
+Environment=MIDVOL_LIVE_ARMED=0
+Environment=MIDVOL_DRY_RUN=0
+ExecStart=/root/btc-5m-bot/venv/bin/python /root/btc-5m-bot/scripts/midrange_vol_daemon.py
+Restart=always
+RestartSec=8
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target

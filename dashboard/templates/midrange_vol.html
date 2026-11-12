@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>先有波幅·中間價</title>
+  <style>
+    :root { --bg:#070a10; --panel:#121820; --border:#2a3544; --text:#eef4fc; --muted:#8fa3bc;
+      --green:#3ee88a; --red:#ff6b6b; --orange:#ffb020; --blue:#5eb3ff; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; line-height:1.45; }
+    .wrap { max-width:720px; margin:0 auto; padding:1rem 1.1rem 2.5rem; }
+  h1 { margin:0 0 .25rem; font-size:1.35rem; }
+  .warn { border:1px solid rgba(255,176,32,.45); background:#1a1408; color:#ffd59a;
+    border-radius:12px; padding:.75rem .9rem; margin:.75rem 0 1rem; font-size:.88rem; }
+  .hero { border:1px solid var(--border); border-radius:14px; background:var(--panel); padding:.9rem 1rem; margin-bottom:.75rem; }
+  .stat { font-size:.92rem; color:var(--muted); }
+  .stat strong { color:var(--green); }
+  .arm { font-size:.9rem; margin-top:.5rem; }
+  .arm.off { color:var(--orange); }
+  .arm.on { color:var(--green); }
+  .log { max-height:65vh; overflow:auto; }
+  .row { border:1px solid var(--border); border-radius:10px; padding:.55rem .65rem; margin-bottom:.4rem; font-size:.84rem; }
+  .row .ts { color:var(--muted); font-size:.78rem; }
+  .tag-entry { color:var(--green); font-weight:700; }
+  .tag-skip { color:var(--muted); }
+  .tag-wait { color:var(--orange); }
+  button { border:1px solid var(--border); background:#0c121a; color:var(--text); border-radius:8px;
+    padding:.4rem .7rem; cursor:pointer; font-size:.8rem; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>先有波幅 · 先買中間價</h1>
+  <p class="stat" id="sub">單邊 $3 · T−75→T−40 · 上一根 5m ≥$80 · 唔對沖</p>
+  <div class="warn" id="valid-warn">⚠️ 新規則未經獨立回測驗證；預設 <strong>MIDVOL_LIVE_ARMED=0</strong>，入金後先開真倉。</div>
+  <div class="hero">
+    <div class="stat" id="stats">載入中…</div>
+    <div class="arm off" id="arm-line">Live armed: —</div>
+    <div class="stat" id="cash-line"></div>
+    <button type="button" id="reload">刷新</button>
+  </div>
+  <div class="log" id="log"></div>
+</div>
+<script>
+async function load() {
+  const r = await fetch('/api/midvol/summary');
+  const s = await r.json();
+  const st = s.stats || {};
+  const pnl = Number(st.pnl_usd || 0);
+  const pnlCls = pnl >= 0 ? 'strong' : 'strong';
+  document.getElementById('stats').innerHTML =
+    `Session <strong>${(s.session||{}).session_id||'—'}</strong> · ` +
+    `已結算 <strong>${st.settled||0}</strong>（${st.wins||0}W/${st.losses||0}L）· PnL <strong>$${pnl.toFixed(2)}</strong> · 持倉 ${st.open||0}`;
+  const armed = s.live_armed;
+  const arm = document.getElementById('arm-line');
+  arm.textContent = armed ? '✅ Live armed — 會落真單' : '⏸ Live 未 armed — 只記錄 wait_capital / paper';
+  arm.className = 'arm ' + (armed ? 'on' : 'off');
+  document.getElementById('cash-line').textContent =
+    s.wallet_cash_usdc != null ? `CLOB Cash ≈ $${Number(s.wallet_cash_usdc).toFixed(2)}` : '';
+  const tail = await fetch('/api/midvol/events?limit=80');
+  const t = await tail.json();
+  const el = document.getElementById('log');
+  el.innerHTML = '';
+  for (const e of (t.events||[]).reverse()) {
+    const div = document.createElement('div');
+    div.className = 'row';
+    const ev = e.event || '';
+    let cls = 'tag-skip';
+    if (ev === 'entry' || ev === 'entry_paper') cls = 'tag-entry';
+    if (ev === 'wait_capital') cls = 'tag-wait';
+    const body = ev === 'skip'
+      ? `${e.reason} · ${e.slug||''} · up ${e.up_ask} down ${e.down_ask}`
+      : JSON.stringify(e).slice(0, 220);
+    div.innerHTML = `<div class="ts">${e.timestamp_hkt||''}</div><span class="${cls}">${ev}</span> ${body}`;
+    el.appendChild(div);
+  }
+}
+document.getElementById('reload').onclick = load;
+load();
+setInterval(load, 12000);
+</script>
+</body>
+</html>

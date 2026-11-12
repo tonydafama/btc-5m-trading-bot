@@ -1492,8 +1492,37 @@ def api_alpha_max_live():
         return jsonify({"ok": False, "error": str(exc)}), 500
 
 
+@app.route("/midvol")
+@app.route("/midvol/")
+def midrange_vol_page():
+    return render_template("midrange_vol.html")
+
+
+@app.route("/api/midvol/summary")
+def api_midvol_summary():
+    try:
+        from midrange_vol_engine import dashboard_snapshot as _snap
+
+        return jsonify(_snap())
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+@app.route("/api/midvol/events")
+def api_midvol_events():
+    try:
+        from dashboard.midrange_vol_board import tail_events
+
+        limit = int(request.args.get("limit") or 80)
+        return jsonify({"ok": True, "events": tail_events(limit)})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
 @app.route("/")
 def index():
+    if (os.getenv("MIDVOL_PRIMARY_DASHBOARD") or "").strip().lower() in ("1", "true", "yes"):
+        return redirect("/midvol")
     return render_template("v1_only.html")
 
 
