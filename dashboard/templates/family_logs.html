@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Log · Son U</title>
+  <title>Log · 先有波幅·中間價</title>
   <style>
     :root {
       --bg:#06080c; --panel:#111820; --border:#2a3544;
@@ -89,14 +89,15 @@
   <div class="wrap">
     <header>
       <div>
-        <h1>Log · Son U</h1>
-        <div class="sub">Live 終極5m 紀錄 · 預設睇全部（含 skip）</div>
+        <h1>先有波幅 · 中間價</h1>
+        <div class="sub">BTC 5m 單邊 $3 · T−75→T−40 · 未驗證策略 · 預設 armed=0</div>
       </div>
-      <a href="/"><button type="button" class="desk-btn">← Desk</button></a>
+      <a href="/midvol"><button type="button" class="desk-btn">簡版</button></a>
     </header>
 
-    <section class="hero" id="live-hero" aria-label="Live Son U">
-      <h2 class="hero-title">終極5m · Live</h2>
+    <section class="hero" id="live-hero" aria-label="Midrange Vol Live">
+      <h2 class="hero-title">先有波幅 · Live</h2>
+      <div class="sub" id="midvol-armed-line" style="color:#ffd59a;font-size:.8rem;margin:-0.35rem 0 .5rem">—</div>
       <div class="hero-status" id="live-status-line">載入中…</div>
       <div class="toolbar">
         <div class="seg" role="tablist">
@@ -109,8 +110,8 @@
       <div class="log-list" id="sonu-live-log-body"></div>
     </section>
 
-    <details class="fold" id="sonu-paper-fold">
-      <summary>Paper · Son U（預設收起）</summary>
+    <details class="fold" id="sonu-paper-fold" hidden>
+      <summary>Legacy Paper（已停用）</summary>
       <div class="fold-toolbar">
         <button type="button" class="active" data-paper-mode="all">全部</button>
         <button type="button" data-paper-mode="trades">成交</button>
@@ -119,8 +120,8 @@
       <div class="log-list" id="sonu-paper-log-body" style="padding:0 .75rem .75rem"></div>
     </details>
 
-    <details class="fold" id="fleet-log-fold">
-      <summary id="fleet-fold-summary">其他機械人 · 預設收起</summary>
+    <details class="fold" id="fleet-log-fold" hidden>
+      <summary id="fleet-fold-summary">其他機械人（legacy）</summary>
       <div class="log-list" id="fleet-log-body" style="padding:.5rem .75rem .75rem"></div>
     </details>
 
@@ -129,7 +130,7 @@
 
   <script>
     /* CORE LOG HELPERS — Do NOT delete parseLine / statusTag / renderRows when patching Son U lock. */
-    const DEFAULT_LIVE_BOT = 'son-btc-5m-ultimate-live';
+    const DEFAULT_LIVE_BOT = 'midrange-vol-live';
     const LIVE_TAIL_N = 40;
     const SONU_FLEET_TOKENS = ['V1', '5M', 'DUAL', 'FUNDING', 'MEME', 'SPORTS', 'GROK', 'NEWNEW'];
 
@@ -250,7 +251,11 @@
       if (!payload) return null;
       const bots = payload.bots;
       if (Array.isArray(bots)) {
-        return bots.find((b) => String(b?.id || '').trim() === DEFAULT_LIVE_BOT) || null;
+        return (
+          bots.find((b) => String(b?.id || '').trim() === DEFAULT_LIVE_BOT) ||
+          bots[0] ||
+          null
+        );
       }
       return payload.son_u_live || null;
     }
@@ -319,7 +324,18 @@
       if (tailPayload && tailPayload.stats) liveStats = normalizeTailStats(tailPayload.stats);
       const statsEl = document.getElementById('live-stats-line');
       if (statsEl) {
-        statsEl.innerHTML = `成交 <strong>${liveStats.fills ?? 0}</strong> · skip ${liveStats.skips ?? 0}`;
+        const mv = tailPayload && tailPayload.midvol_summary;
+        const pnl = mv && mv.pnl_usd != null ? ` · PnL $${Number(mv.pnl_usd).toFixed(2)}` : '';
+        const cash = mv && mv.wallet_cash_usdc != null ? ` · Cash $${Number(mv.wallet_cash_usdc).toFixed(2)}` : '';
+        statsEl.innerHTML =
+          `成交 <strong>${liveStats.fills ?? 0}</strong> · skip ${liveStats.skips ?? 0}${pnl}${cash}`;
+      }
+      const armedEl = document.getElementById('midvol-armed-line');
+      if (armedEl && tailPayload && tailPayload.midvol_summary) {
+        const armed = tailPayload.midvol_summary.live_armed;
+        armedEl.textContent = armed
+          ? '✅ Live armed — 會落真單'
+          : '⏸ 未 armed — 入金後設 MIDVOL_LIVE_ARMED=1';
       }
       const src = tailSource(tailPayload);
       if (src) liveSource = src;
@@ -351,11 +367,22 @@
         paintLiveUnit(payload);
         return;
       }
-      const fallback = await fetchJson('/api/crypto15m/trades?ledger=live&sonu_only=1&limit=200');
-      const rows = (Array.isArray(fallback) ? fallback : []).filter(isSonuTradeRow);
+      const ev = await fetchJson('/api/midvol/events?limit=120');
+      const rows = (ev && ev.events ? ev.events : []).map((e) => ({
+        timestamp_hkt: e.timestamp_hkt,
+        slug: e.slug || '',
+        trade_result: ['entry', 'entry_paper'].includes(e.event) ? 'FILLED' : (e.event === 'skip' ? 'SKIPPED' : (e.event || '').toUpperCase()),
+        reason: e.reason || e.note || e.event,
+        entered: ['entry', 'entry_paper', 'trade_settled'].includes(e.event),
+      }));
       liveStats = countStats(rows);
       liveAllRows = rows;
-      paintLiveUnit({ stats: { trades: liveStats.fills, skips: liveStats.skips, total: liveStats.total }, source: 'crypto_15m_trade_log_live.json' });
+      const sum = await fetchJson('/api/midvol/summary');
+      paintLiveUnit({
+        stats: { trades: liveStats.fills, skips: liveStats.skips, total: liveStats.total },
+        source: 'midrange_vol_events.jsonl',
+        midvol_summary: sum,
+      });
     }
 
     function paintPaper() {

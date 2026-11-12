@@ -20,6 +20,7 @@ BOT_UNITS = (
     "btc-5m-observer",
     "eth-5m-observer",
     "crypto-15m-observer",
+    "midrange-vol-live",
     "btc-5m-dashboard",
 )
 

@@ -1,0 +1,34 @@
+name: Deploy midrange-vol to droplet
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/midrange-vol-7a71
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup SSH key
+        env:
+          KEY: ${{ secrets.BTC_DROPLET_SSH_PRIVATE_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "Missing repository secret BTC_DROPLET_SSH_PRIVATE_KEY"
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+      - name: Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 root@143.110.240.132 <<'EOS'
+          set -euo pipefail
+          cd /root/btc-5m-bot
+          git fetch origin cursor/midrange-vol-7a71
+          git checkout cursor/midrange-vol-7a71
+          git pull --ff-only origin cursor/midrange-vol-7a71
+          bash scripts/apply_midrange_vol_droplet.sh
+          EOS

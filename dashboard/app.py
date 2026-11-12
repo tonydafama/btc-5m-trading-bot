@@ -1024,12 +1024,20 @@ def api_bot_log_tail():
         request.args.get("bot")
         or request.args.get("id")
         or request.args.get("key")
-        or "son-btc-5m-ultimate-live"
+        or os.getenv("FAMILY_DEFAULT_LIVE_BOT", "midrange-vol-live")
     )
     mode = request.args.get("mode", "trades")
     limit_raw = request.args.get("n") or request.args.get("limit") or "40"
     limit = min(int(limit_raw), 200)
     try:
+        if (bot or "").strip().lower().replace(" ", "-") in (
+            "midrange-vol-live",
+            "midrange-vol",
+            "midvol",
+        ):
+            from dashboard.midrange_vol_board import tail_midvol_for_family
+
+            return jsonify(tail_midvol_for_family(mode=mode, limit=limit))
         from bot_log_tail import tail_bot_log
 
         return jsonify(tail_bot_log(bot, mode=mode, limit=limit))
@@ -1102,34 +1110,32 @@ def _crypto15m_control_payload() -> dict[str, Any]:
 
 def _family_bots_payload() -> dict[str, Any]:
     """Droplet-shaped roster for /logs: { ok, n, bots:[{ id, display_name, status, … }] }."""
-    ctrl = _crypto15m_control_payload()
-    mode = str(ctrl.get("mode") or "paper").lower()
-    paused = bool(ctrl.get("paused"))
-    seat_short = "真倉 ON" if mode == "live" else "紙上預備"
-    run_short = "暫停" if paused else "跑緊"
-    status_line = f"{seat_short} · {run_short}"
-    bots: list[dict[str, Any]] = [
-        {
-            "id": "son-btc-5m-ultimate-live",
-            "display_name": "終極5m · Live",
-            "status": status_line,
-            "mode": mode,
-            "paused": paused,
-            "running": not paused,
-        }
-    ]
+    bots: list[dict[str, Any]] = []
     try:
-        rows = _crypto15m_recent_trades(80, None, False, sonu_only=False)
-        seen: set[str] = set()
-        for r in rows:
-            name = str(r.get("bot") or r.get("asset") or "").strip()
-            if not name or name in seen:
-                continue
-            seen.add(name)
-            slug = name.lower().replace(" ", "-")
-            bots.append({"id": slug, "display_name": name, "status": "paper"})
+        from dashboard.midrange_vol_board import family_bot_status
+
+        bots.append(family_bot_status())
     except Exception:
-        pass
+        bots.append(
+            {
+                "id": "midrange-vol-live",
+                "display_name": "先有波幅·中間價",
+                "status": "載入中",
+            }
+        )
+    if (os.getenv("FAMILY_SHOW_LEGACY_BOTS") or "").lower() in ("1", "true", "yes"):
+        try:
+            rows = _crypto15m_recent_trades(80, None, False, sonu_only=False)
+            seen: set[str] = set()
+            for r in rows:
+                name = str(r.get("bot") or r.get("asset") or "").strip()
+                if not name or name in seen:
+                    continue
+                seen.add(name)
+                slug = name.lower().replace(" ", "-")
+                bots.append({"id": slug, "display_name": name, "status": "legacy"})
+        except Exception:
+            pass
     return {"ok": True, "n": len(bots), "bots": bots}
 
 
@@ -1492,8 +1498,37 @@ def api_alpha_max_live():
         return jsonify({"ok": False, "error": str(exc)}), 500
 
 
+@app.route("/midvol")
+@app.route("/midvol/")
+def midrange_vol_page():
+    return render_template("midrange_vol.html")
+
+
+@app.route("/api/midvol/summary")
+def api_midvol_summary():
+    try:
+        from midrange_vol_engine import dashboard_snapshot as _snap
+
+        return jsonify(_snap())
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+@app.route("/api/midvol/events")
+def api_midvol_events():
+    try:
+        from dashboard.midrange_vol_board import tail_events
+
+        limit = int(request.args.get("limit") or 80)
+        return jsonify({"ok": True, "events": tail_events(limit)})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
 @app.route("/")
 def index():
+    if (os.getenv("MIDVOL_PRIMARY_DASHBOARD") or "").strip().lower() in ("1", "true", "yes"):
+        return redirect("/midvol")
     return render_template("v1_only.html")
 
 
