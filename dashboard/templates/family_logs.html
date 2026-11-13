@@ -630,11 +630,12 @@
         const ts = String(row.logged_at_hkt || row.opened_at_hkt || '').replace(' HKT', '').slice(11, 19);
         const reason = String(row.strategy_reason || row.skip_category || row.reason || '');
         const pnlCell = row.pnl == null ? '' : `<span class="log-pnl ${Number(row.pnl) >= 0 ? 'pos' : 'neg'}">${Number(row.pnl) >= 0 ? '+' : ''}$${Math.abs(Number(row.pnl)).toFixed(2)}</span>`;
+        const detail = reason || '—';
         return `<article class="log-card${fillClass}"><div class="log-line">
           <span class="log-ts">${ts || '—'}</span>
           <span class="${tag.className}">${tag.label}</span>
           <span class="log-mode">${rowModeLabel(row)}</span>
-          <span class="log-detail"><span class="slug">${shortSlug(row.slug || '')}</span> · <span class="reason">${reason}</span></span>
+          <span class="log-detail"><span class="reason">${detail}</span></span>
           ${pnlCell}
         </div></article>`;
       }).join('');
