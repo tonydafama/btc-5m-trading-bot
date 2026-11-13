@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Log · Son U</title>
+  <title>Log · Mid-band Range80</title>
   <style>
     :root {
       --bg:#06080c; --panel:#111820; --border:#2a3544;
@@ -13,6 +13,29 @@
     * { box-sizing:border-box; }
     body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif; line-height:1.45; }
     .wrap { max-width:640px; margin:0 auto; padding:.85rem 1rem 2.5rem; }
+    @media (max-width:480px) {
+      .wrap { padding:.6rem .55rem 2rem; }
+      h1 { font-size:1.05rem; }
+      .sub { font-size:.72rem; line-height:1.4; }
+      .hero { padding:.65rem .65rem .85rem; }
+      .hero-title { font-size:.95rem; }
+      .hero-status { font-size:.8rem; margin-bottom:.55rem; }
+      .toolbar { flex-direction:column; align-items:stretch; }
+      .seg { width:100%; justify-content:stretch; }
+      .seg button { flex:1; text-align:center; padding:.42rem .5rem; font-size:.78rem; }
+      .stats-line {
+        font-size:.74rem; line-height:1.45;
+        min-width:0; width:100%;
+      }
+      .reload { align-self:flex-start; }
+      .log-card { padding:.5rem .55rem; }
+      .log-line { gap:.35rem .4rem; }
+      .log-ts { font-size:.72rem; min-width:4.5rem; }
+      .log-mode { font-size:.68rem; }
+      .log-detail { font-size:.78rem; }
+      .fold-toolbar { flex-wrap:wrap; }
+      .fold-meta { margin-left:0; width:100%; font-size:.7rem; }
+    }
     a { color:var(--blue); text-decoration:none; }
     header { display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem; margin-bottom:1rem; }
     h1 { margin:0; font-size:1.2rem; font-weight:800; letter-spacing:-.02em; }
@@ -22,15 +45,20 @@
       border-radius:10px; padding:.45rem .75rem; font-size:.8rem; font-weight:650; cursor:pointer;
     }
     .hero {
-      border:1px solid rgba(255,80,80,.35); border-radius:16px;
+      border:1px solid rgba(62,232,138,.45); border-radius:16px;
       background:linear-gradient(180deg,#141c28 0%,#0e141c 100%);
       padding:.85rem .95rem 1rem; margin-bottom:.75rem;
     }
-    .hero-title { font-size:1.05rem; font-weight:800; margin:0 0 .35rem; color:#ff8a8a; }
+    .hero.inactive {
+      border-color:rgba(255,80,80,.35);
+    }
+    .hero-title { font-size:1.05rem; font-weight:800; margin:0 0 .35rem; color:var(--green); }
+    .hero.inactive .hero-title { color:#ff8a8a; }
     .hero-status { font-size:.88rem; font-weight:650; color:var(--text); margin-bottom:.75rem; }
     .hero-status.paused { color:var(--orange); }
     .toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin-bottom:.55rem; }
-    .seg { display:inline-flex; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+    .midband-log-filters { flex: 1 1 100%; margin: 0 0 .15rem; max-width: 100%; }
+    .seg { display:inline-flex; border:1px solid var(--border); border-radius:10px; overflow:hidden; flex-wrap: wrap; }
     .seg button {
       border:none; background:transparent; color:var(--muted); padding:.4rem .85rem;
       font-size:.82rem; font-weight:700; cursor:pointer;
@@ -48,8 +76,24 @@
       margin-bottom:.45rem; background:#0a0f16;
     }
     .log-card.fill-card { border-color:rgba(62,232,138,.35); background:#0a1410; }
-    .log-line { display:flex; flex-wrap:wrap; align-items:flex-start; gap:.45rem .55rem; font-size:.86rem; }
-    .log-ts { font-variant-numeric:tabular-nums; font-weight:700; color:#b8c8dc; flex:0 0 auto; font-size:.8rem; }
+    .log-line {
+      display:flex; flex-wrap:nowrap; align-items:center; gap:.4rem .55rem;
+      font-size:.84rem; overflow:hidden; min-height:1.65rem;
+    }
+    .log-ts {
+      font-variant-numeric:tabular-nums; font-weight:700; color:#b8c8dc;
+      flex:0 0 auto; font-size:.78rem; min-width:4.75rem;
+    }
+    .log-mode {
+      flex:0 0 auto; font-size:.7rem; font-weight:750; color:var(--muted);
+      letter-spacing:.04em; min-width:2.4rem;
+    }
+    .log-detail {
+      flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden;
+      text-overflow:ellipsis; color:var(--text);
+    }
+    .log-detail .slug { font-weight:650; color:#dbe6f5; }
+    .log-detail .reason { color:#a8b8cc; font-weight:500; }
     .tag {
       display:inline-flex; align-items:center; padding:.15rem .5rem; border-radius:6px;
       font-size:.72rem; font-weight:800; letter-spacing:.06em; flex:0 0 auto;
@@ -58,9 +102,11 @@
     .tag.fill { color:#042a18; background:var(--green); }
     .tag.loss { color:#fff; background:var(--red); }
     .tag.fail { color:#1a1000; background:var(--orange); }
-    .log-body { flex:1 1 12rem; min-width:0; color:var(--text); word-break:break-word; line-height:1.35; }
-    .log-body .slug { font-weight:650; }
-    .log-body .reason { color:#c5d2e0; }
+    .tag.info { color:#dceaf8; background:rgba(94,179,255,.22); border:1px solid rgba(94,179,255,.35); }
+    .log-pnl { font-weight:800; font-variant-numeric:tabular-nums; flex:0 0 auto; margin-left:.15rem; }
+    .log-pnl.pos { color:var(--green); }
+    .log-pnl.neg { color:var(--red); }
+    .log-pnl.flat { color:var(--muted); }
     .empty {
       padding:1.1rem .85rem; font-size:.9rem; color:#c8d4e4; text-align:center;
       border:1px dashed rgba(94,179,255,.35); border-radius:12px; background:rgba(0,0,0,.25);
@@ -71,7 +117,7 @@
     }
     details.fold summary {
       cursor:pointer; padding:.65rem .9rem; font-weight:650; font-size:.85rem;
-      color:var(--orange); list-style:none;
+      color:var(--blue); list-style:none;
     }
     details.fold summary::-webkit-details-marker { display:none; }
     details.fold[open] summary { border-bottom:1px solid var(--border); }
@@ -89,39 +135,50 @@
   <div class="wrap">
     <header>
       <div>
-        <h1>Log · Son U</h1>
-        <div class="sub">Live 終極5m 紀錄 · 預設睇全部（含 skip）</div>
+        <h1 id="page-title">Log · Mid-band Range80</h1>
+        <div class="sub">先有波幅，先買中間價 · 今次 session 紙上盤</div>
       </div>
       <a href="/"><button type="button" class="desk-btn">← Desk</button></a>
     </header>
 
-    <section class="hero" id="live-hero" aria-label="Live Son U">
-      <h2 class="hero-title">終極5m · Live</h2>
-      <div class="hero-status" id="live-status-line">載入中…</div>
+    <section class="hero" id="midband-range80" aria-label="Mid-band Range80">
+      <h2 class="hero-title">先有波幅，先買中間價 · Mid-band Range80</h2>
+      <div class="hero-status" id="midband-hero-status">載入中…</div>
       <div class="toolbar">
+        <p class="seg midband-log-filters" role="tablist" aria-label="Mid-band log filter">
+          <button type="button" class="active" data-midband-filter="all">全部</button>
+          <button type="button" data-midband-filter="fill">入場</button>
+          <button type="button" data-midband-filter="skip">SKIP</button>
+          <button type="button" data-midband-filter="win">WIN</button>
+          <button type="button" data-midband-filter="loss">LOSS</button>
+        </p>
+        <span class="stats-line" id="midband-log-meta">PAPER · 真倉 OFF · 本金待入金 · $0.00 · 0 單</span>
+      </div>
+      <div class="log-list" id="midband-paper-log-body"></div>
+    </section>
+
+    <details class="fold" id="live-hero">
+      <summary class="hero-title" id="live-hero-title">V2 21+ Rg80 · Live</summary>
+      <div class="hero-status" id="live-status-line" style="padding:0 .9rem">載入中…</div>
+      <div class="fold-toolbar">
         <div class="seg" role="tablist">
           <button type="button" class="active" data-live-mode="all" id="live-mode-all">全部</button>
           <button type="button" data-live-mode="trades" id="live-mode-trades">成交</button>
         </div>
-        <span class="stats-line" id="live-stats-line">成交 — · skip —</span>
+        <span class="stats-line" id="live-stats-line">事件 — · skip —</span>
         <button type="button" class="reload" id="live-reload">重新載入</button>
       </div>
-      <div class="log-list" id="sonu-live-log-body"></div>
-    </section>
+      <div class="log-list" id="v2-live-log-body" style="padding:0 .75rem .75rem"></div>
+    </details>
 
-    <details class="fold" id="sonu-paper-fold">
-      <summary>Paper · Son U（預設收起）</summary>
+    <details class="fold" id="paper-fold">
+      <summary id="paper-fold-title">Paper · V2 21+ Rg80</summary>
       <div class="fold-toolbar">
         <button type="button" class="active" data-paper-mode="all">全部</button>
         <button type="button" data-paper-mode="trades">成交</button>
-        <span class="fold-meta" id="sonu-paper-meta">—</span>
+        <span class="fold-meta" id="paper-meta">—</span>
       </div>
-      <div class="log-list" id="sonu-paper-log-body" style="padding:0 .75rem .75rem"></div>
-    </details>
-
-    <details class="fold" id="fleet-log-fold">
-      <summary id="fleet-fold-summary">其他機械人 · 預設收起</summary>
-      <div class="log-list" id="fleet-log-body" style="padding:.5rem .75rem .75rem"></div>
+      <div class="log-list" id="v2-paper-log-body" style="padding:0 .75rem .75rem"></div>
     </details>
 
     <footer class="page-foot" id="page-foot">—</footer>
@@ -129,9 +186,25 @@
 
   <script>
     /* CORE LOG HELPERS — Do NOT delete parseLine / statusTag / renderRows when patching Son U lock. */
-    const DEFAULT_LIVE_BOT = 'son-btc-5m-ultimate-live';
-    const LIVE_TAIL_N = 40;
-    const SONU_FLEET_TOKENS = ['V1', '5M', 'DUAL', 'FUNDING', 'MEME', 'SPORTS', 'GROK', 'NEWNEW'];
+    const V2_LIVE_BOT = 'dual-leg-live-v2';
+    const V2_LABEL_DEFAULT = 'V2 21+ Rg80';
+    const TAIL_N = 40;
+    let v2StrategyLabel = V2_LABEL_DEFAULT;
+    let midbandMode = 'all';
+    let midbandPayload = null;
+
+    function v2Label() {
+      return v2StrategyLabel || V2_LABEL_DEFAULT;
+    }
+
+    function paintPageTitles() {
+      const label = v2Label();
+      const paperSum = document.getElementById('paper-fold-title');
+      if (paperSum) paperSum.textContent = `Paper · ${label}`;
+      const h1 = document.getElementById('page-title');
+      if (h1) h1.textContent = 'Log · Mid-band Range80';
+      document.title = 'Log · Mid-band Range80';
+    }
 
     function parseLine(raw) {
       if (raw == null) return null;
@@ -171,6 +244,8 @@
     function isSkipRow(p) {
       p = parseLine(p);
       if (!p) return true;
+      const ev = String(p.event || '');
+      if (ev.startsWith('skip_') || ev === 'entry_failed' || ev === 'hedge_failed') return true;
       const res = String(p.trade_result || p.status || '').toUpperCase();
       if (res === 'SKIPPED' || res === 'SKIP') return true;
       if (p.entered === false) return true;
@@ -182,19 +257,115 @@
     function isFillRow(p) {
       p = parseLine(p);
       if (!p || isSkipRow(p)) return false;
+      const ev = String(p.event || '');
+      if (ev === 'trade_settled') return true;
+      if (ev === 'entry' || ev === 'hedge') return true;
       const res = String(p.trade_result || p.result || '').toUpperCase();
       if (['WIN', 'LOSS', 'FAILED', 'FAIL', 'FILLED'].includes(res)) return true;
       return !!p.entered;
     }
 
+    function midbandBucket(row) {
+      const r = parseLine(row) || {};
+      const res = String(r.trade_result || '').toUpperCase();
+      if (isSkipRow(r)) return 'skip';
+      const pnl = r.pnl != null ? Number(r.pnl) : null;
+      if (res === 'WIN' || (pnl != null && pnl > 0.001)) return 'win';
+      if (res === 'LOSS' || (pnl != null && pnl < -0.001)) return 'loss';
+      if (r.entered || res === 'FILLED' || (r.stake != null && Number(r.stake) > 0)) return 'fill';
+      return 'skip';
+    }
+
+    function midbandMatchesFilter(row, mode) {
+      const b = midbandBucket(row);
+      if (!mode || mode === 'all') return true;
+      if (mode === 'skip') return b === 'skip';
+      if (mode === 'win') return b === 'win';
+      if (mode === 'loss') return b === 'loss';
+      if (mode === 'fill') return b === 'fill' || b === 'win' || b === 'loss';
+      return true;
+    }
+
+    function rowModeLabel(row) {
+      const r = parseLine(row) || {};
+      if (r.paper === true || String(r.dry_run) === 'true') return 'PAPER';
+      if (r.paper === false || String(r.mode || '').toUpperCase() === 'LIVE') return 'LIVE';
+      return 'PAPER';
+    }
+
     function statusTag(row) {
       const r = parseLine(row) || {};
+      const ev = String(r.event || '');
+      if (ev === 'live_daemon_start' || ev === 'live_daemon_stop') {
+        return { label: 'INFO', className: 'tag info' };
+      }
+      if (ev === 'loop_error') return { label: 'FAIL', className: 'tag fail' };
+      if (ev.startsWith('skip_') || ev === 'entry_failed' || ev === 'hedge_failed') {
+        return { label: 'SKIP', className: 'tag skip' };
+      }
+      if (ev === 'trade_settled') {
+        const tr = String(r.trade_result || '').toUpperCase();
+        if (tr === 'LOSS') return { label: 'LOSS', className: 'tag loss' };
+        if (tr === 'WIN') return { label: 'WIN', className: 'tag fill' };
+        return { label: 'SET', className: 'tag fill' };
+      }
+      if (ev === 'entry' || ev === 'hedge') {
+        return { label: ev === 'hedge' ? 'HEDGE' : 'ENTRY', className: 'tag fill' };
+      }
       if (isSkipRow(r)) return { label: 'SKIP', className: 'tag skip' };
       const res = String(r.trade_result || '').toUpperCase();
       if (res === 'LOSS') return { label: 'LOSS', className: 'tag loss' };
       if (res === 'WIN' || isFillRow(r)) return { label: 'FILL', className: 'tag fill' };
       if (res === 'FAILED' || res === 'FAIL') return { label: 'FAIL', className: 'tag fail' };
       return { label: 'FILL', className: 'tag fill' };
+    }
+
+    function shortSlug(s) {
+      const t = String(s || '').trim();
+      if (!t || t === '—') return t || '—';
+      const parts = t.split('-');
+      const last = parts[parts.length - 1];
+      if (/^\d+$/.test(last) && last.length >= 8) return '⋯' + last.slice(-10);
+      return t.length > 22 ? t.slice(0, 20) + '…' : t;
+    }
+
+    function pnlHtml(row) {
+      const r = parseLine(row) || {};
+      let v = r.log_pnl_usd;
+      if (v == null && r.pnl != null) {
+        const n = Number(r.pnl);
+        if (!Number.isNaN(n)) v = n;
+      }
+      if (v == null || !Number.isFinite(v)) return '';
+      const cls = v > 1e-9 ? 'pos' : v < -1e-9 ? 'neg' : 'flat';
+      const sign = v > 0 ? '+' : '';
+      return `<span class="log-pnl ${cls}">${sign}$${Math.abs(v).toFixed(2)}</span>`;
+    }
+
+    function ledgerModeForRow(row, containerId) {
+      const id = String(containerId || '');
+      if (id.includes('paper')) return 'PAPER';
+      return 'LIVE';
+    }
+
+    function compactDetail(row) {
+      const r = parseLine(row) || {};
+      const ev = String(r.event || '');
+      const slug = shortSlug(r.slug || ev || '—');
+      let tail = '';
+      if (ev === 'skip_rg80') {
+        const rng = r.range_usd != null ? `range $${Number(r.range_usd).toFixed(0)}` : 'Rg80';
+        tail = `${rng} · min $${r.rg80_min_usd != null ? r.rg80_min_usd : 80}`;
+      } else if (ev === 'entry' || ev === 'hedge') {
+        tail = r.reason ? String(r.reason).slice(0, 120) : ev.toUpperCase();
+      } else if (r.reason) {
+        tail = String(r.reason);
+      } else if (ev) {
+        tail = ev;
+      }
+      if (tail === slug) tail = '';
+      const text = [slug, tail].filter(Boolean).join(' · ');
+      return text.length > 160 ? text.slice(0, 159) + '…' : text;
     }
 
     function renderRows(container, rows, emptyMsg) {
@@ -205,19 +376,22 @@
         el.innerHTML = emptyMsg ? `<div class="empty">${emptyMsg}</div>` : '';
         return;
       }
+      const modeDefault = ledgerModeForRow(null, el.id);
       el.innerHTML = list.map((row) => {
         const tag = statusTag(row);
         const ts = (row.timestamp_hkt || '').replace(' HKT', '').slice(11, 19) || (row.timestamp_hkt || '').slice(0, 19);
-        const slug = row.slug || '—';
-        let reason = row.reason && String(row.reason) !== String(slug) ? String(row.reason) : '';
-        if (reason.length > 160) reason = reason.slice(0, 157) + '…';
-        const fillClass = tag.label === 'FILL' || tag.label === 'LOSS' ? ' fill-card' : '';
-        const reasonHtml = reason ? ` · <span class="reason">${reason}</span>` : '';
+        const mode = modeDefault;
+        const name = v2Label();
+        const detail = compactDetail(row);
+        const pnl = pnlHtml(row);
+        const fillClass = ['FILL', 'WIN', 'LOSS', 'SET', 'ENTRY', 'HEDGE'].includes(tag.label) ? ' fill-card' : '';
         return `<article class="log-card${fillClass}">
-          <div class="log-line">
+          <div class="log-line" title="${name} · ${detail}">
             <span class="log-ts">${ts || '—'}</span>
             <span class="${tag.className}">${tag.label}</span>
-            <span class="log-body"><span class="slug">${slug}</span>${reasonHtml}</span>
+            <span class="log-mode">${mode}</span>
+            <span class="log-detail"><span class="slug">${name}</span>${detail ? ` · <span class="reason">${detail}</span>` : ''}</span>
+            ${pnl || ''}
           </div>
         </article>`;
       }).join('');
@@ -229,15 +403,17 @@
       return parsed.filter(isFillRow);
     }
 
-    /** Droplet tail: stats.trades; repo may send stats.fills. */
     function normalizeTailStats(raw) {
-      if (!raw || typeof raw !== 'object') return { fills: 0, skips: 0, total: 0 };
-      const fills = raw.trades ?? raw.fills ?? 0;
-      return {
-        fills: Number(fills) || 0,
-        skips: Number(raw.skips) || 0,
-        total: Number(raw.total) || 0,
-      };
+      if (!raw || typeof raw !== 'object') {
+        return { fills: 0, skips: 0, total: 0, settles: 0, posts: 0, info: 0 };
+      }
+      const settles = Number(raw.settles ?? raw.trades ?? 0) || 0;
+      const posts = Number(raw.posts ?? 0) || 0;
+      const skips = Number(raw.skips) || 0;
+      const info = Number(raw.info ?? 0) || 0;
+      const total = Number(raw.total) || 0;
+      const fills = Number(raw.fills) || posts + settles;
+      return { fills, skips, total, settles, posts, info };
     }
 
     function tailSource(payload) {
@@ -246,30 +422,24 @@
     }
 
     /** Droplet: GET /api/family-bots → { ok, n, bots:[{ id, display_name, status, … }] } */
-    function findSonULiveBot(payload) {
+    function findV2LiveBot(payload) {
       if (!payload) return null;
       const bots = payload.bots;
       if (Array.isArray(bots)) {
-        return bots.find((b) => String(b?.id || '').trim() === DEFAULT_LIVE_BOT) || null;
+        return bots.find((b) => String(b?.id || '').trim() === V2_LIVE_BOT) || null;
       }
-      return payload.son_u_live || null;
+      return null;
     }
 
     function statusLineFromBot(bot) {
-      if (!bot) return '紙上預備 · 跑緊';
+      if (!bot) return '真倉 OFF';
       if (bot.status_line) return bot.status_line;
-      const st = String(bot.status || '').trim();
-      if (st && (/[·・]/.test(st) || /[\u4e00-\u9fff]/.test(st))) return st;
-      const mode = String(bot.mode || bot.ledger || '').toLowerCase();
-      const seat = mode === 'live' || bot.live ? '真倉 ON' : '紙上預備';
-      const paused = bot.paused === true || bot.running === false
-        || /pause|stopped|idle/i.test(st);
-      return `${seat} · ${paused ? '暫停' : '跑緊'}`;
+      return String(bot.status || '').trim() || '—';
     }
 
     function emptyTradesMsg(stats) {
       const skips = stats?.skips ?? 0;
-      return `暫無成交（${skips} skip）· 切去全部睇`;
+      return `暫無成交事件（${skips} skip）· 切去全部睇`;
     }
 
     function countStats(rows) {
@@ -277,16 +447,6 @@
       let fills = 0; let skips = 0;
       parsed.forEach((p) => { if (isFillRow(p)) fills += 1; else if (isSkipRow(p)) skips += 1; });
       return { fills, skips, total: parsed.length };
-    }
-
-    function isSonuTradeRow(r) {
-      const row = parseLine(r);
-      if (!row) return false;
-      if (['sonu', 'crypto15m', 'son_u'].includes(row.desk)) return true;
-      const bot = String(row.bot || row.asset || '').trim().toUpperCase();
-      if (SONU_FLEET_TOKENS.some((tok) => bot.includes(tok))) return false;
-      if (bot === 'BTC' || bot === 'ETH') return true;
-      return false;
     }
 
     async function fetchJson(url) {
@@ -302,89 +462,121 @@
     let liveAllRows = [];
     let liveStats = { fills: 0, skips: 0, total: 0 };
     let liveSource = '';
+    let liveSession = '';
     let paperRows = [];
-    let fleetRows = [];
+    let paperStats = { fills: 0, skips: 0, total: 0 };
+    let paperSession = '';
     let familyBots = null;
 
-    function paintLiveStatus() {
+    function paintLiveHero() {
+      const bot = findV2LiveBot(familyBots);
       const lineEl = document.getElementById('live-status-line');
-      if (!lineEl) return;
-      const bot = findSonULiveBot(familyBots);
-      const text = statusLineFromBot(bot);
-      lineEl.textContent = text;
-      lineEl.classList.toggle('paused', /暫停/.test(text));
+      const hero = document.getElementById('live-hero');
+      const title = document.getElementById('live-hero-title');
+      if (lineEl) {
+        const text = statusLineFromBot(bot);
+        lineEl.textContent = text;
+        lineEl.classList.toggle('paused', /暫停/.test(text));
+      }
+      const on = bot && String(bot.status || bot.status_line || '').includes('LIVE ON');
+      if (hero) hero.classList.toggle('inactive', !on);
+      if (title) {
+        const label = v2Label();
+        title.textContent = on ? `LIVE ON · ${label}` : `${label} · Live`;
+      }
+      paintPageTitles();
     }
 
     function paintLiveUnit(tailPayload) {
       if (tailPayload && tailPayload.stats) liveStats = normalizeTailStats(tailPayload.stats);
       const statsEl = document.getElementById('live-stats-line');
       if (statsEl) {
-        statsEl.innerHTML = `成交 <strong>${liveStats.fills ?? 0}</strong> · skip ${liveStats.skips ?? 0}`;
+        const tailNote = (liveStats.total != null && liveStats.total >= TAIL_N)
+          ? ` <span style="color:var(--muted);font-weight:600">（本頁最近 ${TAIL_N} 行）</span>`
+          : '';
+        const olSet = liveStats.one_leg_settled_n ?? 0;
+        const olOpen = liveStats.one_leg_open_n ?? 0;
+        const olPnl = liveStats.one_leg_settled_pnl_usd;
+        const olPnlTxt = (olPnl != null && olPnl !== '')
+          ? ` · 單腿結算 <strong>${olSet}</strong>（$${Number(olPnl).toFixed(2)}）`
+          : (olSet ? ` · 單腿結算 <strong>${olSet}</strong>` : '');
+        const olOpenTxt = olOpen ? ` · 持倉單腿 <strong>${olOpen}</strong>` : '';
+        const hf = liveStats.hedge_failed_events;
+        const hfTxt = (hf != null && hf > 0) ? ` · 對沖失敗 ${hf}` : '';
+        statsEl.innerHTML = `已結算 <strong>${liveStats.settles ?? 0}</strong> · 下單 <strong>${liveStats.posts ?? 0}</strong> · 略過 ${liveStats.skips ?? 0}${olPnlTxt}${olOpenTxt}${hfTxt}${tailNote}`;
       }
       const src = tailSource(tailPayload);
       if (src) liveSource = src;
       const foot = document.getElementById('page-foot');
-      if (foot && liveSource) foot.textContent = `source: ${liveSource}`;
+      if (foot && liveSource) {
+        const sid = (tailPayload && tailPayload.session_id) ? String(tailPayload.session_id) : '';
+        foot.textContent = sid
+          ? `source: ${liveSource} · live session ${sid}`
+          : `source: ${liveSource}`;
+      }
 
       const view = rowsForMode(liveAllRows, liveMode);
       if (liveMode === 'trades' && !view.length) {
-        renderRows('sonu-live-log-body', [], emptyTradesMsg(liveStats));
+        renderRows('v2-live-log-body', [], emptyTradesMsg(liveStats));
       } else {
-        renderRows('sonu-live-log-body', view, liveMode === 'all' ? '尚無紀錄' : emptyTradesMsg(liveStats));
+        renderRows('v2-live-log-body', view, liveMode === 'all' ? '尚無紀錄' : emptyTradesMsg(liveStats));
       }
     }
 
     async function refreshLiveUnit() {
       const [bots, payload] = await Promise.all([
         fetchJson('/api/family-bots'),
-        fetchJson(
-          `/api/bot-log-tail?id=${encodeURIComponent(DEFAULT_LIVE_BOT)}&mode=all&n=${LIVE_TAIL_N}`,
-        ),
+        fetchJson(`/api/dual-leg-log-tail?ledger=live&mode=all&n=${TAIL_N}`),
       ]);
       if (bots) {
         familyBots = bots;
-        paintLiveStatus();
+        if (bots.strategy_label) v2StrategyLabel = String(bots.strategy_label);
+        const liveBot = findV2LiveBot(bots);
+        if (liveBot && liveBot.strategy_label) v2StrategyLabel = String(liveBot.strategy_label);
+        paintLiveHero();
       }
+      if (payload && payload.strategy_label) v2StrategyLabel = String(payload.strategy_label);
       if (payload && Array.isArray(payload.lines)) {
         liveAllRows = payload.lines;
+        liveSession = payload.session_id || '';
         liveStats = payload.stats ? normalizeTailStats(payload.stats) : countStats(liveAllRows);
         paintLiveUnit(payload);
         return;
       }
-      const fallback = await fetchJson('/api/crypto15m/trades?ledger=live&sonu_only=1&limit=200');
-      const rows = (Array.isArray(fallback) ? fallback : []).filter(isSonuTradeRow);
-      liveStats = countStats(rows);
-      liveAllRows = rows;
-      paintLiveUnit({ stats: { trades: liveStats.fills, skips: liveStats.skips, total: liveStats.total }, source: 'crypto_15m_trade_log_live.json' });
+      liveAllRows = [];
+      liveStats = { fills: 0, skips: 0, total: 0, settles: 0, posts: 0, info: 0 };
+      paintLiveUnit({});
     }
 
     function paintPaper() {
       const view = rowsForMode(paperRows, paperMode);
-      const stats = countStats(paperRows);
-      const meta = document.getElementById('sonu-paper-meta');
-      if (meta) meta.textContent = `成交 ${stats.fills} · skip ${stats.skips}`;
+      const stats = (paperStats && paperStats.total != null)
+        ? { fills: paperStats.fills ?? 0, skips: paperStats.skips ?? 0, total: paperStats.total ?? 0 }
+        : countStats(paperRows);
+      const meta = document.getElementById('paper-meta');
+      if (meta) {
+        const sid = paperSession ? ` · ${paperSession}` : '';
+        meta.textContent = `成交 ${stats.fills} · skip ${stats.skips}${sid}`;
+      }
       if (paperMode === 'trades' && !view.length) {
-        renderRows('sonu-paper-log-body', [], emptyTradesMsg(stats));
+        renderRows('v2-paper-log-body', [], emptyTradesMsg(stats));
       } else {
-        renderRows('sonu-paper-log-body', view, paperMode === 'all' ? '尚無紀錄' : emptyTradesMsg(stats));
+        renderRows('v2-paper-log-body', view, paperMode === 'all' ? '尚無紀錄' : emptyTradesMsg(stats));
       }
     }
 
-    function paintFleet() {
-      renderRows('fleet-log-body', fleetRows.slice(0, 120), '其他 bot 尚無紀錄');
-      const sum = document.getElementById('fleet-fold-summary');
-      const n = familyBots?.n ?? familyBots?.bots?.length ?? familyBots?.fleet_count ?? fleetRows.length;
-      if (sum) sum.textContent = `其他機械人 (${n}) · 預設收起`;
-    }
-
-    async function refreshAll() {
-      await refreshLiveUnit();
-      const paperRaw = await fetchJson('/api/crypto15m/trades?ledger=paper&sonu_only=1&limit=300');
-      paperRows = (Array.isArray(paperRaw) ? paperRaw : []).filter(isSonuTradeRow);
+    async function refreshPaper() {
+      const payload = await fetchJson(`/api/dual-leg-log-tail?ledger=paper&mode=all&n=${TAIL_N}`);
+      if (payload && Array.isArray(payload.lines)) {
+        paperRows = payload.lines;
+        paperSession = payload.session_id || '';
+        paperStats = payload.stats ? normalizeTailStats(payload.stats) : countStats(payload.lines);
+      } else {
+        paperRows = [];
+        paperSession = '';
+        paperStats = { fills: 0, skips: 0, total: 0 };
+      }
       paintPaper();
-      const fleetRaw = await fetchJson('/api/crypto15m/trades?ledger=paper&sonu_only=0&limit=150');
-      fleetRows = (Array.isArray(fleetRaw) ? fleetRaw : []).filter((r) => !isSonuTradeRow(r));
-      paintFleet();
     }
 
     document.querySelectorAll('[data-live-mode]').forEach((btn) => {
@@ -402,6 +594,70 @@
       });
     });
     document.getElementById('live-reload')?.addEventListener('click', () => refreshLiveUnit());
+
+    function paintMidbandLog() {
+      const meta = document.getElementById('midband-log-meta');
+      const body = document.getElementById('midband-paper-log-body');
+      const payload = midbandPayload;
+      if (!body) return;
+      if (!payload) {
+        body.innerHTML = '<div class="empty">紙上卡未連到 · 真倉 OFF</div>';
+        return;
+      }
+      const pnl = Number(payload.pnl || 0);
+      const execTxt = payload.live_on_air ? '真倉 ON' : '真倉 OFF';
+      const viewTxt = (payload.desk_view || payload.desk_mode || 'paper') === 'live' ? 'LIVE' : 'PAPER';
+      const rowsAll = Array.isArray(payload.lines) ? payload.lines : [];
+      const rows = rowsAll.filter((r) => midbandMatchesFilter(r, midbandMode));
+      const counts = rowsAll.reduce((acc, r) => {
+        const b = midbandBucket(r);
+        acc[b] = (acc[b] || 0) + 1;
+        acc.all = (acc.all || 0) + 1;
+        return acc;
+      }, {});
+      const metaTxt = `${viewTxt} · ${execTxt} · ${payload.capital_label || '待入金'} · $${pnl.toFixed(2)} · ${payload.trade_count || 0} 單 · fill ${counts.fill || 0} · skip ${counts.skip || 0} · win ${counts.win || 0} · loss ${counts.loss || 0}`;
+      if (meta) meta.textContent = metaTxt + (payload.session_id ? ` · ${payload.session_id}` : '');
+      const heroStatus = document.getElementById('midband-hero-status');
+      if (heroStatus) heroStatus.textContent = payload.status_label || '跑緊 · Paper / prep · 真倉 OFF';
+      if (!rows.length) {
+        const emptyMsg = rowsAll.length ? '呢個篩選冇無紀錄 · 試其他標籤' : '今次 session 未有單 · 已實現 $0';
+        body.innerHTML = `<div class="empty">${emptyMsg}</div>`;
+        return;
+      }
+      body.innerHTML = rows.map((row) => {
+        const tag = statusTag(row);
+        const fillClass = tag.label === 'FILL' || tag.label === 'WIN' || tag.label === 'LOSS' ? ' fill-card' : '';
+        const ts = String(row.logged_at_hkt || row.opened_at_hkt || '').replace(' HKT', '').slice(11, 19);
+        const reason = String(row.strategy_reason || row.skip_category || row.reason || '');
+        const pnlCell = row.pnl == null ? '' : `<span class="log-pnl ${Number(row.pnl) >= 0 ? 'pos' : 'neg'}">${Number(row.pnl) >= 0 ? '+' : ''}$${Math.abs(Number(row.pnl)).toFixed(2)}</span>`;
+        return `<article class="log-card${fillClass}"><div class="log-line">
+          <span class="log-ts">${ts || '—'}</span>
+          <span class="${tag.className}">${tag.label}</span>
+          <span class="log-mode">${rowModeLabel(row)}</span>
+          <span class="log-detail"><span class="slug">${shortSlug(row.slug || '')}</span> · <span class="reason">${reason}</span></span>
+          ${pnlCell}
+        </div></article>`;
+      }).join('');
+    }
+
+    async function refreshMidband() {
+      midbandPayload = await fetchJson('/api/midband-range80');
+      paintMidbandLog();
+    }
+
+    document.querySelectorAll('[data-midband-filter]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        midbandMode = btn.dataset.midbandFilter || 'all';
+        document.querySelectorAll('[data-midband-filter]').forEach((b) => b.classList.toggle('active', b === btn));
+        paintMidbandLog();
+      });
+    });
+
+    async function refreshAll() {
+      await refreshLiveUnit();
+      await refreshPaper();
+      await refreshMidband();
+    }
 
     refreshAll();
     setInterval(refreshAll, 30000);
