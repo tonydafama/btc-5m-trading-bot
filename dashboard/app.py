@@ -1146,7 +1146,7 @@ def api_midband_range80():
     if request.method == "GET":
         return jsonify(status_payload(ROOT))
     data = request.get_json(silent=True) or {}
-    out = apply_action(ROOT, str(data.get("action") or ""))
+    out = apply_action(ROOT, str(data.get("action") or ""), bet_size=data.get("bet_size"))
     return jsonify(out), (200 if out.get("ok") else 400)
 
 

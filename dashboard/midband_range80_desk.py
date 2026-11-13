@@ -8,15 +8,23 @@ DRY_RUN/REAL_MONEY, and never start/stop real money — finance chat owns that.
 from __future__ import annotations
 
 import json
+import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from desk_bots import fmt_num, parse_bet_size
+
 STRATEGY_ID = "midband-range80"
 DISPLAY = "先有波幅，先買中間價"
-UNIT_USD = 3.0
+DEFAULT_UNIT_USD = 3.0
 DESK_VIEW_NAME = "midband-range80_desk_view.json"
+DESK_SETTINGS_NAME = "midband-range80_desk_settings.json"
+LIVE_ENV = "midband_range80_live.env"
+PAPER_ENV = "midband_range80_paper.env"
+MIDBAND_UNITS = ("btc-midband-range80-live", "btc-midband-range80-paper")
 HKT = timezone(timedelta(hours=8))
+RULE_SHORT = "單邊 · 無對沖 · 持有到結算"
 
 
 def _sons(root: Path) -> Path:
@@ -64,6 +72,98 @@ def _desk_view(root: Path, *, exec_live: bool) -> str:
         if v in ("live", "paper"):
             return v
     return "live" if exec_live else "paper"
+
+
+def _config_dir(root: Path) -> Path:
+    return root / "config"
+
+
+def _read_env_file(path: Path) -> dict[str, str]:
+    found: dict[str, str] = {}
+    if not path.is_file():
+        return found
+    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        raw = line.strip()
+        if not raw or raw.startswith("#") or "=" not in raw:
+            continue
+        key, value = raw.split("=", 1)
+        found[key.strip()] = value.strip().strip('"').strip("'")
+    return found
+
+
+def _write_env_key(path: Path, key: str, value: str) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
+    prefix = f"{key}="
+    out: list[str] = []
+    found = False
+    for line in lines:
+        if line.strip().startswith(prefix):
+            out.append(f"{key}={value}")
+            found = True
+        else:
+            out.append(line)
+    if not found:
+        out.append(f"{key}={value}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(out) + "\n", encoding="utf-8")
+
+
+def _desk_settings_path(root: Path) -> Path:
+    return _sons(root) / DESK_SETTINGS_NAME
+
+
+def current_unit_usd(root: Path) -> float:
+    saved = _read_json(_desk_settings_path(root), {})
+    if isinstance(saved, dict) and saved.get("bet_size") is not None:
+        try:
+            return float(saved["bet_size"])
+        except (TypeError, ValueError):
+            pass
+    for name in (LIVE_ENV, PAPER_ENV):
+        env = _read_env_file(_config_dir(root) / name)
+        raw = env.get("MIDBAND_UNIT_USD")
+        if raw is not None and str(raw).strip():
+            try:
+                return float(raw)
+            except ValueError:
+                continue
+    return DEFAULT_UNIT_USD
+
+
+def _persist_unit_usd(root: Path, bet: float) -> None:
+    bet_txt = fmt_num(bet)
+    for name in (LIVE_ENV, PAPER_ENV):
+        _write_env_key(_config_dir(root) / name, "MIDBAND_UNIT_USD", bet_txt)
+    path = _desk_settings_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {"bet_size": bet, "unit_usd": bet, "updated_at_hkt": datetime.now(HKT).strftime("%Y-%m-%d %H:%M:%S HKT")},
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _restart_active_midband_units(root: Path) -> list[str]:
+    restarted: list[str] = []
+    for unit in MIDBAND_UNITS:
+        try:
+            probe = subprocess.run(
+                ["systemctl", "is-active", unit],
+                capture_output=True,
+                text=True,
+                timeout=8,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+        if probe.stdout.strip() != "active":
+            continue
+        subprocess.run(["systemctl", "restart", unit], capture_output=True, text=True, timeout=45, check=False)
+        restarted.append(unit)
+    return restarted
 
 
 def _set_desk_view(root: Path, view: str) -> None:
@@ -173,6 +273,15 @@ def status_payload(root: Path) -> dict[str, Any]:
         go_live_tc = "未開真倉。要開嘅話喺 finance chat 講 Go Live。"
 
     sid = str(vsession.get("session_id") or status.get("session_id") or "")
+    unit = current_unit_usd(root)
+    stake_label = f"${fmt_num(unit)}/注"
+    rules_tc = (
+        "BTC 5 分鐘 Up/Down · 每窗一注 · 單邊 · 無對沖 · 持有到官方結算 · "
+        "只睇剩餘 40–75 秒 · 上一根 Binance BTCUSDT 5 分鐘高−低 ≥ $80 · "
+        "買第一邊可成交 ask ∈ [0.72, 0.88] · 任一邊 ask > 0.94 跳過該窗 · "
+        "兩邊仍在 0.45–0.55 唔買 · "
+        f"注碼 ${fmt_num(unit)}"
+    )
 
     return {
         "ok": True,
@@ -194,8 +303,12 @@ def status_payload(root: Path) -> dict[str, Any]:
         "funded": bool(exec_live and capital_n is not None),
         "capital_usd": capital_n,
         "capital_label": cap_label,
-        "unit_usd": UNIT_USD,
-        "stake_label": "$3/注",
+        "bet_size": unit,
+        "unit_usd": unit,
+        "stake_usd": unit,
+        "stake_label": stake_label,
+        "rule_line": f"mid-band：{fmt_num(unit)} = ${fmt_num(unit)}",
+        "rule_short": RULE_SHORT,
         "pnl": st["pnl"],
         "pnl_label": f"${st['pnl']:.2f}",
         "trade_count": st["entered_n"],
@@ -208,20 +321,15 @@ def status_payload(root: Path) -> dict[str, Any]:
         "status_label": status_label,
         "view_label_tc": view_tc,
         "heartbeat_at_hkt": status.get("heartbeat_at_hkt"),
-        "rules_tc": (
-            "BTC 5 分鐘 Up/Down · 每窗一注 · 單邊 · 無對沖 · 持有到官方結算 · "
-            "只睇剩餘 40–75 秒 · 上一根 Binance BTCUSDT 5 分鐘高−低 ≥ $80 · "
-            "買第一邊可成交 ask ∈ [0.72, 0.88] · 任一邊 ask > 0.94 跳過該窗 · "
-            "兩邊仍在 0.45–0.55 唔買 · 注碼 $3"
-        ),
+        "rules_tc": rules_tc,
         "go_live_tc": go_live_tc,
         "lines": list(reversed(rows[-40:])),
         "posted_live_orders": st["posted_live_orders"] or int(status.get("posted_live_orders") or 0),
     }
 
 
-def apply_action(root: Path, action: str) -> dict[str, Any]:
-    """Switch desk_view only — never changes the running unit."""
+def apply_action(root: Path, action: str, *, bet_size: Any = None) -> dict[str, Any]:
+    """desk_view / bet_size only — never arms live or touches other bots."""
     action = (action or "").strip().lower()
     status = _status(root)
     session = _session(root)
@@ -256,6 +364,27 @@ def apply_action(root: Path, action: str) -> dict[str, Any]:
             }
         )
         return payload
+    if action == "set_bet_size":
+        try:
+            bet = parse_bet_size(bet_size)
+        except ValueError as exc:
+            payload = status_payload(root)
+            payload.update({"ok": False, "action": action, "error": "bad_bet_size", "error_tc": str(exc)})
+            return payload
+        _persist_unit_usd(root, bet)
+        restarted = _restart_active_midband_units(root)
+        payload = status_payload(root)
+        unit_msg = f"每注 ${fmt_num(bet)}"
+        reload_msg = f"已 reload {', '.join(restarted)}" if restarted else "已儲存（midband unit 冇在跑）"
+        payload.update(
+            {
+                "ok": True,
+                "action": action,
+                "message_tc": f"注碼已設 {unit_msg} · {reload_msg} · 唔會改真倉開關。",
+                "restarted_units": restarted,
+            }
+        )
+        return payload
 
     payload = status_payload(root)
     payload.update(
@@ -263,7 +392,7 @@ def apply_action(root: Path, action: str) -> dict[str, Any]:
             "ok": False,
             "action": action,
             "error": "bad_action",
-            "error_tc": "呢張卡只接受 Paper / Live 檢視切換。",
+            "error_tc": "呢張卡接受：Paper / Live 檢視，或 set_bet_size。",
         }
     )
     return payload
