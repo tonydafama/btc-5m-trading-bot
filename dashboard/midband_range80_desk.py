@@ -15,6 +15,11 @@ from typing import Any
 
 from desk_bots import fmt_num, parse_bet_size
 
+try:
+    from midband_range80 import ASK_MAX, ASK_MIN, ASK_SKIP_ABOVE
+except ImportError:  # dashboard-only checkout without strategy module
+    ASK_MIN, ASK_MAX, ASK_SKIP_ABOVE = 0.80, 0.84, 0.94
+
 STRATEGY_ID = "midband-range80"
 DISPLAY = "先有波幅，先買中間價"
 DEFAULT_UNIT_USD = 3.0
@@ -278,7 +283,8 @@ def status_payload(root: Path) -> dict[str, Any]:
     rules_tc = (
         "BTC 5 分鐘 Up/Down · 每窗一注 · 單邊 · 無對沖 · 持有到官方結算 · "
         "只睇剩餘 40–75 秒 · 上一根 Binance BTCUSDT 5 分鐘高−低 ≥ $80 · "
-        "買第一邊可成交 ask ∈ [0.72, 0.88] · 任一邊 ask > 0.94 跳過該窗 · "
+        f"買第一邊可成交 ask ∈ [{ASK_MIN:.2f}, {ASK_MAX:.2f}] · "
+        f"任一邊 ask > {ASK_SKIP_ABOVE:.2f} 跳過該窗 · "
         "兩邊仍在 0.45–0.55 唔買 · "
         f"注碼 ${fmt_num(unit)}"
     )
