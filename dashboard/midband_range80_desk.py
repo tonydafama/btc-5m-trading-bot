@@ -16,12 +16,37 @@ from typing import Any
 from desk_bots import fmt_num, parse_bet_size
 
 try:
-    from midband_range80 import ASK_MAX, ASK_MIN, ASK_SKIP_ABOVE
+    from midband_range80 import ASK_MAX, ASK_MIN, ASK_SKIP_ABOVE, RANGE_MIN_USD, T_REMAINING_MAX, T_REMAINING_MIN
 except ImportError:  # dashboard-only checkout without strategy module
-    ASK_MIN, ASK_MAX, ASK_SKIP_ABOVE = 0.80, 0.84, 0.94
+    ASK_MIN, ASK_MAX, ASK_SKIP_ABOVE = 0.80, 0.85, 0.94
+    T_REMAINING_MIN, T_REMAINING_MAX, RANGE_MIN_USD = 70.0, 75.0, 100.0
+
+
+def _env_float(env: dict[str, str], key: str, default: float) -> float:
+    raw = env.get(key)
+    if raw is None or not str(raw).strip():
+        return default
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+def strategy_params_from_env(root: Path) -> dict[str, float]:
+    """Desk rules follow live.env (Profile A), not stale module defaults."""
+    env = _read_env_file(_config_dir(root) / LIVE_ENV)
+    return {
+        "ask_min": _env_float(env, "MIDBAND_ASK_MIN", ASK_MIN),
+        "ask_max": _env_float(env, "MIDBAND_ASK_MAX", ASK_MAX),
+        "ask_skip": _env_float(env, "MIDBAND_ASK_SKIP_ABOVE", ASK_SKIP_ABOVE),
+        "t_min": _env_float(env, "MIDBAND_T_MIN", T_REMAINING_MIN),
+        "t_max": _env_float(env, "MIDBAND_T_MAX", T_REMAINING_MAX),
+        "range_min": _env_float(env, "MIDBAND_RANGE_MIN_USD", RANGE_MIN_USD),
+    }
 
 STRATEGY_ID = "midband-range80"
 DISPLAY = "先有波幅，先買中間價"
+PROFILE_LABEL = "Profile A"
 DEFAULT_UNIT_USD = 3.0
 DESK_VIEW_NAME = "midband-range80_desk_view.json"
 DESK_SETTINGS_NAME = "midband-range80_desk_settings.json"
@@ -280,11 +305,13 @@ def status_payload(root: Path) -> dict[str, Any]:
     sid = str(vsession.get("session_id") or status.get("session_id") or "")
     unit = current_unit_usd(root)
     stake_label = f"${fmt_num(unit)}/注"
+    params = strategy_params_from_env(root)
     rules_tc = (
-        "BTC 5 分鐘 Up/Down · 每窗一注 · 單邊 · 無對沖 · 持有到官方結算 · "
-        "只睇剩餘 40–75 秒 · 上一根 Binance BTCUSDT 5 分鐘高−低 ≥ $80 · "
-        f"買第一邊可成交 ask ∈ [{ASK_MIN:.2f}, {ASK_MAX:.2f}] · "
-        f"任一邊 ask > {ASK_SKIP_ABOVE:.2f} 跳過該窗 · "
+        f"{PROFILE_LABEL} · BTC 5 分鐘 Up/Down · 每窗一注 · 單邊 · 無對沖 · 持有到官方結算 · "
+        f"只睇剩餘 {params['t_max']:.0f}–{params['t_min']:.0f} 秒 · "
+        f"上一根 Binance BTCUSDT 5 分鐘高−低 ≥ ${params['range_min']:.0f} · "
+        f"買第一邊可成交 ask ∈ [{params['ask_min']:.2f}, {params['ask_max']:.2f}] · "
+        f"任一邊 ask > {params['ask_skip']:.2f} 跳過該窗 · "
         "兩邊仍在 0.45–0.55 唔買 · "
         f"注碼 ${fmt_num(unit)}"
     )
@@ -293,7 +320,8 @@ def status_payload(root: Path) -> dict[str, Any]:
         "ok": True,
         "id": STRATEGY_ID,
         "display_name": DISPLAY,
-        "display_name_en": "Mid-band Range80",
+        "display_name_en": f"Mid-band Range80 · {PROFILE_LABEL}",
+        "profile_label": PROFILE_LABEL,
         "exec_mode": "live" if exec_live else "paper",
         "desk_view": view,
         "desk_mode": view,
