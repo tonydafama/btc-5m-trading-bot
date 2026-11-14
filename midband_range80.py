@@ -31,11 +31,6 @@ STRATEGY_NAME = "先有波幅，先買中間價"
 STRATEGY_NAME_EN = "Mid-band Range80"
 SESSION_PREFIX = "paper-midband-range80"
 
-T_REMAINING_MIN = 40.0
-T_REMAINING_MAX = 75.0
-RANGE_MIN_USD = 80.0
-
-
 def _env_float(name: str, default: float) -> float:
     raw = os.getenv(name, "")
     if not raw:
@@ -46,8 +41,11 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 
+T_REMAINING_MIN = _env_float("MIDBAND_T_MIN", 40.0)
+T_REMAINING_MAX = _env_float("MIDBAND_T_MAX", 75.0)
+RANGE_MIN_USD = _env_float("MIDBAND_RANGE_MIN_USD", 80.0)
 ASK_MIN = _env_float("MIDBAND_ASK_MIN", 0.80)
-ASK_MAX = _env_float("MIDBAND_ASK_MAX", 0.84)
+ASK_MAX = _env_float("MIDBAND_ASK_MAX", 0.85)
 ASK_SKIP_ABOVE = _env_float("MIDBAND_ASK_SKIP_ABOVE", 0.94)
 COIN_FLIP_MIN = 0.45
 COIN_FLIP_MAX = 0.55
