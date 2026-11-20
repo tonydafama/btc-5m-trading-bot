@@ -36,6 +36,9 @@ logs/telegram_alert_state.json
 logs/backtest_archive/
 logs/bot2/
 logs/dashboard.log
+logs/hint_fok_prep_ledger.json
+logs/hint_fok_prep_ledger.json.tmp
+logs/hint_fok_prep_ledger.lock
 
 # Keep strategy config (no secrets)
 !logs/strategy_config.json

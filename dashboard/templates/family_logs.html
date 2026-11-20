@@ -44,6 +44,7 @@
       border:1px solid var(--border); background:#0c121a; color:var(--text);
       border-radius:10px; padding:.45rem .75rem; font-size:.8rem; font-weight:650; cursor:pointer;
     }
+    .head-actions { display:flex; gap:.4rem; flex-wrap:wrap; justify-content:flex-end; }
     .hero {
       border:1px solid rgba(62,232,138,.45); border-radius:16px;
       background:linear-gradient(180deg,#141c28 0%,#0e141c 100%);
@@ -138,7 +139,10 @@
         <h1 id="page-title">Log · Mid-band Range80</h1>
         <div class="sub">先有波幅，先買中間價 · 今次 session 紙上盤</div>
       </div>
-      <a href="/"><button type="button" class="desk-btn">← Desk</button></a>
+      <div class="head-actions">
+        <a href="/predict"><button type="button" class="desk-btn">升跌提示</button></a>
+        <a href="/"><button type="button" class="desk-btn">← Desk</button></a>
+      </div>
     </header>
 
     <section class="hero" id="midband-range80" aria-label="Mid-band Range80">
