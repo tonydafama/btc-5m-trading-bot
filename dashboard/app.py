@@ -1504,6 +1504,32 @@ def api_alpha_max_live():
         return jsonify({"ok": False, "error": str(exc)}), 500
 
 
+@app.route("/predict")
+@app.route("/predict/")
+def predict_hint_page():
+    """Glance board. Read-only: it never places an order or arms a bot."""
+    return render_template("predict.html")
+
+
+@app.route("/api/predict-hint")
+def api_predict_hint():
+    try:
+        from hint_fok_prep import public_prep_status
+        from predict_hint import build_hint_payload
+
+        payload = build_hint_payload()
+        payload["prep"] = public_prep_status()
+    except Exception:
+        payload = {
+            "ok": False,
+            "error": "暫時攞唔到 Binance 公開行情。頁面冇估方向。",
+            "prep": {"will_send": False, "page_can_send": False, "dry_run": True, "armed": False},
+        }
+    response = jsonify(payload)
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @app.route("/")
 def index():
     return render_template("v1_only.html")

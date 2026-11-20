@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <title>升跌提示 · Family Desk</title>
+  <style>
+    :root {
+      --bg: #0b0e13;
+      --panel: #12161d;
+      --panel2: #0e1218;
+      --line: #1e2630;
+      --line2: #2a3340;
+      --text: #e7ecf3;
+      --muted: #8b95a5;
+      --dim: #5c6675;
+      --green: #3ecf8e;
+      --green-bg: rgba(62,207,142,.10);
+      --red: #f07178;
+      --red-bg: rgba(240,113,120,.10);
+      --blue: #6eb6ff;
+      --amber: #e0b567;
+      --amber-bg: rgba(224,181,103,.10);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); }
+    a { color: var(--blue); text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 1rem 1rem 2.5rem; }
+    .top {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: .75rem; margin-bottom: .85rem; padding-bottom: .75rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .top h1 { margin: 0; font-size: 1.15rem; font-weight: 650; letter-spacing: .01em; }
+    .sub { margin-top: .25rem; color: var(--muted); font-size: .78rem; line-height: 1.45; max-width: 40rem; }
+    .top-actions { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+    .chip {
+      display: inline-flex; align-items: center; gap: .3rem;
+      border: 1px solid var(--line2); background: var(--panel2);
+      color: var(--muted); border-radius: 999px; padding: .28rem .65rem;
+      font-size: .74rem; white-space: nowrap;
+    }
+    .chip.btn { color: var(--text); background: var(--panel2); }
+    .chip.btn:hover { border-color: var(--blue); color: var(--blue); }
+    .chip.here { color: var(--text); border-color: rgba(110,182,255,.45); }
+    .chip.ok { color: var(--green); border-color: rgba(62,207,142,.35); background: var(--green-bg); }
+    .chip.warn { color: var(--amber); border-color: rgba(224,181,103,.35); background: var(--amber-bg); }
+    .chip.bad { color: var(--red); border-color: rgba(240,113,120,.35); background: var(--red-bg); }
+    .strip {
+      display: flex; flex-wrap: wrap; gap: .45rem .9rem; align-items: center;
+      margin-bottom: .9rem; padding: .6rem .75rem;
+      border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+      font-size: .78rem; color: var(--muted);
+    }
+    .strip b { color: var(--text); font-weight: 650; font-variant-numeric: tabular-nums; }
+    .remain {
+      margin-left: auto; font-family: var(--mono); font-size: 1.15rem; font-weight: 700;
+      color: var(--text); letter-spacing: .04em;
+    }
+    .remain.soon { color: var(--amber); }
+    .verdict {
+      display: grid; grid-template-columns: minmax(9rem, 14rem) 1fr; gap: .8rem;
+      border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
+      padding: .9rem 1rem; margin-bottom: .9rem;
+    }
+    .verdict.up { border-color: rgba(62,207,142,.4); }
+    .verdict.down { border-color: rgba(240,113,120,.4); }
+    .big {
+      font-size: 4.2rem; line-height: .95; font-weight: 750; letter-spacing: -.03em;
+    }
+    .verdict.up .big { color: var(--green); }
+    .verdict.down .big { color: var(--red); }
+    .conf { margin-top: .35rem; color: var(--muted); font-size: .78rem; }
+    .lean-label { font-size: 1.05rem; font-weight: 700; }
+    .lean-text { margin: .35rem 0 0; color: var(--text); font-size: .86rem; line-height: 1.45; }
+    .reasons { margin: .45rem 0 0; padding-left: 1.1rem; color: var(--muted); font-size: .75rem; }
+    .reasons li { margin: .12rem 0; }
+    .note {
+      margin: .55rem 0 0; color: var(--amber); font-size: .75rem; line-height: 1.45;
+    }
+    .grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: .8rem; }
+    .card {
+      border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
+      padding: .75rem .8rem .85rem;
+    }
+    .card h2 { margin: 0 0 .55rem; font-size: .92rem; font-weight: 650; }
+    .card .hint { color: var(--muted); font-size: .72rem; line-height: 1.4; margin: -.2rem 0 .55rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+    th, td { text-align: left; padding: .32rem .2rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--dim); font-weight: 600; font-size: .7rem; }
+    td.num, .num { font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: .74rem; }
+    .tone-up { color: var(--green); }
+    .tone-down { color: var(--red); }
+    .tone-warn { color: var(--amber); }
+    .tone-flat { color: var(--muted); }
+    .spark { width: 100%; height: 84px; display: block; margin: .2rem 0 .45rem; }
+    .book-head, .trade-sum {
+      display: flex; flex-wrap: wrap; gap: .4rem .7rem; align-items: baseline;
+      font-size: .78rem; color: var(--muted); margin-bottom: .45rem;
+    }
+    .book-head b, .trade-sum b { color: var(--text); }
+    .bias {
+      position: relative; height: .55rem; border-radius: 999px; background: var(--line);
+      overflow: hidden; margin: .15rem 0 .55rem;
+    }
+    .bias i {
+      position: absolute; top: 0; bottom: 0; width: 2px; background: var(--text);
+      transform: translateX(-1px);
+    }
+    .ladder { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; }
+    .ladder h3 { margin: 0 0 .3rem; font-size: .72rem; font-weight: 650; color: var(--muted); }
+    .lvl { display: grid; grid-template-columns: 1fr auto auto; gap: .35rem; align-items: center; font-size: .72rem; margin: .12rem 0; position: relative; }
+    .lvl .bar { position: absolute; top: 1px; bottom: 1px; border-radius: 3px; opacity: .28; }
+    .bids .bar { right: 0; background: var(--green); }
+    .asks .bar { left: 0; background: var(--red); }
+    .lvl span { position: relative; font-variant-numeric: tabular-nums; }
+    .prep { margin-top: .8rem; }
+    .prep p { margin: .35rem 0; color: var(--muted); font-size: .78rem; line-height: 1.5; }
+    .prep strong { color: var(--text); font-weight: 650; }
+    .foot { margin-top: 1rem; color: var(--dim); font-size: .7rem; display: flex; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+    @media (max-width: 900px) {
+      .verdict, .grid, .ladder { grid-template-columns: 1fr; }
+      .remain { margin-left: 0; }
+      .big { font-size: 3.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <h1>升跌提示</h1>
+        <div class="sub">睇 Binance 公開 BTC/USDT 5 分鐘行情，唔使跳去另一頁再跳返嚟。呢頁唔用 Polymarket 賠率。只係提示。</div>
+      </div>
+      <div class="top-actions">
+        <a class="chip btn" href="/">Desk</a>
+        <a class="chip btn" href="/logs">Logs</a>
+        <span class="chip here">升跌提示</span>
+        <button class="chip btn" id="btn-refresh" type="button">刷新</button>
+      </div>
+    </header>
+
+    <section class="strip" id="window-strip" aria-label="而家呢個 5 分鐘窗">
+      <span>窗 <b id="win-range">—</b></span>
+      <span>Binance 現價 <b id="px">—</b></span>
+      <span>窗開 <b id="open-px">—</b></span>
+      <span id="move">—</span>
+      <span class="remain" id="remain">—:—</span>
+    </section>
+
+    <section class="verdict" id="verdict" aria-live="polite">
+      <div>
+        <div class="big" id="dir">—</div>
+        <div class="conf" id="conf">載入中…</div>
+      </div>
+      <div>
+        <div class="lean-label" id="lean-label">延續定反轉</div>
+        <p class="lean-text" id="lean-text">指標同掛單未到。</p>
+        <ul class="reasons" id="reasons"></ul>
+        <p class="note" id="disclaimer">呢頁係提示，唔係已證明嘅優勢，亦唔係官方結算。Polymarket BTC 5 分鐘官方結算用 <a href="https://data.chain.link/streams/btc-usd-twap-60s-streams">Chainlink BTC/USD TWAP 60 秒</a>，唔係 Binance 最後價。Binance 收市可以同官方結果唔同。</p>
+        <p class="note" id="extra-note"></p>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>5 分鐘指標</h2>
+        <p class="hint" id="prior">EMA 7／25／99、布林 20 2、超級趨勢 10 3、威廉 %R 14、RSI 6、RSI 14、MACD。</p>
+        <svg class="spark" id="spark" viewBox="0 0 560 84" role="img" aria-label="最近 5 分鐘收市"></svg>
+        <table>
+          <thead><tr><th>指標</th><th>數值</th><th>讀法</th></tr></thead>
+          <tbody id="ind-body"><tr><td colspan="3" class="tone-flat">載入中…</td></tr></tbody>
+        </table>
+      </section>
+      <section class="card">
+        <h2>掛單深度同偏向</h2>
+        <p class="hint">公開訂單簿前 20 檔嘅金額，同最近逐筆成交。唔係 Polymarket 賠率。</p>
+        <div class="book-head">
+          <span>買盤 <b id="bid-usd">—</b></span>
+          <span>賣盤 <b id="ask-usd">—</b></span>
+          <span>偏向 <b id="bias">—</b></span>
+        </div>
+        <div class="bias" aria-hidden="true"><i id="bias-mark" style="left:50%"></i></div>
+        <div class="ladder">
+          <div class="bids">
+            <h3>買盤 · 價位同數量</h3>
+            <div id="bid-levels"></div>
+          </div>
+          <div class="asks">
+            <h3>賣盤 · 價位同數量</h3>
+            <div id="ask-levels"></div>
+          </div>
+        </div>
+        <div class="trade-sum" id="trade-sum" style="margin-top:.7rem">最近成交載入中…</div>
+      </section>
+    </div>
+
+    <section class="card prep" aria-label="預設關閉嘅試單路徑">
+      <h2>$1 試單預備 · 未啟動</h2>
+      <p id="prep-flags">DRY_RUN 開 · 未武裝 · 真錢旗關 · 未啟用 · 呢頁唔會落單</p>
+      <p>條路徑同 Mid-band Range80 無關，亦冇服務在跑。之後如果先至放行，先可以跟呢頁嘅升／跌，每個 5 分鐘窗最多落 <strong>一張</strong> Polymarket BTC 5 分鐘 <strong>FOK 買單</strong>。意向金額係 <strong>$1</strong>。</p>
+      <p>Polymarket 最少大約 <strong>5 股</strong>。$1 通常買唔到 5 股，所以常見賣價會把張單抬高：賣價 0.80 大約 <strong>$4.00</strong>，賣價 0.85 大約 <strong>$4.25</strong>。呢頁冇掣可以開真倉，亦唔會改其他 bot。</p>
+    </section>
+
+    <div class="foot">
+      <span id="foot-src">Binance BTC/USDT 公開行情 · 約每 5 秒更新</span>
+      <span id="foot-upd">—</span>
+    </div>
+  </div>
+  <script>
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const POLL_MS = 5000;
+    let skew = 0;
+    let snap = null;
+    let poll = null;
+    let loading = false;
+    let rolledFor = null;
+
+    function esc(value) {
+      return String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[ch]));
+    }
+
+    function remainSec() {
+      if (!snap) return null;
+      const now = Date.now() / 1000 + skew;
+      return Math.max(0, snap.window_end - now);
+    }
+
+    function paintClock() {
+      const left = remainSec();
+      const el = $("remain");
+      if (left == null) {
+        el.textContent = "—:—";
+        return;
+      }
+      const whole = Math.floor(left);
+      const m = Math.floor(whole / 60);
+      const s = whole % 60;
+      el.textContent = String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+      el.classList.toggle("soon", whole < 45);
+      if (snap && snap.window_end != null && Math.floor(Date.now() / 1000 + skew) >= snap.window_end && rolledFor !== snap.window_end) {
+        rolledFor = snap.window_end;
+        load();
+      }
+    }
+
+    function toneClass(tone) {
+      if (tone === "up") return "tone-up";
+      if (tone === "down") return "tone-down";
+      if (tone === "warn") return "tone-warn";
+      return "tone-flat";
+    }
+
+    function drawSpark(spark) {
+      const svg = $("spark");
+      const closes = (spark && spark.closes) || [];
+      if (!closes.length) {
+        svg.innerHTML = "";
+        return;
+      }
+      const nums = closes.filter((v) => typeof v === "number");
+      const min = Math.min.apply(null, nums);
+      const max = Math.max.apply(null, nums);
+      const span = max - min || 1;
+      const w = 560;
+      const h = 84;
+      const pad = 4;
+      const x = (i, n) => pad + (i * (w - pad * 2)) / Math.max(n - 1, 1);
+      const y = (v) => pad + (1 - (v - min) / span) * (h - pad * 2);
+      const line = (series) => series.map((v, i) => {
+        if (typeof v !== "number") return "";
+        const cmd = series.slice(0, i).some((p) => typeof p === "number") ? "L" : "M";
+        return cmd + x(i, series.length).toFixed(1) + "," + y(v).toFixed(1);
+      }).join(" ");
+      const ema = (spark.ema7 || []).map((v) => (typeof v === "number" ? v : null));
+      svg.innerHTML =
+        '<path d="' + line(closes) + '" fill="none" stroke="#6eb6ff" stroke-width="1.6"/>' +
+        '<path d="' + line(ema) + '" fill="none" stroke="#e0b567" stroke-width="1.2" stroke-dasharray="3 3"/>';
+    }
+
+    function levels(host, rows, side) {
+      host.innerHTML = "";
+      (rows || []).forEach((row) => {
+        const div = document.createElement("div");
+        div.className = "lvl";
+        const width = Math.max(4, Math.round((row.bar || 0) * 100));
+        div.innerHTML =
+          '<i class="bar" style="width:' + width + '%"></i>' +
+          '<span>' + esc(Number(row.price).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})) + '</span>' +
+          '<span>' + esc(Number(row.qty).toFixed(4)) + '</span>' +
+          '<span>' + esc(Math.round(row.notional).toLocaleString("en-US")) + '</span>';
+        host.appendChild(div);
+      });
+      if (!rows || !rows.length) {
+        host.innerHTML = '<div class="tone-flat">暫時冇' + (side === "bid" ? "買" : "賣") + '盤</div>';
+      }
+    }
+
+    function paintPrep(prep) {
+      const el = $("prep-flags");
+      if (!prep) return;
+      const bits = [
+        prep.dry_run ? "DRY_RUN 開" : "DRY_RUN 關",
+        prep.armed ? "已武裝" : "未武裝",
+        prep.real_money ? "真錢旗開" : "真錢旗關",
+        prep.enabled ? "已啟用" : "未啟用"
+      ];
+      el.textContent = bits.join(" · ") + " · 呢頁唔會落單";
+      el.className = prep.will_send ? "tone-warn" : "";
+      if (prep.will_send) {
+        el.textContent += "。伺服器旗標係放行，但呢頁仍然唔會自己落單。";
+      }
+    }
+
+    function render() {
+      if (!snap) return;
+      $("win-range").textContent = (snap.window_start_hkt || "—") + " → " + (snap.window_end_hkt || "—");
+      paintClock();
+      paintPrep(snap.prep);
+      const verdict = $("verdict");
+      verdict.classList.remove("up", "down");
+      if (!snap.ok) {
+        $("dir").textContent = "—";
+        $("conf").textContent = snap.error || "暫時冇提示";
+        $("lean-label").textContent = "未有方向";
+        $("lean-text").textContent = "行情未到，所以唔估升跌。";
+        $("reasons").innerHTML = "";
+        return;
+      }
+      verdict.classList.add(snap.direction === "down" ? "down" : "up");
+      $("dir").textContent = snap.label || "—";
+      $("conf").textContent = (snap.confidence_label || "") + (snap.stale ? " · 上一版" : "");
+      $("px").textContent = snap.price_text || "—";
+      $("open-px").textContent = snap.window_open_text || "—";
+      $("move").textContent = (snap.move_label || "") + " " + (snap.delta_text || "");
+      $("lean-label").textContent = snap.lean_label || "未分高低";
+      $("lean-text").textContent = snap.lean_text || "";
+      $("prior").textContent = snap.prior_bars || $("prior").textContent;
+      $("reasons").innerHTML = (snap.reasons || []).map((row) => "<li>" + esc(row) + "</li>").join("");
+      const extra = (snap.notes || []).filter((row) => row.indexOf("只係提示") !== 0 && row.indexOf("官方結算") !== 0);
+      $("extra-note").textContent = extra.join(" ");
+      const body = $("ind-body");
+      body.innerHTML = (snap.indicators || []).map((row) =>
+        "<tr><td>" + esc(row.name) + "</td><td class='num'>" + esc(row.value) + "</td><td class='" + toneClass(row.tone) + "'>" + esc(row.read) + "</td></tr>"
+      ).join("");
+      drawSpark(snap.spark);
+      const book = snap.book || {};
+      $("bid-usd").textContent = book.bid_notional_text || "—";
+      $("ask-usd").textContent = book.ask_notional_text || "—";
+      $("bias").textContent = (book.bias || "—") + (book.imbalance_text ? " " + book.imbalance_text : "");
+      const mark = 50 + Math.max(-1, Math.min(1, book.imbalance || 0)) * 50;
+      $("bias-mark").style.left = mark + "%";
+      levels($("bid-levels"), book.bids, "bid");
+      levels($("ask-levels"), book.asks, "ask");
+      const tr = snap.trades || {};
+      $("trade-sum").innerHTML =
+        "最近 <b>" + esc(tr.count || 0) + "</b> 筆 · 主動買 <b>" + esc(tr.buy_quote_text || "—") +
+        "</b> · 主動賣 <b>" + esc(tr.sell_quote_text || "—") +
+        "</b> · 幣量 <b>" + esc(tr.qty_text || "—") +
+        "</b> · 均價 <b>" + esc(tr.vwap_text || "—") +
+        "</b> · " + esc(tr.flow || "") + " · " + esc(tr.vs_last || "");
+      const updated = new Date();
+      $("foot-upd").textContent = "更新 " + updated.toLocaleTimeString("zh-HK", {hour12: false});
+      if (snap.stale && snap.error) $("foot-src").textContent = snap.error;
+    }
+
+    async function load() {
+      if (loading) return;
+      loading = true;
+      try {
+        const res = await fetch("/api/predict-hint", {cache: "no-store"});
+        const data = await res.json();
+        skew = (Number(data.server_now) || Date.now() / 1000) - Date.now() / 1000;
+        snap = data;
+        render();
+      } catch (err) {
+        if (!snap) {
+          $("conf").textContent = "暫時連唔上提示。";
+        }
+      } finally {
+        loading = false;
+      }
+    }
+
+    $("btn-refresh").addEventListener("click", load);
+    load();
+    poll = setInterval(load, POLL_MS);
+    setInterval(paintClock, 250);
+  })();
+  </script>
+</body>
+</html>
